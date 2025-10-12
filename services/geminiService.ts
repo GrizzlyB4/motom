@@ -1,10 +1,12 @@
-import { GoogleGenAI } from "@google/genai";
 
-// As per guidelines, initialize the client directly, assuming process.env.API_KEY is available.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+import { GoogleGenAI } from "@google/genai";
 
 export const generateAdDescription = async (keywords: string): Promise<string> => {
   try {
+    // Initialize the client here, so the app can load even if process.env is not defined.
+    // The error will only occur when this function is called.
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
     const prompt = `
       Eres un experto en marketing de motocicletas. Crea una descripción de venta atractiva, vendedora y profesional para un anuncio online.
       La descripción debe ser en español. Usa un tono entusiasta pero creíble.
