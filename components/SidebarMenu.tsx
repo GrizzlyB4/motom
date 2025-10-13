@@ -37,29 +37,29 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, onClose, currentUser,
 
       {/* Sidebar Content */}
       <div
-        className={`relative flex flex-col w-80 max-w-[90vw] h-full bg-gray-800 shadow-2xl transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`relative flex flex-col w-80 max-w-[90vw] h-full bg-background-dark shadow-2xl transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-border-dark">
           <div className="flex items-center gap-2">
-             <MotorcycleIcon className="h-8 w-auto text-orange-500" />
-              <span className="text-xl font-bold font-heading text-white">
+             <MotorcycleIcon className="h-8 w-auto text-primary" />
+              <span className="text-xl font-bold font-heading text-foreground-dark">
                 MM
               </span>
           </div>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-gray-700" aria-label="Cerrar menú">
+          <button onClick={onClose} className="p-2 text-foreground-muted-dark hover:text-foreground-dark transition-colors rounded-full hover:bg-card-dark" aria-label="Cerrar menú">
             <CloseIcon className="w-6 h-6" />
           </button>
         </div>
 
         {currentUser ? (
           <>
-            <div className="p-4 border-b border-gray-700">
+            <div className="p-4 border-b border-border-dark">
                 <div className="flex items-center gap-3">
                     {/* fix: Use ProfileIcon instead of the non-existent UserIcon. */}
-                    <ProfileIcon className="w-10 h-10 p-2 bg-gray-700 rounded-full text-orange-400" />
+                    <ProfileIcon className="w-10 h-10 p-2 bg-card-dark rounded-full text-primary" />
                     <div>
-                        <p className="font-semibold text-white">Bienvenido</p>
-                        <p className="text-sm text-gray-400 truncate">{currentUser.email}</p>
+                        <p className="font-semibold text-foreground-dark">Bienvenido</p>
+                        <p className="text-sm text-foreground-muted-dark truncate">{currentUser.email}</p>
                     </div>
                 </div>
             </div>
@@ -71,10 +71,10 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, onClose, currentUser,
               <NavItem onClick={() => handleNavigation('profile')} label="Mi Perfil" />
             </nav>
 
-            <div className="p-4 border-t border-gray-700">
+            <div className="p-4 border-t border-border-dark">
               <button
                 onClick={handleLogoutClick}
-                className="w-full text-left font-semibold text-gray-300 hover:text-red-500 hover:bg-red-500/10 p-3 rounded-lg transition-colors duration-200"
+                className="w-full text-left font-semibold text-foreground-dark hover:text-primary hover:bg-primary/10 p-3 rounded-lg transition-colors duration-200"
               >
                 Cerrar Sesión
               </button>
@@ -82,10 +82,10 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, onClose, currentUser,
           </>
         ) : (
              <div className="flex-grow p-4 flex flex-col justify-center items-center">
-                <p className="text-gray-400 mb-4 text-center">Inicia sesión para acceder a todas las funciones.</p>
+                <p className="text-foreground-muted-dark mb-4 text-center">Inicia sesión para acceder a todas las funciones.</p>
                 <button 
                     onClick={() => handleNavigation('login')}
-                    className="bg-orange-600 text-white font-bold py-2 px-6 rounded-md hover:bg-orange-700 transition-colors duration-300"
+                    className="bg-primary text-white font-bold py-2 px-6 rounded-md hover:opacity-90 transition-colors duration-300"
                 >
                     Iniciar Sesión
                 </button>
@@ -99,7 +99,7 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, onClose, currentUser,
 const NavItem: React.FC<{ onClick: () => void; label: string }> = ({ onClick, label }) => (
   <button
     onClick={onClick}
-    className="w-full text-left text-lg font-semibold text-gray-300 hover:text-orange-400 hover:bg-orange-500/10 p-3 rounded-lg transition-colors duration-200"
+    className="w-full text-left text-lg font-semibold text-foreground-dark hover:text-primary hover:bg-primary/10 p-3 rounded-lg transition-colors duration-200"
   >
     {label}
   </button>

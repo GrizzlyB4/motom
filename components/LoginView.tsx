@@ -57,7 +57,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
             />
           </div>
 
-          {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+          {error && <p className="text-sm text-primary text-center">{error}</p>}
 
           <div>
             <button

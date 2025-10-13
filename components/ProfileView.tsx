@@ -21,7 +21,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ currentUser, userMotorcycles,
                 <p className="text-foreground-muted-light dark:text-foreground-muted-dark">{currentUser.email}</p>
             </div>
         </div>
-        <button onClick={onLogout} className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-red-500 transition-colors">
+        <button onClick={onLogout} className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-primary transition-colors">
             <LogoutIcon className="w-6 h-6"/>
         </button>
       </div>
@@ -42,7 +42,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ currentUser, userMotorcycles,
             {userMotorcycles.map(moto => {
                const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(moto.price);
                return (
-                <div key={moto.id} onClick={() => onSelectMotorcycle(moto)} className="bg-card-light dark:bg-card-dark p-4 rounded-xl flex items-center gap-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-card-dark/50 transition-colors">
+                <div key={moto.id} onClick={() => onSelectMotorcycle(moto)} className="bg-card-light dark:bg-card-dark p-4 rounded-xl flex items-center gap-4 cursor-pointer hover:bg-black/[.03] dark:hover:bg-white/[.05] transition-colors">
                     <img src={moto.imageUrl} alt={`${moto.make} ${moto.model}`} className="w-24 h-16 object-cover rounded-lg flex-shrink-0" />
                     <div className="flex-grow">
                         <p className="font-bold">{moto.make} {moto.model}</p>

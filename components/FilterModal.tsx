@@ -78,7 +78,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
         </div>
 
         <div className="mt-8 grid grid-cols-2 gap-4">
-            <button onClick={handleReset} className="w-full bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark text-foreground-light dark:text-foreground-dark font-bold py-3 px-4 rounded-xl hover:bg-gray-100 dark:hover:bg-border-dark transition-colors">
+            <button onClick={handleReset} className="w-full bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark text-foreground-light dark:text-foreground-dark font-bold py-3 px-4 rounded-xl hover:bg-black/[.05] dark:hover:bg-border-dark transition-colors">
                 Limpiar Filtros
             </button>
             <button onClick={onClose} className="w-full bg-primary text-white font-bold py-3 px-4 rounded-xl hover:opacity-90 transition-opacity">
