@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Motorcycle, User, MotorcycleCategory } from './types';
 import Header from './components/Header';
@@ -10,13 +11,13 @@ import BottomNav from './components/BottomNav';
 import FilterModal from './components/FilterModal';
 
 const mockMotorcycles: Motorcycle[] = [
-    { id: 1, make: 'Honda', model: 'CB650R', year: 2021, price: 7500, mileage: 8500, engineSize: 649, description: 'Como nueva...', imageUrl: 'https://picsum.photos/seed/cb650r/800/600', sellerEmail: 'seller1@example.com', category: 'Sport' },
-    { id: 2, make: 'Kawasaki', model: 'Z900', year: 2020, price: 8200, mileage: 12000, engineSize: 948, description: 'Vendo Kawasaki Z900...', imageUrl: 'https://picsum.photos/seed/z900/800/600', sellerEmail: 'user@motomarket.com', category: 'Sport' },
-    { id: 3, make: 'Yamaha', model: 'MT-07', year: 2022, price: 6800, mileage: 4500, engineSize: 689, description: 'Yamaha MT-07 del 2022...', imageUrl: 'https://picsum.photos/seed/mt07/800/600', sellerEmail: 'seller2@example.com', category: 'Sport' },
-    { id: 4, make: 'BMW', model: 'R1250GS', year: 2021, price: 21500, mileage: 15000, engineSize: 1254, description: 'Impresionante R1250GS...', imageUrl: 'https://picsum.photos/seed/r1250gs/800/600', sellerEmail: 'user@motomarket.com', category: 'Touring' },
-    { id: 5, make: 'Ducati', model: 'Panigale V2', year: 2020, price: 16000, mileage: 9800, engineSize: 955, description: 'Ducati Panigale V2...', imageUrl: 'https://picsum.photos/seed/panigale-v2/800/600', sellerEmail: 'seller3@example.com', category: 'Sport' },
-    { id: 8, make: 'Harley-Davidson', model: 'Iron 883', year: 2018, price: 9200, mileage: 18000, engineSize: 883, description: 'Icónica Iron 883...', imageUrl: 'https://picsum.photos/seed/iron883/800/600', sellerEmail: 'seller6@example.com', category: 'Cruiser' },
-    { id: 9, make: 'KTM', model: '390 Adventure', year: 2022, price: 6500, mileage: 5000, engineSize: 373, description: 'Perfecta trail ligera...', imageUrl: 'https://picsum.photos/seed/390adv/800/600', sellerEmail: 'user@motomarket.com', category: 'Off-Road' }
+    { id: 1, make: 'Honda', model: 'CB650R', year: 2021, price: 7500, mileage: 8500, engineSize: 649, description: 'Como nueva...', imageUrl: 'https://images.unsplash.com/photo-1621115132957-81df81347053?q=80&w=800&auto=format&fit=crop', sellerEmail: 'seller1@example.com', category: 'Sport' },
+    { id: 2, make: 'Kawasaki', model: 'Z900', year: 2020, price: 8200, mileage: 12000, engineSize: 948, description: 'Vendo Kawasaki Z900...', imageUrl: 'https://images.unsplash.com/photo-1623563720235-3a0639f60324?q=80&w=800&auto=format&fit=crop', sellerEmail: 'user@motomarket.com', category: 'Sport' },
+    { id: 3, make: 'Yamaha', model: 'MT-07', year: 2022, price: 6800, mileage: 4500, engineSize: 689, description: 'Yamaha MT-07 del 2022...', imageUrl: 'https://images.unsplash.com/photo-1640890656113-3a137250abfa?q=80&w=800&auto=format&fit=crop', sellerEmail: 'seller2@example.com', category: 'Sport' },
+    { id: 4, make: 'BMW', model: 'R1250GS', year: 2021, price: 21500, mileage: 15000, engineSize: 1254, description: 'Impresionante R1250GS...', imageUrl: 'https://images.unsplash.com/photo-1623563720275-2c86b2253245?q=80&w=800&auto=format&fit=crop', sellerEmail: 'user@motomarket.com', category: 'Touring' },
+    { id: 5, make: 'Ducati', model: 'Panigale V2', year: 2020, price: 16000, mileage: 9800, engineSize: 955, description: 'Ducati Panigale V2...', imageUrl: 'https://images.unsplash.com/photo-1600761343111-a0a623e1d6d8?q=80&w=800&auto=format&fit=crop', sellerEmail: 'seller3@example.com', category: 'Sport' },
+    { id: 8, make: 'Harley-Davidson', model: 'Iron 883', year: 2018, price: 9200, mileage: 18000, engineSize: 883, description: 'Icónica Iron 883...', imageUrl: 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800&auto=format&fit=crop', sellerEmail: 'seller6@example.com', category: 'Cruiser' },
+    { id: 9, make: 'KTM', model: '390 Adventure', year: 2022, price: 6500, mileage: 5000, engineSize: 373, description: 'Perfecta trail ligera...', imageUrl: 'https://images.unsplash.com/photo-1627916699311-3a088371295b?q=80&w=800&auto=format&fit=crop', sellerEmail: 'user@motomarket.com', category: 'Off-Road' }
 ];
 
 export type View = 'home' | 'detail' | 'sell' | 'profile' | 'favorites' | 'chat' | 'login';
@@ -52,7 +53,7 @@ const App: React.FC = () => {
     const newMoto: Motorcycle = {
         ...newMotoData,
         id: motorcycles.length + 1,
-        imageUrl: `https://placehold.co/800x600/182830/e3e8ea?text=${newMotoData.make}`,
+        imageUrl: `https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=800&auto=format&fit=crop`,
         sellerEmail: currentUser.email,
         category: 'Sport', // Default category for now
     };
