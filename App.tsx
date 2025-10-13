@@ -143,7 +143,7 @@ const App: React.FC = () => {
   };
   
   return (
-    <div className="flex flex-col min-h-screen text-foreground-light dark:text-foreground-dark">
+    <div className="flex flex-col min-h-screen bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark">
       {view !== 'detail' && (
         <Header 
           searchTerm={searchTerm} 
