@@ -1,9 +1,11 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Motorcycle, User, MotorcycleCategory, ChatConversation, ChatMessage, HeatmapPoint, SavedSearch } from './types';
+import { Motorcycle, User, MotorcycleCategory, ChatConversation, ChatMessage, HeatmapPoint, SavedSearch, Part, PartCategory } from './types';
 import Header from './components/Header';
 import MotorcycleList from './components/MotorcycleList';
+import PartList from './components/PartList';
 import MotorcycleDetailView from './components/MotorcycleDetailView';
+import PartDetailView from './components/PartDetailView';
 import LoginView from './components/LoginView';
 import SignUpView from './components/SignUpView';
 import SellForm from './components/SellForm';
@@ -29,6 +31,12 @@ const mockMotorcycles: Motorcycle[] = [
     { id: 9, make: 'KTM', model: '390 Adventure', year: 2022, price: 6500, mileage: 5000, engineSize: 373, description: 'Perfecta trail ligera...', imageUrls: ['https://images.unsplash.com/photo-1627916699311-3a088371295b?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Off-Road', status: 'sold', location: 'Zaragoza, España', featured: false }
 ];
 
+const mockParts: Part[] = [
+    { id: 101, name: 'Escape Akrapovič Racing Line', price: 850, description: 'Sistema de escape completo de titanio para Yamaha MT-07. Aumenta la potencia y reduce el peso. Sonido espectacular. Usado pero en perfecto estado.', imageUrls: ['https://images.unsplash.com/photo-1617056036422-4458698946a3?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller2@example.com', category: 'Exhausts', condition: 'used', compatibility: ['Yamaha MT-07 2021-2023'], status: 'for-sale', location: 'Valencia, España' },
+    { id: 102, name: 'Juego de Neumáticos Pirelli Diablo Rosso IV', price: 280, description: 'Neumáticos deportivos para carretera. Medidas 120/70-17 y 180/55-17. Completamente nuevos, sin estrenar. Vendo por cambio de moto.', imageUrls: ['https://images.unsplash.com/photo-1589256956321-9950397851a7?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Tires', condition: 'new', compatibility: ['Universal - Verificar medidas'], status: 'for-sale', location: 'Barcelona, España' },
+    { id: 103, name: 'Frenos Brembo Stylema', price: 600, description: 'Pinzas de freno delanteras Brembo Stylema. Alto rendimiento de frenada. Proceden de una Ducati Panigale V2. Incluye pastillas al 80%.', imageUrls: ['https://images.unsplash.com/photo-1598111034225-16782d33463b?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller3@example.com', category: 'Brakes', condition: 'used', compatibility: ['Ducati Panigale V2', 'Aprilia RSV4'], status: 'for-sale', location: 'Madrid, España' },
+];
+
 const mockConversations: ChatConversation[] = [
     { id: 'convo1', participants: ['user@motomarket.com', 'seller1@example.com'], motorcycleId: 1 },
 ];
@@ -47,7 +55,7 @@ const mockUsers: User[] = [
 ];
 
 
-export type View = 'home' | 'detail' | 'sell' | 'profile' | 'favorites' | 'chat' | 'chatList' | 'chatDetail' | 'login' | 'publicProfile' | 'edit' | 'signup';
+export type View = 'home' | 'detail' | 'partDetail' | 'sell' | 'profile' | 'favorites' | 'chat' | 'chatList' | 'chatDetail' | 'login' | 'publicProfile' | 'edit' | 'signup';
 
 // --- Notification Service Functions ---
 const requestNotificationPermission = async (): Promise<NotificationPermission> => {
@@ -76,9 +84,11 @@ const sendNotification = (title: string, options?: NotificationOptions): void =>
 const App: React.FC = () => {
   const [view, setView] = useState<View>('login');
   const [selectedMotorcycle, setSelectedMotorcycle] = useState<Motorcycle | null>(null);
+  const [selectedPart, setSelectedPart] = useState<Part | null>(null);
   const [motorcycleToEdit, setMotorcycleToEdit] = useState<Motorcycle | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [motorcycles, setMotorcycles] = useState<Motorcycle[]>(mockMotorcycles);
+  const [parts, setParts] = useState<Part[]>(mockParts);
   const [conversations, setConversations] = useState<ChatConversation[]>(mockConversations);
   const [messages, setMessages] = useState<ChatMessage[]>(mockMessages);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
@@ -91,6 +101,8 @@ const App: React.FC = () => {
   const [yearRange, setYearRange] = useState({ min: '', max: '' });
   const [engineSizeCategory, setEngineSizeCategory] = useState('any');
   const [selectedCategory, setSelectedCategory] = useState<MotorcycleCategory>('All');
+  const [selectedPartCategory, setSelectedPartCategory] = useState<PartCategory>('All');
+
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   
   const [favorites, setFavorites] = useState<number[]>([]);
@@ -103,8 +115,10 @@ const App: React.FC = () => {
 
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
   const [motoToPublish, setMotoToPublish] = useState<Omit<Motorcycle, 'id' | 'sellerEmail' | 'category' | 'status'> | null>(null);
+  const [partToPublish, setPartToPublish] = useState<Omit<Part, 'id' | 'sellerEmail' | 'status' | 'category'> | null>(null);
   const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false);
   const [motoToPromoteId, setMotoToPromoteId] = useState<number | null>(null);
+  const [marketView, setMarketView] = useState<'motorcycles' | 'parts'>('motorcycles');
 
 
   useEffect(() => {
@@ -177,7 +191,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [view, selectedMotorcycle, selectedConversationId]);
+  }, [view, selectedMotorcycle, selectedPart, selectedConversationId]);
   
   // Simulate price drop notification for a favorite item
   useEffect(() => {
@@ -294,11 +308,12 @@ const App: React.FC = () => {
   };
 
   const handleSelectMotorcycle = (moto: Motorcycle) => { setSelectedMotorcycle(moto); setView('detail'); };
+  const handleSelectPart = (part: Part) => { setSelectedPart(part); setView('partDetail'); };
   const handleBackToPrevView = () => {
     if (view === 'chatDetail') {
         setSelectedConversationId(null);
         setView('chatList');
-    } else if (view === 'publicProfile' && selectedMotorcycle) {
+    } else if ((view === 'publicProfile' || view === 'partDetail') && selectedMotorcycle) {
         setView('detail');
     } else if (view === 'edit') {
         setMotorcycleToEdit(null);
@@ -306,12 +321,12 @@ const App: React.FC = () => {
     }
     else {
         setSelectedMotorcycle(null);
+        setSelectedPart(null);
         setSelectedSellerEmail(null);
         setView('home');
     }
   };
   
-  // FIX: Update function signature to only require email, which is what LoginView provides.
   const handleLoginSuccess = (user: { email: string }) => {
     const foundUser = users.find(u => u.email.toLowerCase() === user.email.toLowerCase());
     if (foundUser) {
@@ -354,31 +369,47 @@ const App: React.FC = () => {
     setView('login');
   };
 
-  const handlePublish = (newMotoData: Omit<Motorcycle, 'id' | 'sellerEmail' | 'category' | 'status'>) => {
-    setMotoToPublish(newMotoData);
+  const handlePublish = (data: Omit<Motorcycle, 'id' | 'sellerEmail' | 'category' | 'status'> | Omit<Part, 'id' | 'sellerEmail' | 'category' | 'status'>, type: 'motorcycle' | 'part') => {
+    if (type === 'motorcycle') {
+        setMotoToPublish(data as Omit<Motorcycle, 'id' | 'sellerEmail' | 'category' | 'status'>);
+    } else {
+        setPartToPublish(data as Omit<Part, 'id' | 'sellerEmail' | 'status' | 'category'>);
+    }
     setIsConfirmationModalOpen(true);
   };
   
   const handleConfirmPublish = () => {
-    if (!currentUser || !motoToPublish) return;
-
-    const newMoto: Motorcycle = {
-      ...motoToPublish,
-      id: Date.now(), // Using timestamp for a more unique ID
-      imageUrls: motoToPublish.imageUrls.length > 0 ? motoToPublish.imageUrls : [`https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=800&auto=format&fit=crop`],
-      sellerEmail: currentUser.email,
-      category: 'Sport', // Default category for now
-      status: 'for-sale',
-      featured: false,
-    };
-
-    setMotorcycles(prev => [newMoto, ...prev]);
-    alert("¡Tu moto ha sido publicada!");
-    setView('profile');
+    if (!currentUser) return;
     
-    // Reset state
+    if (motoToPublish) {
+        const newMoto: Motorcycle = {
+          ...motoToPublish,
+          id: Date.now(),
+          imageUrls: motoToPublish.imageUrls.length > 0 ? motoToPublish.imageUrls : [`https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=800&auto=format&fit=crop`],
+          sellerEmail: currentUser.email,
+          category: 'Sport',
+          status: 'for-sale',
+          featured: false,
+        };
+        setMotorcycles(prev => [newMoto, ...prev]);
+        alert("¡Tu moto ha sido publicada!");
+    } else if (partToPublish) {
+        const newPart: Part = {
+          ...partToPublish,
+          id: Date.now(),
+          imageUrls: partToPublish.imageUrls.length > 0 ? partToPublish.imageUrls : ['https://images.unsplash.com/photo-1559795632-520a8e7a016f?q=80&w=800&auto=format&fit=crop'],
+          sellerEmail: currentUser.email,
+          category: 'Exhausts',
+          status: 'for-sale',
+        };
+        setParts(prev => [newPart, ...prev]);
+        alert("¡Tu pieza ha sido publicada!");
+    }
+
+    setView('profile');
     setIsConfirmationModalOpen(false);
     setMotoToPublish(null);
+    setPartToPublish(null);
   };
   
   const handleResetFilters = () => {
@@ -449,7 +480,6 @@ const App: React.FC = () => {
         setIsTyping(prev => ({ ...prev, [conversationId]: false }));
         setMessages(prev => [...prev, reply]);
 
-        // Send a notification if the user is not viewing this specific chat
         if (view !== 'chatDetail' || selectedConversationId !== conversationId) {
             const motorcycle = motorcycles.find(m => m.id === conversation.motorcycleId);
             const sender = users.find(u => u.email === otherUserEmail);
@@ -529,7 +559,6 @@ const App: React.FC = () => {
     ));
     alert('¡Anuncio promocionado con éxito!');
     
-    // Reset state
     setIsPromoteModalOpen(false);
     setMotoToPromoteId(null);
   };
@@ -559,12 +588,10 @@ const App: React.FC = () => {
   };
 
   const handleAddHeatmapPoint = (e: React.MouseEvent) => {
-    // Only add points if the heatmap is active, to avoid collecting unnecessary data.
-    // Or collect always for analytics purposes. Let's collect always for this demo.
     const newPoint: HeatmapPoint = {
       x: e.pageX,
       y: e.pageY,
-      value: 1, // Each click has a value of 1
+      value: 1,
     };
     const updatedData = [...heatmapData, newPoint];
     setHeatmapData(updatedData);
@@ -585,7 +612,6 @@ const App: React.FC = () => {
           yearRange,
           engineSizeCategory,
       };
-      // Check if an identical search already exists
       const alreadyExists = savedSearches.some(s => 
           s.searchTerm === searchCriteria.searchTerm &&
           s.locationFilter === searchCriteria.locationFilter &&
@@ -643,6 +669,26 @@ const App: React.FC = () => {
     }
     return filtered;
   }, [motorcycles, searchTerm, locationFilter, priceRange, yearRange, engineSizeCategory, selectedCategory]);
+
+  const filteredParts = useMemo(() => {
+    let filtered = parts.filter(p => p.status === 'for-sale');
+    const lowercasedFilter = searchTerm.toLowerCase();
+     if (lowercasedFilter) {
+      filtered = filtered.filter(p => `${p.name} ${p.description}`.toLowerCase().includes(lowercasedFilter));
+    }
+    if (locationFilter) {
+      filtered = filtered.filter(p => p.location.toLowerCase().includes(locationFilter.toLowerCase()));
+    }
+    if (selectedPartCategory !== 'All') {
+      filtered = filtered.filter(p => p.category === selectedPartCategory);
+    }
+    const minPrice = parseFloat(priceRange.min);
+    if (!isNaN(minPrice)) filtered = filtered.filter(p => p.price >= minPrice);
+    const maxPrice = parseFloat(priceRange.max);
+    if (!isNaN(maxPrice)) filtered = filtered.filter(p => p.price <= maxPrice);
+    
+    return filtered;
+  }, [parts, searchTerm, locationFilter, priceRange, selectedPartCategory]);
   
   const featuredMotorcycles = useMemo(() => {
     return motorcycles.filter(moto => moto.featured && moto.status === 'for-sale');
@@ -653,13 +699,17 @@ const App: React.FC = () => {
     return motorcycles.filter(moto => moto.sellerEmail === currentUser.email);
   }, [motorcycles, currentUser]);
   
+  const userParts = useMemo(() => {
+      if (!currentUser) return [];
+      return parts.filter(part => part.sellerEmail === currentUser.email);
+  }, [parts, currentUser]);
+  
   const favoriteMotorcycles = useMemo(() => {
     return motorcycles.filter(moto => favorites.includes(moto.id));
   }, [motorcycles, favorites]);
   
   const unreadMessagesCount = useMemo(() => {
     if (!currentUser) return 0;
-    // Count unread messages sent to the current user
     return messages.filter(msg => {
         const conversation = conversations.find(c => c.id === msg.conversationId);
         return (
@@ -701,6 +751,16 @@ const App: React.FC = () => {
             onSelectMotorcycle={handleSelectMotorcycle}
         />;
       }
+      case 'partDetail': {
+        const seller = users.find(u => u.email === selectedPart?.sellerEmail);
+        if (!selectedPart || !seller) return <PlaceholderView title="Anuncio no encontrado" />;
+        return <PartDetailView 
+            part={selectedPart} 
+            seller={seller}
+            onBack={handleBackToPrevView} 
+            onViewPublicProfile={handleViewPublicProfile}
+        />;
+      }
       case 'sell':
         return <SellForm onBack={() => setView('home')} onPublish={handlePublish} />;
       case 'edit':
@@ -713,6 +773,7 @@ const App: React.FC = () => {
         return <ProfileView 
             currentUser={currentUser} 
             userMotorcycles={userMotorcycles} 
+            userParts={userParts}
             onGoToSell={() => setView('sell')} 
             onSelectMotorcycle={handleSelectMotorcycle} 
             onLogout={handleLogout} 
@@ -786,25 +847,47 @@ const App: React.FC = () => {
       default:
         const areFiltersActive = searchTerm !== '' || locationFilter !== '' || selectedCategory !== 'All' || priceRange.min !== '' || priceRange.max !== '' || yearRange.min !== '' || yearRange.max !== '' || engineSizeCategory !== 'any';
         return (
-          <MotorcycleList 
-            motorcycles={filteredMotorcycles} 
-            featuredMotorcycles={featuredMotorcycles}
-            onSelectMotorcycle={handleSelectMotorcycle}
-            selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
-            favorites={favorites}
-            onToggleFavorite={handleToggleFavorite}
-            onAddHeatmapPoint={handleAddHeatmapPoint}
-            searchTerm={searchTerm}
-            onSaveSearch={handleSaveSearch}
-            areFiltersActive={areFiltersActive}
-          />
+          <div>
+            <div className="p-4 bg-background-light dark:bg-background-dark">
+                <div className="flex w-full bg-card-light dark:bg-card-dark p-1 rounded-full border border-border-light dark:border-border-dark">
+                    <button onClick={() => setMarketView('motorcycles')} className={`w-1/2 py-2 rounded-full text-sm font-bold transition-colors ${marketView === 'motorcycles' ? 'bg-primary text-white' : 'text-foreground-light dark:text-foreground-dark'}`}>
+                        Motos
+                    </button>
+                    <button onClick={() => setMarketView('parts')} className={`w-1/2 py-2 rounded-full text-sm font-bold transition-colors ${marketView === 'parts' ? 'bg-primary text-white' : 'text-foreground-light dark:text-foreground-dark'}`}>
+                        Piezas
+                    </button>
+                </div>
+            </div>
+            {marketView === 'motorcycles' ? (
+              <MotorcycleList 
+                motorcycles={filteredMotorcycles} 
+                featuredMotorcycles={featuredMotorcycles}
+                onSelectMotorcycle={handleSelectMotorcycle}
+                selectedCategory={selectedCategory}
+                onSelectCategory={setSelectedCategory}
+                favorites={favorites}
+                onToggleFavorite={handleToggleFavorite}
+                onAddHeatmapPoint={handleAddHeatmapPoint}
+                searchTerm={searchTerm}
+                onSaveSearch={handleSaveSearch}
+                areFiltersActive={areFiltersActive}
+              />
+            ) : (
+              <PartList 
+                parts={filteredParts}
+                onSelectPart={handleSelectPart}
+                selectedCategory={selectedPartCategory}
+                onSelectCategory={setSelectedPartCategory}
+                onAddHeatmapPoint={handleAddHeatmapPoint}
+              />
+            )}
+          </div>
         );
     }
   };
   
-  const isHeaderVisible = view !== 'detail' && view !== 'chatDetail' && view !== 'publicProfile' && view !== 'edit';
-  const isBottomNavVisible = view !== 'detail' && view !== 'chatDetail' && view !== 'publicProfile' && view !== 'edit';
+  const isHeaderVisible = view !== 'detail' && view !== 'partDetail' && view !== 'chatDetail' && view !== 'publicProfile' && view !== 'edit';
+  const isBottomNavVisible = view !== 'detail' && view !== 'partDetail' && view !== 'chatDetail' && view !== 'publicProfile' && view !== 'edit';
   const mainContentPadding = isBottomNavVisible ? 'pb-24' : '';
 
 
@@ -822,13 +905,11 @@ const App: React.FC = () => {
         />
       )}
       <main className={`flex-1 ${mainContentPadding}`}>
-        <div key={view} className="animate-view-transition">
+        <div key={`${view}-${marketView}`} className="animate-view-transition">
           {renderContent()}
         </div>
       </main>
       {isBottomNavVisible && (
-        // FIX: Simplify the currentView prop to avoid a TypeScript type inference error.
-        // `startsWith` is a robust way to map 'chatList' and 'chatDetail' to the 'chat' nav item.
         <BottomNav 
             currentView={view.startsWith('chat') ? 'chat' : view} 
             onNavigate={handleNavigate}
@@ -853,6 +934,7 @@ const App: React.FC = () => {
         onClose={() => {
           setIsConfirmationModalOpen(false);
           setMotoToPublish(null);
+          setPartToPublish(null);
         }}
         onConfirm={handleConfirmPublish}
         title="Confirmar Publicación"

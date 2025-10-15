@@ -1,4 +1,6 @@
 export type MotorcycleCategory = 'All' | 'Sport' | 'Cruiser' | 'Off-Road' | 'Touring';
+export type PartCategory = 'All' | 'Exhausts' | 'Brakes' | 'Tires' | 'Suspension' | 'Electronics';
+export type PartCondition = 'new' | 'used' | 'refurbished';
 
 export interface Motorcycle {
   id: number;
@@ -15,6 +17,20 @@ export interface Motorcycle {
   status: 'for-sale' | 'sold';
   location: string;
   featured?: boolean;
+}
+
+export interface Part {
+  id: number;
+  name: string;
+  price: number;
+  description: string;
+  imageUrls: string[];
+  sellerEmail: string;
+  category: Exclude<PartCategory, 'All'>;
+  condition: PartCondition;
+  compatibility: string[]; // e.g., ['Yamaha MT-07 2021-2023', 'Yamaha R7']
+  status: 'for-sale' | 'sold';
+  location: string;
 }
 
 export interface User {

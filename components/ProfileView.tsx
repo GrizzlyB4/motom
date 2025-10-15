@@ -1,11 +1,12 @@
 import React from 'react';
-import { User, Motorcycle, SavedSearch } from '../types';
+import { User, Motorcycle, SavedSearch, Part } from '../types';
 import { ProfileIcon, LogoutIcon, EditIcon, TrashIcon, StarIcon } from './Icons';
 import StarRating from './StarRating';
 
 interface ProfileViewProps {
   currentUser: User;
   userMotorcycles: Motorcycle[];
+  userParts: Part[];
   onGoToSell: () => void;
   onSelectMotorcycle: (moto: Motorcycle) => void;
   onLogout: () => void;
@@ -44,7 +45,7 @@ const formatSearchCriteria = (search: SavedSearch): string => {
 };
 
 const ProfileView: React.FC<ProfileViewProps> = ({ 
-    currentUser, userMotorcycles, onGoToSell, onSelectMotorcycle, onLogout, 
+    currentUser, userMotorcycles, userParts, onGoToSell, onSelectMotorcycle, onLogout, 
     notificationPermission, onRequestPermission, onUpdateProfileImage, 
     onEditMotorcycle, onMarkAsSold, onPromoteMotorcycle, savedSearches, onDeleteSearch 
 }) => {
@@ -141,12 +142,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({
       <div className="space-y-8">
         <div>
             <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold">Mis Anuncios ({activeListings.length})</h3>
+                <h3 className="text-lg font-bold">Mis Anuncios de Motos ({activeListings.length})</h3>
                 <button
                     onClick={onGoToSell}
                     className="bg-primary/20 text-primary font-bold py-2 px-4 rounded-lg hover:bg-primary/30 transition-colors duration-300 text-sm"
                 >
-                    + Vender Moto
+                    + Vender
                 </button>
             </div>
 
@@ -205,6 +206,40 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                 >
                     Vender mi Moto
                 </button>
+            </div>
+            )}
+        </div>
+        
+        <div>
+            <h3 className="text-lg font-bold mb-4">Mis Piezas en Venta ({userParts.length})</h3>
+             {userParts.length > 0 ? (
+            <div className="space-y-4">
+                {userParts.map(part => {
+                const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(part.price);
+                return (
+                    <div key={part.id} className="bg-card-light dark:bg-card-dark p-3 rounded-xl flex items-center gap-3">
+                        <div className="flex-grow flex items-center gap-3 cursor-pointer">
+                            <img src={part.imageUrls[0]} alt={part.name} className="w-24 h-16 object-cover rounded-lg flex-shrink-0" />
+                            <div className="flex-grow">
+                                <p className="font-bold">{part.name}</p>
+                                <p className="text-sm text-primary">{formattedPrice}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-1 sm:gap-2">
+                           <button className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-blue-500 rounded-full hover:bg-blue-500/10 transition-colors" aria-label="Editar anuncio">
+                                <EditIcon className="w-5 h-5" />
+                            </button>
+                            <button className="text-xs font-semibold text-green-600 bg-green-500/10 hover:bg-green-500/20 px-3 py-2 rounded-md transition-colors">
+                                Vendido
+                            </button>
+                        </div>
+                    </div>
+                );
+                })}
+            </div>
+            ) : (
+            <div className="text-center py-12 border-2 border-dashed border-border-light dark:border-border-dark rounded-xl">
+                <h4 className="text-lg font-semibold">No tienes piezas en venta</h4>
             </div>
             )}
         </div>
