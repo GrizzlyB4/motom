@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Motorcycle, User, MotorcycleCategory, ChatConversation, ChatMessage, HeatmapPoint, SavedSearch } from './types';
 import Header from './components/Header';
@@ -497,6 +495,15 @@ const App: React.FC = () => {
     alert('¡Anuncio actualizado con éxito!');
   };
 
+  const handlePromoteMotorcycle = (motoId: number) => {
+    if (window.confirm('Promocionar este anuncio tiene un coste de $5.00. ¿Deseas continuar?')) {
+      setMotorcycles(prev => prev.map(moto =>
+        moto.id === motoId ? { ...moto, featured: true } : moto
+      ));
+      alert('¡Anuncio promocionado con éxito!');
+    }
+  };
+
   const handleRateUser = (sellerEmail: string, rating: number) => {
     if (!currentUser || currentUser.email === sellerEmail || userRatings[sellerEmail]) {
         return;
@@ -671,6 +678,7 @@ const App: React.FC = () => {
             onUpdateProfileImage={handleUpdateProfileImage}
             onEditMotorcycle={handleNavigateToEdit}
             onMarkAsSold={handleMarkAsSold}
+            onPromoteMotorcycle={handlePromoteMotorcycle}
             savedSearches={savedSearches}
             onDeleteSearch={handleDeleteSearch}
         />;

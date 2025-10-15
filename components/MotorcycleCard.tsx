@@ -1,6 +1,6 @@
 import React from 'react';
 import { Motorcycle } from '../types';
-import { HeartIcon, MapPinIcon } from './Icons';
+import { HeartIcon, MapPinIcon, StarIcon } from './Icons';
 
 interface MotorcycleCardProps {
   motorcycle: Motorcycle;
@@ -21,6 +21,12 @@ const MotorcycleCard: React.FC<MotorcycleCardProps> = ({ motorcycle, onSelect, i
       style={style}
     >
       <div className="relative h-full bg-card-light dark:bg-card-dark rounded-xl overflow-hidden shadow-sm border border-border-light dark:border-border-dark transition-transform duration-200 hover:scale-[1.02] active:scale-95">
+        {motorcycle.featured && (
+            <div className="absolute top-3 left-3 z-10 flex items-center gap-1 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-full">
+                <StarIcon className="w-3 h-3"/>
+                <span>DESTACADO</span>
+            </div>
+        )}
         <button
           onClick={(e) => {
             e.stopPropagation();

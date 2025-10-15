@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Motorcycle, User } from '../types';
-import { ArrowLeftIcon, RoadIcon, EngineIcon, TagIcon, ProfileIcon, HeartIcon, ChevronLeftIcon, ChevronRightIcon, ShareIcon, MapPinIcon } from './Icons';
+import { ArrowLeftIcon, RoadIcon, EngineIcon, TagIcon, ProfileIcon, HeartIcon, ChevronLeftIcon, ChevronRightIcon, ShareIcon, MapPinIcon, StarIcon } from './Icons';
 import StarRating from './StarRating';
 
 interface MotorcycleDetailViewProps {
@@ -135,7 +135,15 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({
         
         <div className="p-4 pb-28">
             <div className="animate-fade-in-up mb-6" style={{ animationDelay: '50ms' }}>
-                <h1 className="text-3xl font-bold text-foreground-light dark:text-foreground-dark">{motorcycle.make} {motorcycle.model}</h1>
+                <div className="flex items-center gap-3 flex-wrap">
+                    <h1 className="text-3xl font-bold text-foreground-light dark:text-foreground-dark">{motorcycle.make} {motorcycle.model}</h1>
+                    {motorcycle.featured && (
+                        <div className="flex-shrink-0 flex items-center gap-1.5 bg-yellow-400 text-black text-sm font-bold px-3 py-1 rounded-full">
+                            <StarIcon className="w-4 h-4"/>
+                            <span>DESTACADO</span>
+                        </div>
+                    )}
+                </div>
                 <p className="text-lg text-foreground-muted-light dark:text-foreground-muted-dark mt-1">{motorcycle.year}</p>
                 <div className="flex items-center text-foreground-muted-light dark:text-foreground-muted-dark mt-2">
                     <MapPinIcon className="w-5 h-5 mr-2 flex-shrink-0" />
