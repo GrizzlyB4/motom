@@ -12,10 +12,12 @@ export interface Motorcycle {
   imageUrls: string[];
   sellerEmail: string;
   category: Exclude<MotorcycleCategory, 'All'>;
+  status: 'for-sale' | 'sold';
 }
 
 export interface User {
   email: string;
+  profileImageUrl?: string;
 }
 
 export interface ChatMessage {

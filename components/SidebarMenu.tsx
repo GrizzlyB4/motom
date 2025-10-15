@@ -55,8 +55,13 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, onClose, currentUser,
           <>
             <div className="p-4 border-b border-border-dark">
                 <div className="flex items-center gap-3">
-                    {/* fix: Use ProfileIcon instead of the non-existent UserIcon. */}
-                    <ProfileIcon className="w-10 h-10 p-2 bg-card-dark rounded-full text-primary" />
+                    {currentUser.profileImageUrl ? (
+                        <img src={currentUser.profileImageUrl} alt="Foto de perfil" className="w-10 h-10 rounded-full object-cover" />
+                    ) : (
+                        <div className="w-10 h-10 rounded-full bg-card-dark flex items-center justify-center">
+                           <ProfileIcon className="w-6 h-6 text-primary" />
+                        </div>
+                    )}
                     <div>
                         <p className="font-semibold text-foreground-dark">Bienvenido</p>
                         <p className="text-sm text-foreground-muted-dark truncate">{currentUser.email}</p>

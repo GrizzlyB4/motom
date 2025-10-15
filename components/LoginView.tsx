@@ -13,16 +13,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      setError('Por favor, introduce tu email y contraseña.');
-      return;
-    }
-    if (!email.includes('@')) {
-        setError('Por favor, introduce un email válido.');
-        return;
-    }
-    setError('');
-    // For demonstration, log in as a user with existing listings.
+    // For demonstration, log in as a user with existing listings, bypassing credential checks.
     onLoginSuccess({ email: 'user@motomarket.com' });
   };
 

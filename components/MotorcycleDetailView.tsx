@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Motorcycle } from '../types';
-import { ArrowLeftIcon, RoadIcon, EngineIcon, TagIcon, ProfileIcon, HeartIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons';
+import { ArrowLeftIcon, RoadIcon, EngineIcon, TagIcon, ProfileIcon, HeartIcon, ChevronLeftIcon, ChevronRightIcon, ShareIcon } from './Icons';
 
 interface MotorcycleDetailViewProps {
   motorcycle: Motorcycle;
@@ -8,6 +8,7 @@ interface MotorcycleDetailViewProps {
   onStartChat: (motorcycle: Motorcycle) => void;
   isFavorite: boolean;
   onToggleFavorite: (motoId: number) => void;
+  onViewPublicProfile: (sellerEmail: string) => void;
 }
 
 const SpecItem: React.FC<{ icon: React.ReactNode; label: string; value: string | number }> = ({ icon, label, value }) => (
@@ -19,7 +20,7 @@ const SpecItem: React.FC<{ icon: React.ReactNode; label: string; value: string |
 );
 
 
-const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({ motorcycle, onBack, onStartChat, isFavorite, onToggleFavorite }) => {
+const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({ motorcycle, onBack, onStartChat, isFavorite, onToggleFavorite, onViewPublicProfile }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(motorcycle.price);
 
@@ -31,6 +32,32 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({ motorcycle,
     setCurrentImageIndex((prevIndex) => (prevIndex - 1 + motorcycle.imageUrls.length) % motorcycle.imageUrls.length);
   };
 
+  const handleShare = async () => {
+    const shareData = {
+      title: `Mira esta ${motorcycle.make} ${motorcycle.model} en MotoMarket`,
+      text: `¡Echa un vistazo a esta ${motorcycle.make} ${motorcycle.model} por ${formattedPrice}!`,
+      url: window.location.href, // In a real app, this would be a persistent URL
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        // User cancelled share, no need to show error
+        console.log('Share was cancelled or failed', err);
+      }
+    } else {
+      // Fallback for browsers without Web Share API
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        alert('¡Enlace copiado al portapapeles!');
+      } catch (err) {
+        console.error('Failed to copy link: ', err);
+        alert('No se pudo copiar el enlace.');
+      }
+    }
+  };
+
   const hasMultipleImages = motorcycle.imageUrls.length > 1;
 
   return (
@@ -40,12 +67,17 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({ motorcycle,
             <button onClick={onBack} className="p-2 -ml-2">
                 <ArrowLeftIcon className="w-6 h-6 text-foreground-light dark:text-foreground-dark" />
             </button>
-             <button onClick={() => onToggleFavorite(motorcycle.id)} className="p-2 -mr-2" aria-label="Añadir a favoritos">
-                <HeartIcon 
-                    filled={isFavorite} 
-                    className={`w-7 h-7 transition-colors ${isFavorite ? 'text-primary' : 'text-foreground-muted-light dark:text-foreground-muted-dark hover:text-primary'}`} 
-                />
-            </button>
+            <div className="flex items-center gap-2">
+              <button onClick={handleShare} className="p-2" aria-label="Compartir">
+                  <ShareIcon className="w-6 h-6 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-primary transition-colors" />
+              </button>
+              <button onClick={() => onToggleFavorite(motorcycle.id)} className="p-2 -mr-2" aria-label="Añadir a favoritos">
+                  <HeartIcon 
+                      filled={isFavorite} 
+                      className={`w-7 h-7 transition-colors ${isFavorite ? 'text-primary' : 'text-foreground-muted-light dark:text-foreground-muted-dark hover:text-primary'}`} 
+                  />
+              </button>
+            </div>
          </div>
        </header>
 
@@ -112,9 +144,13 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({ motorcycle,
                 
                 <div>
                     <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark mb-3">Vendedor</h3>
-                    <div className="bg-card-light dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-4 flex items-center gap-3">
+                    <div onClick={() => onViewPublicProfile(motorcycle.sellerEmail)} className="bg-card-light dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-4 flex items-center gap-3 cursor-pointer hover:bg-black/[.03] dark:hover:bg-white/[.05] transition-colors">
                         <ProfileIcon className="w-8 h-8 text-primary"/>
-                        <p className="text-md font-medium text-foreground-light dark:text-foreground-dark">{motorcycle.sellerEmail}</p>
+                        <div className="flex-grow">
+                            <p className="text-md font-medium text-foreground-light dark:text-foreground-dark">{motorcycle.sellerEmail}</p>
+                            <p className="text-sm text-foreground-muted-light dark:text-foreground-muted-dark">Ver perfil y anuncios</p>
+                        </div>
+                        <ChevronRightIcon className="w-5 h-5 text-foreground-muted-light dark:text-foreground-muted-dark"/>
                     </div>
                 </div>
             </div>

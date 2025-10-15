@@ -11,16 +11,18 @@ import FilterModal from './components/FilterModal';
 import ChatListView from './components/ChatListView';
 import ChatDetailView from './components/ChatDetailView';
 import FavoritesView from './components/FavoritesView';
+import PublicProfileView from './components/PublicProfileView';
+import EditForm from './components/EditForm';
 
 
 const mockMotorcycles: Motorcycle[] = [
-    { id: 1, make: 'Honda', model: 'CB650R', year: 2021, price: 7500, mileage: 8500, engineSize: 649, description: 'Como nueva...', imageUrls: ['https://images.unsplash.com/photo-1621115132957-81df81347053?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller1@example.com', category: 'Sport' },
-    { id: 2, make: 'Kawasaki', model: 'Z900', year: 2020, price: 8200, mileage: 12000, engineSize: 948, description: 'Vendo Kawasaki Z900...', imageUrls: ['https://images.unsplash.com/photo-1623563720235-3a0639f60324?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Sport' },
-    { id: 3, make: 'Yamaha', model: 'MT-07', year: 2022, price: 6800, mileage: 4500, engineSize: 689, description: 'Yamaha MT-07 del 2022...', imageUrls: ['https://images.unsplash.com/photo-1640890656113-3a137250abfa?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller2@example.com', category: 'Sport' },
-    { id: 4, make: 'BMW', model: 'R1250GS', year: 2021, price: 21500, mileage: 15000, engineSize: 1254, description: 'Impresionante R1250GS...', imageUrls: ['https://images.unsplash.com/photo-1623563720275-2c86b2253245?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Touring' },
-    { id: 5, make: 'Ducati', model: 'Panigale V2', year: 2020, price: 16000, mileage: 9800, engineSize: 955, description: 'Ducati Panigale V2...', imageUrls: ['https://images.unsplash.com/photo-1600761343111-a0a623e1d6d8?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller3@example.com', category: 'Sport' },
-    { id: 8, make: 'Harley-Davidson', model: 'Iron 883', year: 2018, price: 9200, mileage: 18000, engineSize: 883, description: 'Icónica Iron 883...', imageUrls: ['https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller6@example.com', category: 'Cruiser' },
-    { id: 9, make: 'KTM', model: '390 Adventure', year: 2022, price: 6500, mileage: 5000, engineSize: 373, description: 'Perfecta trail ligera...', imageUrls: ['https://images.unsplash.com/photo-1627916699311-3a088371295b?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Off-Road' }
+    { id: 1, make: 'Honda', model: 'CB650R', year: 2021, price: 7500, mileage: 8500, engineSize: 649, description: 'Como nueva...', imageUrls: ['https://images.unsplash.com/photo-1621115132957-81df81347053?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller1@example.com', category: 'Sport', status: 'for-sale' },
+    { id: 2, make: 'Kawasaki', model: 'Z900', year: 2020, price: 8200, mileage: 12000, engineSize: 948, description: 'Vendo Kawasaki Z900...', imageUrls: ['https://images.unsplash.com/photo-1623563720235-3a0639f60324?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Sport', status: 'for-sale' },
+    { id: 3, make: 'Yamaha', model: 'MT-07', year: 2022, price: 6800, mileage: 4500, engineSize: 689, description: 'Yamaha MT-07 del 2022...', imageUrls: ['https://images.unsplash.com/photo-1640890656113-3a137250abfa?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller2@example.com', category: 'Sport', status: 'for-sale' },
+    { id: 4, make: 'BMW', model: 'R1250GS', year: 2021, price: 21500, mileage: 15000, engineSize: 1254, description: 'Impresionante R1250GS...', imageUrls: ['https://images.unsplash.com/photo-1623563720275-2c86b2253245?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Touring', status: 'for-sale' },
+    { id: 5, make: 'Ducati', model: 'Panigale V2', year: 2020, price: 16000, mileage: 9800, engineSize: 955, description: 'Ducati Panigale V2...', imageUrls: ['https://images.unsplash.com/photo-1600761343111-a0a623e1d6d8?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller3@example.com', category: 'Sport', status: 'for-sale' },
+    { id: 8, make: 'Harley-Davidson', model: 'Iron 883', year: 2018, price: 9200, mileage: 18000, engineSize: 883, description: 'Icónica Iron 883...', imageUrls: ['https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller6@example.com', category: 'Cruiser', status: 'for-sale' },
+    { id: 9, make: 'KTM', model: '390 Adventure', year: 2022, price: 6500, mileage: 5000, engineSize: 373, description: 'Perfecta trail ligera...', imageUrls: ['https://images.unsplash.com/photo-1627916699311-3a088371295b?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Off-Road', status: 'sold' }
 ];
 
 const mockConversations: ChatConversation[] = [
@@ -32,16 +34,51 @@ const mockMessages: ChatMessage[] = [
     { id: 'msg2', conversationId: 'convo1', senderEmail: 'seller1@example.com', text: '¡Hola! Sí, todavía está a la venta.', timestamp: Date.now() - 1000 * 60 * 4 },
 ];
 
-export type View = 'home' | 'detail' | 'sell' | 'profile' | 'favorites' | 'chat' | 'chatList' | 'chatDetail' | 'login';
+const mockUsers: User[] = [
+    { email: 'user@motomarket.com', profileImageUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=400&auto=format&fit=crop' },
+    { email: 'seller1@example.com', profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop' },
+    { email: 'seller2@example.com', profileImageUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=400&auto=format&fit=crop' },
+    { email: 'seller3@example.com', profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=400&auto=format&fit=crop' },
+    { email: 'seller6@example.com', profileImageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop' },
+];
+
+export type View = 'home' | 'detail' | 'sell' | 'profile' | 'favorites' | 'chat' | 'chatList' | 'chatDetail' | 'login' | 'publicProfile' | 'edit';
+
+// --- Notification Service Functions ---
+const requestNotificationPermission = async (): Promise<NotificationPermission> => {
+  if (!('Notification' in window)) {
+    alert('Este navegador no soporta notificaciones de escritorio');
+    return 'denied';
+  }
+  const permission = await Notification.requestPermission();
+  return permission;
+};
+
+const sendNotification = (title: string, options?: NotificationOptions): void => {
+  if (!('Notification' in window)) {
+    console.warn('Este navegador no soporta notificaciones de escritorio');
+    return;
+  }
+  
+  if (Notification.permission === 'granted') {
+    new Notification(title, options);
+  } else {
+    console.log('Permiso para notificaciones no concedido.');
+  }
+};
+
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>('home');
   const [selectedMotorcycle, setSelectedMotorcycle] = useState<Motorcycle | null>(null);
+  const [motorcycleToEdit, setMotorcycleToEdit] = useState<Motorcycle | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [motorcycles, setMotorcycles] = useState<Motorcycle[]>(mockMotorcycles);
   const [conversations, setConversations] = useState<ChatConversation[]>(mockConversations);
   const [messages, setMessages] = useState<ChatMessage[]>(mockMessages);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [selectedSellerEmail, setSelectedSellerEmail] = useState<string | null>(null);
+  const [users, setUsers] = useState<User[]>(mockUsers);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
@@ -51,6 +88,13 @@ const App: React.FC = () => {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   
   const [favorites, setFavorites] = useState<number[]>([]);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+
+  useEffect(() => {
+    if ('Notification' in window) {
+      setNotificationPermission(Notification.permission);
+    }
+  }, []);
 
   useEffect(() => {
     try {
@@ -71,6 +115,41 @@ const App: React.FC = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [view, selectedMotorcycle, selectedConversationId]);
+  
+  // Simulate price drop notification for a favorite item
+  useEffect(() => {
+    if (!currentUser || favorites.length === 0 || Notification.permission !== 'granted') return;
+
+    const timer = setTimeout(() => {
+      const randomFavoriteId = favorites[Math.floor(Math.random() * favorites.length)];
+      
+      setMotorcycles(prevMotos => {
+        const updatedMotos = prevMotos.map(m => {
+          if (m.id === randomFavoriteId && m.status === 'for-sale') {
+            const originalPrice = m.price;
+            const newPrice = Math.round(originalPrice * 0.9); // 10% discount
+
+            if (newPrice < originalPrice) {
+              const formattedNewPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(newPrice);
+              sendNotification(
+                '¡Alerta de Precio!',
+                {
+                  body: `¡El precio de la ${m.make} ${m.model} ha bajado a ${formattedNewPrice}!`,
+                  icon: m.imageUrls[0],
+                  tag: `price-drop-${m.id}`
+                }
+              );
+              return { ...m, price: newPrice };
+            }
+          }
+          return m;
+        });
+        return updatedMotos;
+      });
+    }, 10000);
+
+    return () => clearTimeout(timer);
+  }, [favorites, currentUser]);
 
   const handleNavigate = (newView: View) => {
     if (newView === 'chat') {
@@ -85,15 +164,22 @@ const App: React.FC = () => {
     if (view === 'chatDetail') {
         setSelectedConversationId(null);
         setView('chatList');
-    } else {
+    } else if (view === 'publicProfile' && selectedMotorcycle) {
+        setView('detail');
+    } else if (view === 'edit') {
+        setMotorcycleToEdit(null);
+        setView('profile');
+    }
+    else {
         setSelectedMotorcycle(null);
+        setSelectedSellerEmail(null);
         setView('home');
     }
   };
   const handleLoginSuccess = (user: User) => { setCurrentUser(user); setView('home'); };
   const handleLogout = () => { setCurrentUser(null); setView('home'); };
 
-  const handlePublish = (newMotoData: Omit<Motorcycle, 'id' | 'sellerEmail' | 'category'>) => {
+  const handlePublish = (newMotoData: Omit<Motorcycle, 'id' | 'sellerEmail' | 'category' | 'status'>) => {
     if(!currentUser) { return; }
     const newMoto: Motorcycle = {
         ...newMotoData,
@@ -101,6 +187,7 @@ const App: React.FC = () => {
         imageUrls: newMotoData.imageUrls.length > 0 ? newMotoData.imageUrls : [`https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=800&auto=format&fit=crop`],
         sellerEmail: currentUser.email,
         category: 'Sport', // Default category for now
+        status: 'for-sale',
     };
     setMotorcycles(prev => [newMoto, ...prev]);
     alert("¡Tu moto ha sido publicada!");
@@ -118,6 +205,10 @@ const App: React.FC = () => {
         alert("No puedes iniciar un chat contigo mismo.");
         return;
     };
+    if (motorcycle.status === 'sold') {
+        alert("Esta moto ya ha sido vendida.");
+        return;
+    }
 
     const existingConversation = conversations.find(c => 
         c.motorcycleId === motorcycle.id && c.participants.includes(currentUser.email)
@@ -164,6 +255,19 @@ const App: React.FC = () => {
             timestamp: Date.now(),
         };
         setMessages(prev => [...prev, reply]);
+
+        // Send a notification if the user is not viewing this specific chat
+        if (view !== 'chatDetail' || selectedConversationId !== conversationId) {
+            const motorcycle = motorcycles.find(m => m.id === conversation.motorcycleId);
+            sendNotification(
+              `Nuevo mensaje sobre ${motorcycle?.make || 'una moto'}`,
+              {
+                body: reply.text,
+                icon: motorcycle?.imageUrls[0],
+                tag: `new-message-${conversation.id}`
+              }
+            );
+        }
     }, 1500);
   };
   
@@ -177,8 +281,47 @@ const App: React.FC = () => {
     });
   };
 
+  const handleRequestNotificationPermission = async () => {
+    const permission = await requestNotificationPermission();
+    setNotificationPermission(permission);
+  };
+
+  const handleUpdateProfileImage = (imageUrl: string) => {
+    if (currentUser) {
+      setCurrentUser(prevUser => prevUser ? { ...prevUser, profileImageUrl: imageUrl } : null);
+      setUsers(prevUsers => prevUsers.map(u => u.email === currentUser.email ? {...u, profileImageUrl: imageUrl} : u));
+    }
+  };
+  
+  const handleViewPublicProfile = (sellerEmail: string) => {
+      setSelectedSellerEmail(sellerEmail);
+      setView('publicProfile');
+  };
+
+  const handleMarkAsSold = (motoId: number) => {
+    if (window.confirm('¿Estás seguro de que quieres marcar esta moto como vendida?')) {
+        setMotorcycles(prev => prev.map(moto => 
+            moto.id === motoId ? { ...moto, status: 'sold' } : moto
+        ));
+    }
+  };
+
+  const handleNavigateToEdit = (moto: Motorcycle) => {
+    setMotorcycleToEdit(moto);
+    setView('edit');
+  };
+
+  const handleUpdateMotorcycle = (updatedMoto: Motorcycle) => {
+    setMotorcycles(prev => prev.map(moto => 
+      moto.id === updatedMoto.id ? updatedMoto : moto
+    ));
+    setMotorcycleToEdit(null);
+    setView('profile');
+    alert('¡Anuncio actualizado con éxito!');
+  };
+
   const filteredMotorcycles = useMemo(() => {
-    let filtered = [...motorcycles];
+    let filtered = motorcycles.filter(m => m.status === 'for-sale');
     const lowercasedFilter = searchTerm.toLowerCase();
     if (lowercasedFilter) {
       filtered = filtered.filter(m => `${m.make} ${m.model} ${m.year}`.toLowerCase().includes(lowercasedFilter));
@@ -237,11 +380,42 @@ const App: React.FC = () => {
             onStartChat={handleStartOrGoToChat} 
             isFavorite={favorites.includes(selectedMotorcycle.id)}
             onToggleFavorite={handleToggleFavorite}
+            onViewPublicProfile={handleViewPublicProfile}
         />;
       case 'sell':
         return <SellForm onBack={() => setView('home')} onPublish={handlePublish} />;
+      case 'edit':
+        return motorcycleToEdit && <EditForm
+            motorcycle={motorcycleToEdit}
+            onBack={handleBackToPrevView}
+            onUpdate={handleUpdateMotorcycle}
+        />;
       case 'profile':
-        return <ProfileView currentUser={currentUser} userMotorcycles={userMotorcycles} onGoToSell={() => setView('sell')} onSelectMotorcycle={handleSelectMotorcycle} onLogout={handleLogout} />;
+        return <ProfileView 
+            currentUser={currentUser} 
+            userMotorcycles={userMotorcycles} 
+            onGoToSell={() => setView('sell')} 
+            onSelectMotorcycle={handleSelectMotorcycle} 
+            onLogout={handleLogout} 
+            notificationPermission={notificationPermission}
+            onRequestPermission={handleRequestNotificationPermission}
+            onUpdateProfileImage={handleUpdateProfileImage}
+            onEditMotorcycle={handleNavigateToEdit}
+            onMarkAsSold={handleMarkAsSold}
+        />;
+      case 'publicProfile': {
+        const seller = users.find(u => u.email === selectedSellerEmail);
+        const sellerMotorcycles = motorcycles.filter(m => m.sellerEmail === selectedSellerEmail && m.status === 'for-sale');
+        if (!seller) return <PlaceholderView title="Vendedor no encontrado" />;
+        return <PublicProfileView 
+            seller={seller}
+            motorcycles={sellerMotorcycles}
+            onBack={handleBackToPrevView}
+            onSelectMotorcycle={handleSelectMotorcycle}
+            favorites={favorites}
+            onToggleFavorite={handleToggleFavorite}
+        />;
+      }
       case 'favorites':
         return <FavoritesView 
             motorcycles={favoriteMotorcycles} 
@@ -290,8 +464,8 @@ const App: React.FC = () => {
     }
   };
   
-  const isHeaderVisible = view !== 'detail' && view !== 'chatDetail';
-  const isBottomNavVisible = view !== 'detail' && view !== 'chatDetail';
+  const isHeaderVisible = view !== 'detail' && view !== 'chatDetail' && view !== 'publicProfile' && view !== 'edit';
+  const isBottomNavVisible = view !== 'detail' && view !== 'chatDetail' && view !== 'publicProfile' && view !== 'edit';
   const mainContentPadding = isBottomNavVisible ? 'pb-24' : '';
 
 
