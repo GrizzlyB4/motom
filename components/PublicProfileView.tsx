@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Motorcycle, User } from '../types';
 import { ArrowLeftIcon, ProfileIcon } from './Icons';
@@ -26,6 +27,9 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({
     : 0;
 
   const canRate = currentUser.email !== seller.email && !userRating;
+
+  const activeListings = motorcycles.filter(m => m.status === 'for-sale');
+  const soldListings = motorcycles.filter(m => m.status === 'sold');
 
   return (
     <div className="bg-background-light dark:bg-background-dark min-h-screen">
@@ -60,7 +64,7 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({
                 <p className="text-sm text-foreground-muted-light dark:text-foreground-muted-dark">Sin valoraciones</p>
             )}
           </div>
-          <p className="text-foreground-muted-light dark:text-foreground-muted-dark mt-2">{motorcycles.length} {motorcycles.length === 1 ? 'anuncio' : 'anuncios'} en venta</p>
+          <p className="text-foreground-muted-light dark:text-foreground-muted-dark mt-2">{motorcycles.length} {motorcycles.length === 1 ? 'anuncio publicado' : 'anuncios publicados'}</p>
         </div>
         
         {canRate && (
@@ -81,24 +85,48 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({
             </div>
         )}
 
-        {motorcycles.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4">
-            {motorcycles.map(moto => (
-                <MotorcycleCard 
-                    key={moto.id} 
-                    motorcycle={moto} 
-                    onSelect={onSelectMotorcycle} 
-                    isFavorite={favorites.includes(moto.id)}
-                    onToggleFavorite={onToggleFavorite}
-                />
-            ))}
-            </div>
-        ) : (
-            <div className="text-center py-16 px-4">
-                <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark">Este vendedor no tiene anuncios</h3>
-                <p className="text-foreground-muted-light dark:text-foreground-muted-dark mt-2">Vuelve más tarde para ver si ha publicado algo nuevo.</p>
-            </div>
-        )}
+        <div className="p-4 space-y-8">
+            {activeListings.length > 0 && (
+              <div>
+                <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark mb-4">Anuncios en Venta ({activeListings.length})</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {activeListings.map(moto => (
+                      <MotorcycleCard 
+                          key={moto.id} 
+                          motorcycle={moto} 
+                          onSelect={onSelectMotorcycle} 
+                          isFavorite={favorites.includes(moto.id)}
+                          onToggleFavorite={onToggleFavorite}
+                      />
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {soldListings.length > 0 && (
+              <div>
+                <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark mb-4">Motos Vendidas ({soldListings.length})</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {soldListings.map(moto => (
+                      <MotorcycleCard 
+                          key={moto.id} 
+                          motorcycle={moto} 
+                          onSelect={onSelectMotorcycle} 
+                          isFavorite={favorites.includes(moto.id)}
+                          onToggleFavorite={onToggleFavorite}
+                      />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {motorcycles.length === 0 ? (
+                <div className="text-center py-16">
+                    <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark">Este vendedor no tiene anuncios</h3>
+                    <p className="text-foreground-muted-light dark:text-foreground-muted-dark mt-2">Vuelve más tarde para ver si ha publicado algo nuevo.</p>
+                </div>
+            ) : null}
+        </div>
       </main>
     </div>
   );

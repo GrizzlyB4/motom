@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Motorcycle } from '../types';
 import { HeartIcon, MapPinIcon, StarIcon } from './Icons';
@@ -13,30 +14,33 @@ interface MotorcycleCardProps {
 
 const MotorcycleCard: React.FC<MotorcycleCardProps> = ({ motorcycle, onSelect, isFavorite, onToggleFavorite, className, style }) => {
   const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(motorcycle.price);
+  const isSold = motorcycle.status === 'sold';
 
   return (
     <div 
-      className={`cursor-pointer ${className || ''}`}
-      onClick={() => onSelect(motorcycle)}
+      className={`relative ${isSold ? 'cursor-default' : 'cursor-pointer'} ${className || ''}`}
+      onClick={() => !isSold && onSelect(motorcycle)}
       style={style}
     >
-      <div className="relative h-full bg-card-light dark:bg-card-dark rounded-xl overflow-hidden shadow-sm border border-border-light dark:border-border-dark transition-transform duration-200 hover:scale-[1.02] active:scale-95">
-        {motorcycle.featured && (
+      <div className={`h-full bg-card-light dark:bg-card-dark rounded-xl overflow-hidden shadow-sm border border-border-light dark:border-border-dark transition-transform duration-200 ${!isSold ? 'hover:scale-[1.02] active:scale-95' : ''}`}>
+        {motorcycle.featured && !isSold && (
             <div className="absolute top-3 left-3 z-10 flex items-center gap-1 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-full">
                 <StarIcon className="w-3 h-3"/>
                 <span>DESTACADO</span>
             </div>
         )}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleFavorite(motorcycle.id);
-          }}
-          className={`absolute top-3 right-3 z-10 p-1.5 bg-black/40 rounded-full transition-colors ${isFavorite ? 'text-primary' : 'text-white'}`}
-          aria-label="Añadir a favoritos"
-        >
-          <HeartIcon filled={isFavorite} className="w-6 h-6" />
-        </button>
+        {!isSold && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFavorite(motorcycle.id);
+              }}
+              className={`absolute top-3 right-3 z-10 p-1.5 bg-black/40 rounded-full transition-colors ${isFavorite ? 'text-primary' : 'text-white'}`}
+              aria-label="Añadir a favoritos"
+            >
+              <HeartIcon filled={isFavorite} className="w-6 h-6" />
+            </button>
+        )}
 
         <div 
           className="w-full h-48 bg-center bg-no-repeat bg-cover" 
@@ -52,6 +56,11 @@ const MotorcycleCard: React.FC<MotorcycleCardProps> = ({ motorcycle, onSelect, i
           <p className="text-xl font-bold text-primary mt-2">{formattedPrice}</p>
         </div>
       </div>
+      {isSold && (
+        <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center pointer-events-none">
+            <div className="bg-green-600 text-white text-base font-bold px-4 py-2 rounded shadow-lg transform -rotate-6">VENDIDO</div>
+        </div>
+      )}
     </div>
   );
 };

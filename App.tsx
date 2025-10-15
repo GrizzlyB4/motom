@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Motorcycle, User, MotorcycleCategory, ChatConversation, ChatMessage, HeatmapPoint, SavedSearch } from './types';
 import Header from './components/Header';
@@ -102,6 +103,8 @@ const App: React.FC = () => {
 
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
   const [motoToPublish, setMotoToPublish] = useState<Omit<Motorcycle, 'id' | 'sellerEmail' | 'category' | 'status'> | null>(null);
+  const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false);
+  const [motoToPromoteId, setMotoToPromoteId] = useState<number | null>(null);
 
 
   useEffect(() => {
@@ -496,12 +499,21 @@ const App: React.FC = () => {
   };
 
   const handlePromoteMotorcycle = (motoId: number) => {
-    if (window.confirm('Promocionar este anuncio tiene un coste de $5.00. ¿Deseas continuar?')) {
-      setMotorcycles(prev => prev.map(moto =>
-        moto.id === motoId ? { ...moto, featured: true } : moto
-      ));
-      alert('¡Anuncio promocionado con éxito!');
-    }
+    setMotoToPromoteId(motoId);
+    setIsPromoteModalOpen(true);
+  };
+
+  const handleConfirmPromote = () => {
+    if (motoToPromoteId === null) return;
+
+    setMotorcycles(prev => prev.map(moto =>
+      moto.id === motoToPromoteId ? { ...moto, featured: true } : moto
+    ));
+    alert('¡Anuncio promocionado con éxito!');
+    
+    // Reset state
+    setIsPromoteModalOpen(false);
+    setMotoToPromoteId(null);
   };
 
   const handleRateUser = (sellerEmail: string, rating: number) => {
@@ -684,7 +696,7 @@ const App: React.FC = () => {
         />;
       case 'publicProfile': {
         const seller = users.find(u => u.email === selectedSellerEmail);
-        const sellerMotorcycles = motorcycles.filter(m => m.sellerEmail === selectedSellerEmail && m.status === 'for-sale');
+        const sellerMotorcycles = motorcycles.filter(m => m.sellerEmail === selectedSellerEmail);
         if (!seller) return <PlaceholderView title="Vendedor no encontrado" />;
         return <PublicProfileView 
             seller={seller}
@@ -807,6 +819,18 @@ const App: React.FC = () => {
         message="¿Estás seguro de que quieres publicar este anuncio? Por favor, revisa que todos los detalles sean correctos."
         confirmText="Sí, Publicar"
         cancelText="Revisar"
+      />
+      <ConfirmationModal
+        isOpen={isPromoteModalOpen}
+        onClose={() => {
+          setIsPromoteModalOpen(false);
+          setMotoToPromoteId(null);
+        }}
+        onConfirm={handleConfirmPromote}
+        title="Promocionar Anuncio"
+        message="Promocionar este anuncio tiene un coste de $5.00. Esto lo mostrará en la sección 'Destacadas' en la página principal. ¿Deseas continuar?"
+        confirmText="Sí, Promocionar ($5.00)"
+        cancelText="Cancelar"
       />
     </div>
   );
