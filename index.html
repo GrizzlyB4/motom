@@ -52,9 +52,101 @@
       opacity: 0;
       animation: fadeInUp 0.4s ease-out forwards;
     }
+    
+    /* Splash Screen Styles */
+    @keyframes drive-in-center {
+      from {
+        transform: translateX(-100vw);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes drive-out-right {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(100vw);
+        opacity: 0;
+      }
+    }
+
+    @keyframes fade-in-title {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fade-out-title {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+    }
+
+    #splash-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: #1E1E1E; /* background-dark */
+      color: #F8F9FA; /* foreground-dark */
+      transition: opacity 0.8s ease-in;
+      opacity: 1;
+      overflow-x: hidden; /* Hide moto before it enters */
+    }
+
+    #splash-screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .splash-moto {
+      animation: drive-in-center 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+
+    .splash-moto.exit {
+      animation: drive-out-right 0.8s cubic-bezier(0.5, 0, 0.75, 0) forwards;
+    }
+
+    .splash-title {
+      opacity: 0;
+      animation: fade-in-title 0.7s ease-out 0.4s forwards;
+    }
+    
+    .splash-title.exit {
+      animation: fade-out-title 0.5s ease-out forwards;
+    }
   </style>
 </head>
 <body>
+  <div id="splash-screen">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-24 h-24 text-primary splash-moto" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="5" cy="16" r="3" />
+        <circle cx="19" cy="16" r="3" />
+        <path d="M7.5 14h5l4 -4h-10.5m1.5 4l4 -4" />
+        <path d="M13 5h2l4 3l-2 4h-1" />
+    </svg>
+    <h1 class="text-4xl font-bold text-foreground-dark mt-4 splash-title">MotoMarket</h1>
+  </div>
+
   <div id="root"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/heatmap.js@2.0.2/heatmap.min.js"></script>

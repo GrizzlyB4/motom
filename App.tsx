@@ -108,6 +108,22 @@ const App: React.FC = () => {
 
 
   useEffect(() => {
+    // Hide splash screen
+    const splashScreen = document.getElementById('splash-screen');
+    const splashMoto = document.querySelector('.splash-moto');
+    const splashTitle = document.querySelector('.splash-title');
+
+    if (splashScreen && splashMoto && splashTitle) {
+      setTimeout(() => {
+        splashMoto.classList.add('exit');
+        splashTitle.classList.add('exit');
+        splashScreen.classList.add('hidden');
+        splashScreen.addEventListener('transitionend', () => {
+          splashScreen.remove();
+        });
+      }, 5000);
+    }
+
     // Check for saved user session first
     try {
       const storedUser = window.localStorage.getItem('motoMarketCurrentUser');
