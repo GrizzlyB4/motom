@@ -1,6 +1,6 @@
 import React from 'react';
 import { Motorcycle } from '../types';
-import { HeartIcon } from './Icons';
+import { HeartIcon, MapPinIcon } from './Icons';
 
 interface MotorcycleCardProps {
   motorcycle: Motorcycle;
@@ -39,6 +39,10 @@ const MotorcycleCard: React.FC<MotorcycleCardProps> = ({ motorcycle, onSelect, i
         <div className="p-4">
           <h3 className="text-lg font-bold text-foreground-light dark:text-foreground-dark truncate">{motorcycle.make} {motorcycle.model}</h3>
           <p className="text-sm text-foreground-muted-light dark:text-foreground-muted-dark mt-1">{motorcycle.year} · {motorcycle.engineSize}cc</p>
+          <div className="flex items-center text-sm text-foreground-muted-light dark:text-foreground-muted-dark mt-1">
+            <MapPinIcon className="w-4 h-4 mr-1.5 flex-shrink-0" />
+            <span className="truncate">{motorcycle.location}</span>
+          </div>
           <p className="text-xl font-bold text-primary mt-2">{formattedPrice}</p>
         </div>
       </div>

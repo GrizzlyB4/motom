@@ -12,7 +12,7 @@ interface EditFormProps {
 
 const EditForm: React.FC<EditFormProps> = ({ motorcycle, onBack, onUpdate }) => {
   const [formData, setFormData] = useState({
-    make: '', model: '', year: '', price: '', mileage: '', engineSize: '', description: '',
+    make: '', model: '', year: '', price: '', mileage: '', engineSize: '', description: '', location: '',
   });
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [aiKeywords, setAiKeywords] = useState('');
@@ -28,6 +28,7 @@ const EditForm: React.FC<EditFormProps> = ({ motorcycle, onBack, onUpdate }) => 
             mileage: String(motorcycle.mileage),
             engineSize: String(motorcycle.engineSize),
             description: motorcycle.description,
+            location: motorcycle.location,
         });
         setImageUrls(motorcycle.imageUrls);
     }
@@ -73,8 +74,8 @@ const EditForm: React.FC<EditFormProps> = ({ motorcycle, onBack, onUpdate }) => 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const { make, model, year, price, mileage, engineSize, description } = formData;
-    if (!make || !model || !year || !price || !mileage || !engineSize || !description) {
+    const { make, model, year, price, mileage, engineSize, description, location } = formData;
+    if (!make || !model || !year || !price || !mileage || !engineSize || !description || !location) {
         alert('Por favor, completa todos los campos.');
         return;
     }
@@ -84,7 +85,7 @@ const EditForm: React.FC<EditFormProps> = ({ motorcycle, onBack, onUpdate }) => 
     }
     onUpdate({
       ...motorcycle, // Keep original id, sellerEmail, status, etc.
-      make, model,
+      make, model, location,
       year: parseInt(year, 10),
       price: parseFloat(price),
       mileage: parseInt(mileage, 10),
@@ -143,6 +144,10 @@ const EditForm: React.FC<EditFormProps> = ({ motorcycle, onBack, onUpdate }) => 
             <input type="number" name="engineSize" placeholder="Cilindrada (cc)" onChange={handleChange} value={formData.engineSize} className="form-input" required />
             </div>
             
+            <div>
+                <input type="text" name="location" placeholder="Ubicación (ej: Madrid, España)" onChange={handleChange} value={formData.location} className="form-input" required />
+            </div>
+
             <div className="bg-card-light dark:bg-card-dark p-4 rounded-xl border border-border-light dark:border-border-dark space-y-3">
                 <p className="font-bold">Descripción con IA (Opcional)</p>
                 <p className="text-sm text-foreground-muted-light dark:text-foreground-muted-dark">Añade notas para que la IA cree una descripción atractiva.</p>

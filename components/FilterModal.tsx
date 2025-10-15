@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CloseIcon } from './Icons';
 
 interface FilterModalProps {
@@ -10,15 +10,28 @@ interface FilterModalProps {
   setYearRange: (range: { min: string; max: string }) => void;
   engineSizeCategory: string;
   setEngineSizeCategory: (category: string) => void;
+  locationFilter: string;
+  setLocationFilter: (location: string) => void;
   onResetFilters: () => void;
 }
 
 const FilterModal: React.FC<FilterModalProps> = ({
   isOpen, onClose, priceRange, setPriceRange,
   yearRange, setYearRange, engineSizeCategory,
-  setEngineSizeCategory, onResetFilters
+  setEngineSizeCategory, locationFilter, setLocationFilter,
+  onResetFilters
 }) => {
+  const [isClosing, setIsClosing] = useState(false);
+
   if (!isOpen) return null;
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+      setIsClosing(false); // Reset state for next open
+    }, 300); // Match animation duration
+  };
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -32,23 +45,34 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
   const handleReset = () => {
     onResetFilters();
-    onClose();
+    handleClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={handleClose}>
       <div 
-        className="bg-card-light dark:bg-card-dark w-full max-w-lg rounded-t-xl p-6 shadow-xl relative animate-slide-up"
+        className={`bg-card-light dark:bg-card-dark w-full max-w-lg rounded-t-xl p-6 shadow-xl relative ${isClosing ? 'animate-slide-down' : 'animate-slide-up'}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold">Filtros Avanzados</h2>
-          <button onClick={onClose} className="p-2 -mr-2">
+          <button onClick={handleClose} className="p-2 -mr-2">
             <CloseIcon className="w-6 h-6"/>
           </button>
         </div>
 
         <div className="space-y-6">
+            <div>
+                <label className="block text-sm font-medium mb-2">Ubicación</label>
+                <input 
+                    type="text" 
+                    name="location" 
+                    placeholder="Ciudad, Provincia..." 
+                    value={locationFilter} 
+                    onChange={(e) => setLocationFilter(e.target.value)} 
+                    className="form-input" 
+                />
+            </div>
             <div>
                 <label className="block text-sm font-medium mb-2">Rango de Precios ($)</label>
                 <div className="flex items-center gap-2">
@@ -81,7 +105,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
             <button onClick={handleReset} className="w-full bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark text-foreground-light dark:text-foreground-dark font-bold py-3 px-4 rounded-xl hover:bg-black/[.05] dark:hover:bg-border-dark transition-colors">
                 Limpiar Filtros
             </button>
-            <button onClick={onClose} className="w-full bg-primary text-white font-bold py-3 px-4 rounded-xl hover:opacity-90 transition-opacity">
+            <button onClick={handleClose} className="w-full bg-primary text-white font-bold py-3 px-4 rounded-xl hover:opacity-90 transition-opacity">
                 Aplicar
             </button>
         </div>
@@ -90,7 +114,9 @@ const FilterModal: React.FC<FilterModalProps> = ({
             .form-input { appearance: none; width: 100%; background-color: transparent; border: 1px solid #2a3c46; border-radius: 0.75rem; padding: 0.75rem 1rem; color: inherit; transition: all 0.2s; } 
             .form-input:focus { outline: none; border-color: #1193d4; box-shadow: 0 0 0 2px rgba(17, 147, 212, 0.5); }
             @keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
-            .animate-slide-up { animation: slide-up 0.3s ease-out; }
+            @keyframes slide-down { from { transform: translateY(0); } to { transform: translateY(100%); } }
+            .animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
+            .animate-slide-down { animation: slide-down 0.3s ease-out forwards; }
         `}</style>
     </div>
   );

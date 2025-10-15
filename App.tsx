@@ -21,13 +21,13 @@ import ConfirmationModal from './components/ConfirmationModal';
 
 
 const mockMotorcycles: Motorcycle[] = [
-    { id: 1, make: 'Honda', model: 'CB650R', year: 2021, price: 7500, mileage: 8500, engineSize: 649, description: 'Como nueva...', imageUrls: ['https://images.unsplash.com/photo-1621115132957-81df81347053?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller1@example.com', category: 'Sport', status: 'for-sale', featured: true },
-    { id: 2, make: 'Kawasaki', model: 'Z900', year: 2020, price: 8200, mileage: 12000, engineSize: 948, description: 'Vendo Kawasaki Z900...', imageUrls: ['https://images.unsplash.com/photo-1623563720235-3a0639f60324?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Sport', status: 'for-sale', featured: false },
-    { id: 3, make: 'Yamaha', model: 'MT-07', year: 2022, price: 6800, mileage: 4500, engineSize: 689, description: 'Yamaha MT-07 del 2022...', imageUrls: ['https://images.unsplash.com/photo-1640890656113-3a137250abfa?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller2@example.com', category: 'Sport', status: 'for-sale', featured: false },
-    { id: 4, make: 'BMW', model: 'R1250GS', year: 2021, price: 21500, mileage: 15000, engineSize: 1254, description: 'Impresionante R1250GS...', imageUrls: ['https://images.unsplash.com/photo-1623563720275-2c86b2253245?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Touring', status: 'for-sale', featured: true },
-    { id: 5, make: 'Ducati', model: 'Panigale V2', year: 2020, price: 16000, mileage: 9800, engineSize: 955, description: 'Ducati Panigale V2...', imageUrls: ['https://images.unsplash.com/photo-1600761343111-a0a623e1d6d8?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller3@example.com', category: 'Sport', status: 'for-sale', featured: true },
-    { id: 8, make: 'Harley-Davidson', model: 'Iron 883', year: 2018, price: 9200, mileage: 18000, engineSize: 883, description: 'Icónica Iron 883...', imageUrls: ['https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller6@example.com', category: 'Cruiser', status: 'for-sale', featured: false },
-    { id: 9, make: 'KTM', model: '390 Adventure', year: 2022, price: 6500, mileage: 5000, engineSize: 373, description: 'Perfecta trail ligera...', imageUrls: ['https://images.unsplash.com/photo-1627916699311-3a088371295b?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Off-Road', status: 'sold', featured: false }
+    { id: 1, make: 'Honda', model: 'CB650R', year: 2021, price: 7500, mileage: 8500, engineSize: 649, description: 'Como nueva...', imageUrls: ['https://images.unsplash.com/photo-1621115132957-81df81347053?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller1@example.com', category: 'Sport', status: 'for-sale', location: 'Madrid, España', featured: true },
+    { id: 2, make: 'Kawasaki', model: 'Z900', year: 2020, price: 8200, mileage: 12000, engineSize: 948, description: 'Vendo Kawasaki Z900...', imageUrls: ['https://images.unsplash.com/photo-1623563720235-3a0639f60324?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Sport', status: 'for-sale', location: 'Barcelona, España', featured: false },
+    { id: 3, make: 'Yamaha', model: 'MT-07', year: 2022, price: 6800, mileage: 4500, engineSize: 689, description: 'Yamaha MT-07 del 2022...', imageUrls: ['https://images.unsplash.com/photo-1640890656113-3a137250abfa?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller2@example.com', category: 'Sport', status: 'for-sale', location: 'Valencia, España', featured: false },
+    { id: 4, make: 'BMW', model: 'R1250GS', year: 2021, price: 21500, mileage: 15000, engineSize: 1254, description: 'Impresionante R1250GS...', imageUrls: ['https://images.unsplash.com/photo-1623563720275-2c86b2253245?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Touring', status: 'for-sale', location: 'Sevilla, España', featured: true },
+    { id: 5, make: 'Ducati', model: 'Panigale V2', year: 2020, price: 16000, mileage: 9800, engineSize: 955, description: 'Ducati Panigale V2...', imageUrls: ['https://images.unsplash.com/photo-1600761343111-a0a623e1d6d8?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller3@example.com', category: 'Sport', status: 'for-sale', location: 'Madrid, España', featured: true },
+    { id: 8, make: 'Harley-Davidson', model: 'Iron 883', year: 2018, price: 9200, mileage: 18000, engineSize: 883, description: 'Icónica Iron 883...', imageUrls: ['https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller6@example.com', category: 'Cruiser', status: 'for-sale', location: 'Málaga, España', featured: false },
+    { id: 9, make: 'KTM', model: '390 Adventure', year: 2022, price: 6500, mileage: 5000, engineSize: 373, description: 'Perfecta trail ligera...', imageUrls: ['https://images.unsplash.com/photo-1627916699311-3a088371295b?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Off-Road', status: 'sold', location: 'Zaragoza, España', featured: false }
 ];
 
 const mockConversations: ChatConversation[] = [
@@ -87,6 +87,7 @@ const App: React.FC = () => {
   const [users, setUsers] = useState<User[]>(mockUsers);
   
   const [searchTerm, setSearchTerm] = useState('');
+  const [locationFilter, setLocationFilter] = useState('');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [yearRange, setYearRange] = useState({ min: '', max: '' });
   const [engineSizeCategory, setEngineSizeCategory] = useState('any');
@@ -205,6 +206,7 @@ const App: React.FC = () => {
                 const lowercasedFilter = search.searchTerm.toLowerCase();
                 if (!`${moto.make} ${moto.model} ${moto.year}`.toLowerCase().includes(lowercasedFilter)) return false;
             }
+            if (search.locationFilter && !moto.location.toLowerCase().includes(search.locationFilter.toLowerCase())) return false;
             if (search.category !== 'All' && moto.category !== search.category) return false;
             const minPrice = parseFloat(search.priceRange.min);
             if (!isNaN(minPrice) && moto.price < minPrice) return false;
@@ -238,6 +240,7 @@ const App: React.FC = () => {
                 price: 9500,
                 mileage: 1500,
                 engineSize: 765,
+                location: 'Madrid, España',
                 description: 'Casi nueva, una bestia ágil y potente. Perfecta para curvas.',
                 imageUrls: ['https://images.unsplash.com/photo-1618364210243-5b2a441a6f6c?q=80&w=800&auto=format&fit=crop'],
                 sellerEmail: 'new-seller@example.com',
@@ -362,6 +365,7 @@ const App: React.FC = () => {
   };
   
   const handleResetFilters = () => {
+    setLocationFilter('');
     setPriceRange({ min: '', max: '' });
     setYearRange({ min: '', max: '' });
     setEngineSizeCategory('any');
@@ -538,6 +542,7 @@ const App: React.FC = () => {
       const searchCriteria: SavedSearch = {
           id: `search-${Date.now()}`,
           searchTerm,
+          locationFilter,
           category: selectedCategory,
           priceRange,
           yearRange,
@@ -546,6 +551,7 @@ const App: React.FC = () => {
       // Check if an identical search already exists
       const alreadyExists = savedSearches.some(s => 
           s.searchTerm === searchCriteria.searchTerm &&
+          s.locationFilter === searchCriteria.locationFilter &&
           s.category === searchCriteria.category &&
           s.priceRange.min === searchCriteria.priceRange.min &&
           s.priceRange.max === searchCriteria.priceRange.max &&
@@ -573,6 +579,9 @@ const App: React.FC = () => {
     if (lowercasedFilter) {
       filtered = filtered.filter(m => `${m.make} ${m.model} ${m.year}`.toLowerCase().includes(lowercasedFilter));
     }
+    if (locationFilter) {
+      filtered = filtered.filter(m => m.location.toLowerCase().includes(locationFilter.toLowerCase()));
+    }
     if (selectedCategory !== 'All') {
       filtered = filtered.filter(m => m.category === selectedCategory);
     }
@@ -596,7 +605,7 @@ const App: React.FC = () => {
       });
     }
     return filtered;
-  }, [motorcycles, searchTerm, priceRange, yearRange, engineSizeCategory, selectedCategory]);
+  }, [motorcycles, searchTerm, locationFilter, priceRange, yearRange, engineSizeCategory, selectedCategory]);
   
   const featuredMotorcycles = useMemo(() => {
     return motorcycles.filter(moto => moto.featured && moto.status === 'for-sale');
@@ -719,7 +728,7 @@ const App: React.FC = () => {
       }
       case 'home':
       default:
-        const areFiltersActive = searchTerm !== '' || selectedCategory !== 'All' || priceRange.min !== '' || priceRange.max !== '' || yearRange.min !== '' || yearRange.max !== '' || engineSizeCategory !== 'any';
+        const areFiltersActive = searchTerm !== '' || locationFilter !== '' || selectedCategory !== 'All' || priceRange.min !== '' || priceRange.max !== '' || yearRange.min !== '' || yearRange.max !== '' || engineSizeCategory !== 'any';
         return (
           <MotorcycleList 
             motorcycles={filteredMotorcycles} 
@@ -775,6 +784,8 @@ const App: React.FC = () => {
         setYearRange={setYearRange}
         engineSizeCategory={engineSizeCategory}
         setEngineSizeCategory={setEngineSizeCategory}
+        locationFilter={locationFilter}
+        setLocationFilter={setLocationFilter}
         onResetFilters={handleResetFilters}
       />
       <ConfirmationModal

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Motorcycle, User } from '../types';
-import { ArrowLeftIcon, RoadIcon, EngineIcon, TagIcon, ProfileIcon, HeartIcon, ChevronLeftIcon, ChevronRightIcon, ShareIcon } from './Icons';
+import { ArrowLeftIcon, RoadIcon, EngineIcon, TagIcon, ProfileIcon, HeartIcon, ChevronLeftIcon, ChevronRightIcon, ShareIcon, MapPinIcon } from './Icons';
 import StarRating from './StarRating';
 
 interface MotorcycleDetailViewProps {
@@ -137,6 +137,10 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({
             <div className="animate-fade-in-up mb-6" style={{ animationDelay: '50ms' }}>
                 <h1 className="text-3xl font-bold text-foreground-light dark:text-foreground-dark">{motorcycle.make} {motorcycle.model}</h1>
                 <p className="text-lg text-foreground-muted-light dark:text-foreground-muted-dark mt-1">{motorcycle.year}</p>
+                <div className="flex items-center text-foreground-muted-light dark:text-foreground-muted-dark mt-2">
+                    <MapPinIcon className="w-5 h-5 mr-2 flex-shrink-0" />
+                    <span className="font-medium text-foreground-light dark:text-foreground-dark">{motorcycle.location}</span>
+                </div>
                 <p className="text-3xl font-bold text-primary mt-2">{formattedPrice}</p>
             </div>
             

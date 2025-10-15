@@ -12,7 +12,7 @@ interface SellFormProps {
 
 const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
   const [formData, setFormData] = useState({
-    make: '', model: '', year: '', price: '', mileage: '', engineSize: '', description: '',
+    make: '', model: '', year: '', price: '', mileage: '', engineSize: '', description: '', location: '',
   });
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [aiKeywords, setAiKeywords] = useState('');
@@ -59,8 +59,8 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const { make, model, year, price, mileage, engineSize, description } = formData;
-    if (!make || !model || !year || !price || !mileage || !engineSize || !description) {
+    const { make, model, year, price, mileage, engineSize, description, location } = formData;
+    if (!make || !model || !year || !price || !mileage || !engineSize || !description || !location) {
         alert('Por favor, completa todos los campos.');
         return;
     }
@@ -69,7 +69,7 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
         return;
     }
     onPublish({
-      make, model,
+      make, model, location,
       year: parseInt(year, 10),
       price: parseFloat(price),
       mileage: parseInt(mileage, 10),
@@ -117,6 +117,10 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
           <input type="number" name="price" placeholder="Precio ($)" onChange={handleChange} value={formData.price} className="form-input" required />
           <input type="number" name="mileage" placeholder="Kilometraje (km)" onChange={handleChange} value={formData.mileage} className="form-input" required />
           <input type="number" name="engineSize" placeholder="Cilindrada (cc)" onChange={handleChange} value={formData.engineSize} className="form-input" required />
+        </div>
+        
+        <div>
+          <input type="text" name="location" placeholder="Ubicación (ej: Madrid, España)" onChange={handleChange} value={formData.location} className="form-input" required />
         </div>
         
         <div className="bg-card-light dark:bg-card-dark p-4 rounded-xl border border-border-light dark:border-border-dark space-y-3">

@@ -21,6 +21,7 @@ interface ProfileViewProps {
 const formatSearchCriteria = (search: SavedSearch): string => {
     const parts: string[] = [];
     if (search.searchTerm) parts.push(`'${search.searchTerm}'`);
+    if (search.locationFilter) parts.push(`en '${search.locationFilter}'`);
     if (search.category !== 'All') parts.push(search.category);
     if (search.priceRange.min && search.priceRange.max) parts.push(`$${search.priceRange.min}-$${search.priceRange.max}`);
     else if (search.priceRange.min) parts.push(`> $${search.priceRange.min}`);

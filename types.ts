@@ -13,6 +13,7 @@ export interface Motorcycle {
   sellerEmail: string;
   category: Exclude<MotorcycleCategory, 'All'>;
   status: 'for-sale' | 'sold';
+  location: string;
   featured?: boolean;
 }
 
@@ -41,6 +42,7 @@ export interface ChatConversation {
 export interface SavedSearch {
   id: string;
   searchTerm: string;
+  locationFilter: string;
   category: MotorcycleCategory;
   priceRange: { min: string; max: string };
   yearRange: { min: string; max: string };
