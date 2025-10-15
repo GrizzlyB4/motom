@@ -18,6 +18,8 @@ export interface Motorcycle {
 export interface User {
   email: string;
   profileImageUrl?: string;
+  totalRatingPoints?: number;
+  numberOfRatings?: number;
 }
 
 export interface ChatMessage {
@@ -32,4 +34,10 @@ export interface ChatConversation {
   id: string;
   participants: string[];
   motorcycleId: number;
+}
+
+export interface HeatmapPoint {
+  x: number;
+  y: number;
+  value: number;
 }

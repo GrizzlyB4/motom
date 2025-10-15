@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
-import { Motorcycle } from '../types';
+import React, { useState, useMemo } from 'react';
+import { Motorcycle, User } from '../types';
 import { ArrowLeftIcon, RoadIcon, EngineIcon, TagIcon, ProfileIcon, HeartIcon, ChevronLeftIcon, ChevronRightIcon, ShareIcon } from './Icons';
+import StarRating from './StarRating';
 
 interface MotorcycleDetailViewProps {
   motorcycle: Motorcycle;
+  seller: User;
+  allMotorcycles: Motorcycle[];
   onBack: () => void;
   onStartChat: (motorcycle: Motorcycle) => void;
   isFavorite: boolean;
   onToggleFavorite: (motoId: number) => void;
   onViewPublicProfile: (sellerEmail: string) => void;
+  onSelectMotorcycle: (moto: Motorcycle) => void;
 }
 
 const SpecItem: React.FC<{ icon: React.ReactNode; label: string; value: string | number }> = ({ icon, label, value }) => (
@@ -20,9 +24,30 @@ const SpecItem: React.FC<{ icon: React.ReactNode; label: string; value: string |
 );
 
 
-const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({ motorcycle, onBack, onStartChat, isFavorite, onToggleFavorite, onViewPublicProfile }) => {
+const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({ 
+  motorcycle, seller, onBack, onStartChat, isFavorite, onToggleFavorite, 
+  onViewPublicProfile, allMotorcycles, onSelectMotorcycle 
+}) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(motorcycle.price);
+
+  const sellerRating = (seller.totalRatingPoints && seller.numberOfRatings) 
+    ? seller.totalRatingPoints / seller.numberOfRatings 
+    : 0;
+
+  const similarMotorcycles = useMemo(() => {
+    if (!allMotorcycles) return [];
+    const priceBuffer = motorcycle.price * 0.20; // 20% buffer
+    const minPrice = motorcycle.price - priceBuffer;
+    const maxPrice = motorcycle.price + priceBuffer;
+
+    return allMotorcycles.filter(m =>
+        m.id !== motorcycle.id &&
+        m.status === 'for-sale' &&
+        m.category === motorcycle.category &&
+        m.price >= minPrice && m.price <= maxPrice
+    ).slice(0, 4);
+  }, [allMotorcycles, motorcycle]);
 
   const nextImage = () => {
     setCurrentImageIndex((prevIndex) => (prevIndex + 1) % motorcycle.imageUrls.length);
@@ -141,18 +166,58 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({ motorcycle,
                     <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark mb-2">Descripción</h3>
                     <p className="text-foreground-light dark:text-foreground-dark leading-relaxed whitespace-pre-wrap">{motorcycle.description}</p>
                 </div>
-                
+
                 <div>
                     <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark mb-3">Vendedor</h3>
                     <div onClick={() => onViewPublicProfile(motorcycle.sellerEmail)} className="bg-card-light dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-4 flex items-center gap-3 cursor-pointer hover:bg-black/[.03] dark:hover:bg-white/[.05] transition-colors">
-                        <ProfileIcon className="w-8 h-8 text-primary"/>
+                        {seller.profileImageUrl ? (
+                            <img src={seller.profileImageUrl} alt="Foto del vendedor" className="w-12 h-12 object-cover rounded-full flex-shrink-0" />
+                        ) : (
+                            <ProfileIcon className="w-12 h-12 text-primary flex-shrink-0"/>
+                        )}
                         <div className="flex-grow">
                             <p className="text-md font-medium text-foreground-light dark:text-foreground-dark">{motorcycle.sellerEmail}</p>
-                            <p className="text-sm text-foreground-muted-light dark:text-foreground-muted-dark">Ver perfil y anuncios</p>
+                            <div className="flex items-center gap-1 mt-1">
+                                {seller.numberOfRatings ? (
+                                    <>
+                                        <StarRating rating={sellerRating} size="sm" readOnly />
+                                        <span className="text-xs text-foreground-muted-light dark:text-foreground-muted-dark">({seller.numberOfRatings})</span>
+                                    </>
+                                ) : (
+                                    <p className="text-xs text-foreground-muted-light dark:text-foreground-muted-dark">Sin valoraciones</p>
+                                )}
+                            </div>
                         </div>
                         <ChevronRightIcon className="w-5 h-5 text-foreground-muted-light dark:text-foreground-muted-dark"/>
                     </div>
                 </div>
+
+                {similarMotorcycles.length > 0 && (
+                    <div>
+                        <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark mb-3">Motos Similares</h3>
+                        <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 no-scrollbar">
+                            {similarMotorcycles.map(moto => (
+                                <div
+                                    key={moto.id}
+                                    onClick={() => onSelectMotorcycle(moto)}
+                                    className="flex-shrink-0 w-40 bg-card-light dark:bg-card-dark rounded-xl overflow-hidden shadow-sm border border-border-light dark:border-border-dark cursor-pointer transition-transform duration-200 hover:scale-[1.03]"
+                                >
+                                    <div
+                                        className="w-full h-24 bg-cover bg-center"
+                                        style={{ backgroundImage: `url(${moto.imageUrls[0]})` }}
+                                    />
+                                    <div className="p-2">
+                                        <p className="text-sm font-bold truncate">{moto.make} {moto.model}</p>
+                                        <p className="text-xs text-foreground-muted-light dark:text-foreground-muted-dark">{moto.year}</p>
+                                        <p className="text-md font-bold text-primary mt-1">
+                                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(moto.price)}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
 
         </div>

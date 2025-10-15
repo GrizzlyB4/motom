@@ -2,6 +2,7 @@ import React from 'react';
 import { Motorcycle, User } from '../types';
 import { ArrowLeftIcon, ProfileIcon } from './Icons';
 import MotorcycleCard from './MotorcycleCard';
+import StarRating from './StarRating';
 
 interface PublicProfileViewProps {
   seller: User;
@@ -10,9 +11,22 @@ interface PublicProfileViewProps {
   onSelectMotorcycle: (moto: Motorcycle) => void;
   favorites: number[];
   onToggleFavorite: (motoId: number) => void;
+  currentUser: User;
+  userRating?: number;
+  onRateUser: (sellerEmail: string, rating: number) => void;
 }
 
-const PublicProfileView: React.FC<PublicProfileViewProps> = ({ seller, motorcycles, onBack, onSelectMotorcycle, favorites, onToggleFavorite }) => {
+const PublicProfileView: React.FC<PublicProfileViewProps> = ({ 
+  seller, motorcycles, onBack, onSelectMotorcycle, 
+  favorites, onToggleFavorite, currentUser, userRating, onRateUser 
+}) => {
+
+  const sellerRating = (seller.totalRatingPoints && seller.numberOfRatings)
+    ? seller.totalRatingPoints / seller.numberOfRatings
+    : 0;
+
+  const canRate = currentUser.email !== seller.email && !userRating;
+
   return (
     <div className="bg-background-light dark:bg-background-dark min-h-screen">
       <header className="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm border-b border-border-light dark:border-border-dark">
@@ -35,9 +49,37 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({ seller, motorcycl
             </div>
           )}
           <h2 className="text-xl font-bold text-foreground-light dark:text-foreground-dark">{seller.email}</h2>
-          <p className="text-foreground-muted-light dark:text-foreground-muted-dark mt-1">{motorcycles.length} {motorcycles.length === 1 ? 'anuncio' : 'anuncios'} en venta</p>
+          <div className="flex items-center gap-1 mt-2">
+            {seller.numberOfRatings ? (
+                <>
+                    <StarRating rating={sellerRating} size="md" readOnly />
+                    <span className="text-sm text-foreground-muted-light dark:text-foreground-muted-dark">({seller.numberOfRatings} valoraciones)</span>
+                </>
+            ) : (
+                <p className="text-sm text-foreground-muted-light dark:text-foreground-muted-dark">Sin valoraciones</p>
+            )}
+          </div>
+          <p className="text-foreground-muted-light dark:text-foreground-muted-dark mt-2">{motorcycles.length} {motorcycles.length === 1 ? 'anuncio' : 'anuncios'} en venta</p>
         </div>
         
+        {canRate && (
+            <div className="p-6 text-center border-b border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark">
+                <h3 className="text-lg font-semibold text-foreground-light dark:text-foreground-dark">¿Has interactuado con este vendedor?</h3>
+                <p className="text-sm text-foreground-muted-light dark:text-foreground-muted-dark mt-1 mb-3">Deja tu valoración</p>
+                <div className="flex justify-center">
+                    <StarRating rating={0} size="lg" onRate={(rating) => onRateUser(seller.email, rating)} />
+                </div>
+            </div>
+        )}
+        {userRating && (
+             <div className="p-4 text-center border-b border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark">
+                <p className="text-sm text-foreground-muted-light dark:text-foreground-muted-dark">Tu valoración:</p>
+                <div className="flex justify-center mt-1">
+                    <StarRating rating={userRating} size="md" readOnly />
+                </div>
+            </div>
+        )}
+
         {motorcycles.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4">
             {motorcycles.map(moto => (

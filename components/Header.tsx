@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { FilterIcon, SearchIcon } from './Icons';
+import { FilterIcon, SearchIcon, FireIcon } from './Icons';
 import { View } from '../App';
 
 interface HeaderProps {
@@ -8,9 +7,11 @@ interface HeaderProps {
     setSearchTerm: (term: string) => void;
     onOpenFilters: () => void;
     currentView: View;
+    isHeatmapVisible: boolean;
+    onToggleHeatmap: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ searchTerm, setSearchTerm, onOpenFilters, currentView }) => {
+const Header: React.FC<HeaderProps> = ({ searchTerm, setSearchTerm, onOpenFilters, currentView, isHeatmapVisible, onToggleHeatmap }) => {
     const isSearchVisible = currentView === 'home';
 
     const getTitle = () => {
@@ -31,11 +32,22 @@ const Header: React.FC<HeaderProps> = ({ searchTerm, setSearchTerm, onOpenFilter
     };
 
     return (
-        <header className="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm border-b border-border-light dark:border-border-dark">
+        <header className="sticky top-0 z-20 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm border-b border-border-light dark:border-border-dark">
             <div className="px-4 py-3">
                 <div className="flex items-center justify-between">
-                    <div className="w-8"></div>
+                    <div className="w-16 flex items-center gap-2">
+                        {isSearchVisible && (
+                             <button 
+                                onClick={onToggleHeatmap} 
+                                className={`p-1.5 rounded-full transition-colors ${isHeatmapVisible ? 'bg-primary/20 text-primary' : 'text-foreground-light dark:text-foreground-dark'}`}
+                                aria-label="Toggle Heatmap"
+                            >
+                                <FireIcon className="w-5 h-5"/>
+                            </button>
+                        )}
+                    </div>
                     <h1 className="text-lg font-bold text-foreground-light dark:text-foreground-dark">{getTitle()}</h1>
+                    <div className="w-16 flex justify-end">
                     {isSearchVisible ? (
                         <button onClick={onOpenFilters} className="text-foreground-light dark:text-foreground-dark p-1">
                             <FilterIcon />
@@ -43,6 +55,7 @@ const Header: React.FC<HeaderProps> = ({ searchTerm, setSearchTerm, onOpenFilter
                     ) : (
                         <div className="w-8"></div>
                     )}
+                    </div>
                 </div>
                 {isSearchVisible && (
                     <div className="mt-4">

@@ -9,19 +9,26 @@ interface MotorcycleListProps {
   onSelectCategory: (category: MotorcycleCategory) => void;
   favorites: number[];
   onToggleFavorite: (motoId: number) => void;
+  onAddHeatmapPoint: (event: React.MouseEvent) => void;
 }
 
 const categories: MotorcycleCategory[] = ['All', 'Sport', 'Cruiser', 'Off-Road', 'Touring'];
 
-const MotorcycleList: React.FC<MotorcycleListProps> = ({ motorcycles, onSelectMotorcycle, selectedCategory, onSelectCategory, favorites, onToggleFavorite }) => {
+const MotorcycleList: React.FC<MotorcycleListProps> = ({ 
+    motorcycles, onSelectMotorcycle, selectedCategory, onSelectCategory, 
+    favorites, onToggleFavorite, onAddHeatmapPoint 
+}) => {
   return (
-    <div>
+    <div onClick={onAddHeatmapPoint}>
       <div className="px-4 py-3">
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar">
           {categories.map((category) => (
             <button
               key={category}
-              onClick={() => onSelectCategory(category)}
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent click from bubbling to the main container
+                onSelectCategory(category);
+              }}
               className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 ${
                 selectedCategory === category
                   ? 'bg-primary text-white'

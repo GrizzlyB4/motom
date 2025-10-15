@@ -1,6 +1,7 @@
 import React from 'react';
 import { User, Motorcycle } from '../types';
 import { ProfileIcon, LogoutIcon, EditIcon } from './Icons';
+import StarRating from './StarRating';
 
 interface ProfileViewProps {
   currentUser: User;
@@ -40,6 +41,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({
   
   const activeListings = userMotorcycles.filter(m => m.status === 'for-sale');
   const soldListings = userMotorcycles.filter(m => m.status === 'sold');
+  const userRating = (currentUser.totalRatingPoints && currentUser.numberOfRatings)
+    ? currentUser.totalRatingPoints / currentUser.numberOfRatings
+    : 0;
 
   return (
     <div className="p-4 max-w-4xl mx-auto">
@@ -65,8 +69,17 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                 </div>
             </label>
             <div>
-                <h2 className="text-xl font-bold">Mi Perfil</h2>
-                <p className="text-foreground-muted-light dark:text-foreground-muted-dark">{currentUser.email}</p>
+                <h2 className="text-xl font-bold">{currentUser.email}</h2>
+                 <div className="flex items-center gap-1 mt-1">
+                    {currentUser.numberOfRatings ? (
+                        <>
+                            <StarRating rating={userRating} size="sm" readOnly />
+                            <span className="text-xs text-foreground-muted-light dark:text-foreground-muted-dark">({currentUser.numberOfRatings} valoraciones)</span>
+                        </>
+                    ) : (
+                        <p className="text-xs text-foreground-muted-light dark:text-foreground-muted-dark">Aún no tienes valoraciones</p>
+                    )}
+                </div>
             </div>
         </div>
         <button onClick={onLogout} className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-primary transition-colors">

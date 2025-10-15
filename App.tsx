@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Motorcycle, User, MotorcycleCategory, ChatConversation, ChatMessage } from './types';
+import { Motorcycle, User, MotorcycleCategory, ChatConversation, ChatMessage, HeatmapPoint } from './types';
 import Header from './components/Header';
 import MotorcycleList from './components/MotorcycleList';
 import MotorcycleDetailView from './components/MotorcycleDetailView';
@@ -13,6 +13,8 @@ import ChatDetailView from './components/ChatDetailView';
 import FavoritesView from './components/FavoritesView';
 import PublicProfileView from './components/PublicProfileView';
 import EditForm from './components/EditForm';
+import HeatmapOverlay from './components/HeatmapOverlay';
+import ConfirmationModal from './components/ConfirmationModal';
 
 
 const mockMotorcycles: Motorcycle[] = [
@@ -35,12 +37,13 @@ const mockMessages: ChatMessage[] = [
 ];
 
 const mockUsers: User[] = [
-    { email: 'user@motomarket.com', profileImageUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=400&auto=format&fit=crop' },
-    { email: 'seller1@example.com', profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop' },
-    { email: 'seller2@example.com', profileImageUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=400&auto=format&fit=crop' },
-    { email: 'seller3@example.com', profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=400&auto=format&fit=crop' },
-    { email: 'seller6@example.com', profileImageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop' },
+    { email: 'user@motomarket.com', profileImageUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=400&auto=format&fit=crop', totalRatingPoints: 45, numberOfRatings: 10 }, // 4.5 stars
+    { email: 'seller1@example.com', profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop', totalRatingPoints: 18, numberOfRatings: 4 }, // 4.5 stars
+    { email: 'seller2@example.com', profileImageUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=400&auto=format&fit=crop', totalRatingPoints: 88, numberOfRatings: 20 }, // 4.4 stars
+    { email: 'seller3@example.com', profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=400&auto=format&fit=crop' }, // No ratings
+    { email: 'seller6@example.com', profileImageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop', totalRatingPoints: 5, numberOfRatings: 1 }, // 5 stars
 ];
+
 
 export type View = 'home' | 'detail' | 'sell' | 'profile' | 'favorites' | 'chat' | 'chatList' | 'chatDetail' | 'login' | 'publicProfile' | 'edit';
 
@@ -89,6 +92,13 @@ const App: React.FC = () => {
   
   const [favorites, setFavorites] = useState<number[]>([]);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+  const [userRatings, setUserRatings] = useState<{ [sellerEmail: string]: number }>({});
+  const [heatmapData, setHeatmapData] = useState<HeatmapPoint[]>([]);
+  const [isHeatmapVisible, setIsHeatmapVisible] = useState(false);
+
+  const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
+  const [motoToPublish, setMotoToPublish] = useState<Omit<Motorcycle, 'id' | 'sellerEmail' | 'category' | 'status'> | null>(null);
+
 
   useEffect(() => {
     if ('Notification' in window) {
@@ -99,17 +109,26 @@ const App: React.FC = () => {
   useEffect(() => {
     try {
       const storedFavorites = window.localStorage.getItem('motoMarketFavorites');
-      if (storedFavorites) {
-        setFavorites(JSON.parse(storedFavorites));
-      }
+      if (storedFavorites) setFavorites(JSON.parse(storedFavorites));
+
+      const storedRatings = window.localStorage.getItem('motoMarketUserRatings');
+      if (storedRatings) setUserRatings(JSON.parse(storedRatings));
+      
+      const storedHeatmapData = window.localStorage.getItem('motoMarketHeatmapData');
+      if (storedHeatmapData) setHeatmapData(JSON.parse(storedHeatmapData));
+
     } catch (error) {
-      console.error("Failed to parse favorites from localStorage", error);
+      console.error("Failed to parse data from localStorage", error);
     }
   }, []);
 
   useEffect(() => {
     window.localStorage.setItem('motoMarketFavorites', JSON.stringify(favorites));
   }, [favorites]);
+
+  useEffect(() => {
+    window.localStorage.setItem('motoMarketUserRatings', JSON.stringify(userRatings));
+  }, [userRatings]);
 
 
   useEffect(() => {
@@ -180,18 +199,29 @@ const App: React.FC = () => {
   const handleLogout = () => { setCurrentUser(null); setView('home'); };
 
   const handlePublish = (newMotoData: Omit<Motorcycle, 'id' | 'sellerEmail' | 'category' | 'status'>) => {
-    if(!currentUser) { return; }
+    setMotoToPublish(newMotoData);
+    setIsConfirmationModalOpen(true);
+  };
+  
+  const handleConfirmPublish = () => {
+    if (!currentUser || !motoToPublish) return;
+
     const newMoto: Motorcycle = {
-        ...newMotoData,
-        id: motorcycles.length + 1,
-        imageUrls: newMotoData.imageUrls.length > 0 ? newMotoData.imageUrls : [`https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=800&auto=format&fit=crop`],
-        sellerEmail: currentUser.email,
-        category: 'Sport', // Default category for now
-        status: 'for-sale',
+      ...motoToPublish,
+      id: Date.now(), // Using timestamp for a more unique ID
+      imageUrls: motoToPublish.imageUrls.length > 0 ? motoToPublish.imageUrls : [`https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=800&auto=format&fit=crop`],
+      sellerEmail: currentUser.email,
+      category: 'Sport', // Default category for now
+      status: 'for-sale',
     };
+
     setMotorcycles(prev => [newMoto, ...prev]);
     alert("¡Tu moto ha sido publicada!");
     setView('profile');
+    
+    // Reset state
+    setIsConfirmationModalOpen(false);
+    setMotoToPublish(null);
   };
   
   const handleResetFilters = () => {
@@ -320,6 +350,47 @@ const App: React.FC = () => {
     alert('¡Anuncio actualizado con éxito!');
   };
 
+  const handleRateUser = (sellerEmail: string, rating: number) => {
+    if (!currentUser || currentUser.email === sellerEmail || userRatings[sellerEmail]) {
+        return;
+    }
+
+    setUsers(prevUsers => 
+        prevUsers.map(user => {
+            if (user.email === sellerEmail) {
+                const newTotalRatingPoints = (user.totalRatingPoints || 0) + rating;
+                const newNumberOfRatings = (user.numberOfRatings || 0) + 1;
+                return { ...user, totalRatingPoints: newTotalRatingPoints, numberOfRatings: newNumberOfRatings };
+            }
+            return user;
+        })
+    );
+
+    setUserRatings(prevRatings => ({
+        ...prevRatings,
+        [sellerEmail]: rating,
+    }));
+    
+    alert(`Has valorado a ${sellerEmail} con ${rating} estrellas. ¡Gracias!`);
+  };
+
+  const handleAddHeatmapPoint = (e: React.MouseEvent) => {
+    // Only add points if the heatmap is active, to avoid collecting unnecessary data.
+    // Or collect always for analytics purposes. Let's collect always for this demo.
+    const newPoint: HeatmapPoint = {
+      x: e.pageX,
+      y: e.pageY,
+      value: 1, // Each click has a value of 1
+    };
+    const updatedData = [...heatmapData, newPoint];
+    setHeatmapData(updatedData);
+    window.localStorage.setItem('motoMarketHeatmapData', JSON.stringify(updatedData));
+  };
+  
+  const handleToggleHeatmap = () => {
+    setIsHeatmapVisible(prev => !prev);
+  };
+
   const filteredMotorcycles = useMemo(() => {
     let filtered = motorcycles.filter(m => m.status === 'for-sale');
     const lowercasedFilter = searchTerm.toLowerCase();
@@ -373,15 +444,21 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     switch (view) {
-      case 'detail':
-        return selectedMotorcycle && <MotorcycleDetailView 
+      case 'detail': {
+        const seller = users.find(u => u.email === selectedMotorcycle?.sellerEmail);
+        if (!selectedMotorcycle || !seller) return <PlaceholderView title="Anuncio no encontrado" />;
+        return <MotorcycleDetailView 
             motorcycle={selectedMotorcycle} 
+            seller={seller}
+            allMotorcycles={motorcycles}
             onBack={handleBackToPrevView} 
             onStartChat={handleStartOrGoToChat} 
             isFavorite={favorites.includes(selectedMotorcycle.id)}
             onToggleFavorite={handleToggleFavorite}
             onViewPublicProfile={handleViewPublicProfile}
+            onSelectMotorcycle={handleSelectMotorcycle}
         />;
+      }
       case 'sell':
         return <SellForm onBack={() => setView('home')} onPublish={handlePublish} />;
       case 'edit':
@@ -414,6 +491,9 @@ const App: React.FC = () => {
             onSelectMotorcycle={handleSelectMotorcycle}
             favorites={favorites}
             onToggleFavorite={handleToggleFavorite}
+            currentUser={currentUser}
+            userRating={userRatings[seller.email]}
+            onRateUser={handleRateUser}
         />;
       }
       case 'favorites':
@@ -459,6 +539,7 @@ const App: React.FC = () => {
             onSelectCategory={setSelectedCategory}
             favorites={favorites}
             onToggleFavorite={handleToggleFavorite}
+            onAddHeatmapPoint={handleAddHeatmapPoint}
           />
         );
     }
@@ -471,12 +552,15 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark">
+      {isHeatmapVisible && <HeatmapOverlay data={heatmapData} />}
       {isHeaderVisible && (
         <Header 
           currentView={view}
           searchTerm={searchTerm} 
           setSearchTerm={setSearchTerm} 
           onOpenFilters={() => setIsFilterModalOpen(true)}
+          isHeatmapVisible={isHeatmapVisible}
+          onToggleHeatmap={handleToggleHeatmap}
         />
       )}
       <main className={`flex-1 ${mainContentPadding}`}>
@@ -495,6 +579,18 @@ const App: React.FC = () => {
         engineSizeCategory={engineSizeCategory}
         setEngineSizeCategory={setEngineSizeCategory}
         onResetFilters={handleResetFilters}
+      />
+      <ConfirmationModal
+        isOpen={isConfirmationModalOpen}
+        onClose={() => {
+          setIsConfirmationModalOpen(false);
+          setMotoToPublish(null);
+        }}
+        onConfirm={handleConfirmPublish}
+        title="Confirmar Publicación"
+        message="¿Estás seguro de que quieres publicar este anuncio? Por favor, revisa que todos los detalles sean correctos."
+        confirmText="Sí, Publicar"
+        cancelText="Revisar"
       />
     </div>
   );
