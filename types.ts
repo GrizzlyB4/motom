@@ -17,6 +17,7 @@ export interface Motorcycle {
 }
 
 export interface User {
+  name: string;
   email: string;
   profileImageUrl?: string;
   totalRatingPoints?: number;

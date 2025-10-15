@@ -7,15 +7,17 @@ interface ChatDetailViewProps {
   messages: ChatMessage[];
   motorcycle: Motorcycle;
   currentUser: User;
+  users: User[];
   onBack: () => void;
   onSendMessage: (conversationId: string, text: string) => void;
 }
 
-const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages, motorcycle, currentUser, onBack, onSendMessage }) => {
+const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages, motorcycle, currentUser, users, onBack, onSendMessage }) => {
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const otherParticipant = conversation.participants.find(p => p !== currentUser.email);
+  const otherParticipantEmail = conversation.participants.find(p => p !== currentUser.email);
+  const otherParticipant = users.find(u => u.email === otherParticipantEmail);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -39,7 +41,7 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages,
           <img src={motorcycle.imageUrls[0]} alt={motorcycle.model} className="w-10 h-10 object-cover rounded-md" />
           <div>
              <h2 className="font-bold text-foreground-light dark:text-foreground-dark leading-tight">{motorcycle.make} {motorcycle.model}</h2>
-             <p className="text-xs text-foreground-muted-light dark:text-foreground-muted-dark">Chat con {otherParticipant}</p>
+             <p className="text-xs text-foreground-muted-light dark:text-foreground-muted-dark">Chat con {otherParticipant?.name || otherParticipantEmail}</p>
           </div>
         </div>
       </header>

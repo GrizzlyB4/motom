@@ -2,24 +2,36 @@ import React, { useState } from 'react';
 import { User } from '../types';
 import { MotorcycleIcon } from './Icons';
 
-interface LoginViewProps {
-  onLoginSuccess: (user: User) => void;
-  onNavigateToSignUp: () => void;
+interface SignUpViewProps {
+  onSignUpSuccess: (user: Omit<User, 'profileImageUrl' | 'totalRatingPoints' | 'numberOfRatings'>) => void;
+  onNavigateToLogin: () => void;
 }
 
-const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onNavigateToSignUp }) => {
-  const [email, setEmail] = useState('user@motomarket.com');
+const SignUpView: React.FC<SignUpViewProps> = ({ onSignUpSuccess, onNavigateToLogin }) => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) {
-        setError("Por favor, introduce tu email.");
+    setError('');
+
+    if (!name || !email || !password || !confirmPassword) {
+      setError('Por favor, completa todos los campos.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Las contraseñas no coinciden.');
+      return;
+    }
+    if (!/\S+@\S+\.\S+/.test(email)) {
+        setError('Por favor, introduce un email válido.');
         return;
     }
-    // For demonstration, we bypass password check.
-    onLoginSuccess({ email });
+    
+    onSignUpSuccess({ name, email });
   };
 
   return (
@@ -27,19 +39,31 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onNavigateToSignU
       <div className="w-full max-w-sm mx-auto">
         <div className="flex flex-col items-center mb-8">
             <MotorcycleIcon className="w-16 h-16 text-primary mb-2" />
-            <h1 className="text-3xl font-bold text-foreground-light dark:text-foreground-dark">MotoMarket</h1>
-            <p className="text-foreground-muted-light dark:text-foreground-muted-dark mt-1">Inicia sesión para continuar</p>
+            <h1 className="text-3xl font-bold text-foreground-light dark:text-foreground-dark">Crear Cuenta</h1>
+            <p className="text-foreground-muted-light dark:text-foreground-muted-dark mt-1">Únete a la comunidad de MotoMarket</p>
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <input
+              type="text"
+              placeholder="Nombre Completo"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="form-input"
+              aria-label="Nombre Completo"
+              required
+            />
+          </div>
+          <div>
+            <input
               type="email"
-              placeholder="Email (ej: user@motomarket.com)"
+              placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="form-input"
               aria-label="Email"
+              required
             />
           </div>
           <div>
@@ -50,6 +74,18 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onNavigateToSignU
               onChange={(e) => setPassword(e.target.value)}
               className="form-input"
               aria-label="Password"
+              required
+            />
+          </div>
+          <div>
+            <input
+              type="password"
+              placeholder="Confirmar Contraseña"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="form-input"
+              aria-label="Confirm Password"
+              required
             />
           </div>
 
@@ -60,13 +96,13 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onNavigateToSignU
               type="submit"
               className="w-full bg-primary text-white font-bold py-3 px-4 rounded-xl hover:opacity-90 transition-opacity duration-300 text-lg"
             >
-              Iniciar Sesión
+              Crear Cuenta
             </button>
           </div>
         </form>
 
         <p className="text-center text-sm text-foreground-muted-light dark:text-foreground-muted-dark mt-8">
-            ¿No tienes cuenta? <button type="button" onClick={onNavigateToSignUp} className="font-semibold text-primary hover:underline">Regístrate</button>
+            ¿Ya tienes cuenta? <button type="button" onClick={onNavigateToLogin} className="font-semibold text-primary hover:underline">Inicia sesión</button>
         </p>
 
       </div>
@@ -75,4 +111,4 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onNavigateToSignU
   );
 };
 
-export default LoginView;
+export default SignUpView;

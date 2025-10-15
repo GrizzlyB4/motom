@@ -69,7 +69,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                 </div>
             </label>
             <div>
-                <h2 className="text-xl font-bold">{currentUser.email}</h2>
+                <h2 className="text-xl font-bold">{currentUser.name}</h2>
+                <p className="text-sm text-foreground-muted-light dark:text-foreground-muted-dark">{currentUser.email}</p>
                  <div className="flex items-center gap-1 mt-1">
                     {currentUser.numberOfRatings ? (
                         <>

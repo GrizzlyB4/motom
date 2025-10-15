@@ -176,7 +176,8 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({
                             <ProfileIcon className="w-12 h-12 text-primary flex-shrink-0"/>
                         )}
                         <div className="flex-grow">
-                            <p className="text-md font-medium text-foreground-light dark:text-foreground-dark">{motorcycle.sellerEmail}</p>
+                            <p className="text-md font-medium text-foreground-light dark:text-foreground-dark">{seller.name}</p>
+                            <p className="text-xs text-foreground-muted-light dark:text-foreground-muted-dark">{seller.email}</p>
                             <div className="flex items-center gap-1 mt-1">
                                 {seller.numberOfRatings ? (
                                     <>

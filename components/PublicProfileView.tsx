@@ -48,7 +48,8 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({
               <ProfileIcon className="w-16 h-16 text-primary" />
             </div>
           )}
-          <h2 className="text-xl font-bold text-foreground-light dark:text-foreground-dark">{seller.email}</h2>
+          <h2 className="text-xl font-bold text-foreground-light dark:text-foreground-dark">{seller.name}</h2>
+          <p className="text-sm text-foreground-muted-light dark:text-foreground-muted-dark">{seller.email}</p>
           <div className="flex items-center gap-1 mt-2">
             {seller.numberOfRatings ? (
                 <>

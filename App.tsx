@@ -4,6 +4,7 @@ import Header from './components/Header';
 import MotorcycleList from './components/MotorcycleList';
 import MotorcycleDetailView from './components/MotorcycleDetailView';
 import LoginView from './components/LoginView';
+import SignUpView from './components/SignUpView';
 import SellForm from './components/SellForm';
 import ProfileView from './components/ProfileView';
 import BottomNav from './components/BottomNav';
@@ -37,15 +38,15 @@ const mockMessages: ChatMessage[] = [
 ];
 
 const mockUsers: User[] = [
-    { email: 'user@motomarket.com', profileImageUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=400&auto=format&fit=crop', totalRatingPoints: 45, numberOfRatings: 10 }, // 4.5 stars
-    { email: 'seller1@example.com', profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop', totalRatingPoints: 18, numberOfRatings: 4 }, // 4.5 stars
-    { email: 'seller2@example.com', profileImageUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=400&auto=format&fit=crop', totalRatingPoints: 88, numberOfRatings: 20 }, // 4.4 stars
-    { email: 'seller3@example.com', profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=400&auto=format&fit=crop' }, // No ratings
-    { email: 'seller6@example.com', profileImageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop', totalRatingPoints: 5, numberOfRatings: 1 }, // 5 stars
+    { name: 'Carlos Rossi', email: 'user@motomarket.com', profileImageUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=400&auto=format&fit=crop', totalRatingPoints: 45, numberOfRatings: 10 }, // 4.5 stars
+    { name: 'Juan Pérez', email: 'seller1@example.com', profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop', totalRatingPoints: 18, numberOfRatings: 4 }, // 4.5 stars
+    { name: 'Ana Gómez', email: 'seller2@example.com', profileImageUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=400&auto=format&fit=crop', totalRatingPoints: 88, numberOfRatings: 20 }, // 4.4 stars
+    { name: 'Sofía Loren', email: 'seller3@example.com', profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=400&auto=format&fit=crop' }, // No ratings
+    { name: 'Marco Antonio', email: 'seller6@example.com', profileImageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop', totalRatingPoints: 5, numberOfRatings: 1 }, // 5 stars
 ];
 
 
-export type View = 'home' | 'detail' | 'sell' | 'profile' | 'favorites' | 'chat' | 'chatList' | 'chatDetail' | 'login' | 'publicProfile' | 'edit';
+export type View = 'home' | 'detail' | 'sell' | 'profile' | 'favorites' | 'chat' | 'chatList' | 'chatDetail' | 'login' | 'publicProfile' | 'edit' | 'signup';
 
 // --- Notification Service Functions ---
 const requestNotificationPermission = async (): Promise<NotificationPermission> => {
@@ -72,7 +73,7 @@ const sendNotification = (title: string, options?: NotificationOptions): void =>
 
 
 const App: React.FC = () => {
-  const [view, setView] = useState<View>('home');
+  const [view, setView] = useState<View>('login');
   const [selectedMotorcycle, setSelectedMotorcycle] = useState<Motorcycle | null>(null);
   const [motorcycleToEdit, setMotorcycleToEdit] = useState<Motorcycle | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -195,8 +196,33 @@ const App: React.FC = () => {
         setView('home');
     }
   };
-  const handleLoginSuccess = (user: User) => { setCurrentUser(user); setView('home'); };
-  const handleLogout = () => { setCurrentUser(null); setView('home'); };
+  
+  const handleLoginSuccess = (user: User) => {
+    const foundUser = users.find(u => u.email.toLowerCase() === user.email.toLowerCase());
+    if (foundUser) {
+        setCurrentUser(foundUser);
+        setView('home');
+    } else {
+        alert("Usuario no encontrado. Por favor, regístrate.");
+    }
+  };
+  
+  const handleSignUpSuccess = (newUser: Omit<User, 'profileImageUrl' | 'totalRatingPoints' | 'numberOfRatings'>) => {
+    if (users.some(u => u.email.toLowerCase() === newUser.email.toLowerCase())) {
+        alert('Este email ya está registrado. Por favor, inicia sesión.');
+        setView('login');
+        return;
+    }
+    const userToSave: User = { name: newUser.name, email: newUser.email };
+    setUsers(prev => [...prev, userToSave]);
+    setCurrentUser(userToSave);
+    setView('home');
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setView('login');
+  };
 
   const handlePublish = (newMotoData: Omit<Motorcycle, 'id' | 'sellerEmail' | 'category' | 'status'>) => {
     setMotoToPublish(newMotoData);
@@ -444,7 +470,10 @@ const App: React.FC = () => {
   );
 
   if (!currentUser) {
-    return <LoginView onLoginSuccess={handleLoginSuccess} />;
+    if (view === 'signup') {
+      return <SignUpView onSignUpSuccess={handleSignUpSuccess} onNavigateToLogin={() => setView('login')} />;
+    }
+    return <LoginView onLoginSuccess={handleLoginSuccess} onNavigateToSignUp={() => setView('signup')} />;
   }
 
   const renderContent = () => {
@@ -514,6 +543,7 @@ const App: React.FC = () => {
             messages={messages}
             motorcycles={motorcycles}
             currentUser={currentUser}
+            users={users}
             onSelectConversation={(convoId) => {
                 setSelectedConversationId(convoId);
                 setView('chatDetail');
@@ -530,6 +560,7 @@ const App: React.FC = () => {
             messages={messages.filter(m => m.conversationId === selectedConversationId).sort((a,b) => a.timestamp - b.timestamp)}
             motorcycle={motorcycle}
             currentUser={currentUser}
+            users={users}
             onBack={handleBackToPrevView}
             onSendMessage={handleSendMessage}
         />;

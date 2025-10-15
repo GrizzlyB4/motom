@@ -7,15 +7,17 @@ interface ChatListViewProps {
   messages: ChatMessage[];
   motorcycles: Motorcycle[];
   currentUser: User;
+  users: User[];
   onSelectConversation: (conversationId: string) => void;
 }
 
-const ChatListView: React.FC<ChatListViewProps> = ({ conversations, messages, motorcycles, currentUser, onSelectConversation }) => {
+const ChatListView: React.FC<ChatListViewProps> = ({ conversations, messages, motorcycles, currentUser, users, onSelectConversation }) => {
 
   const conversationsWithDetails = useMemo(() => {
     return conversations.map(convo => {
       const motorcycle = motorcycles.find(m => m.id === convo.motorcycleId);
-      const otherParticipant = convo.participants.find(p => p !== currentUser.email);
+      const otherParticipantEmail = convo.participants.find(p => p !== currentUser.email);
+      const otherParticipant = users.find(u => u.email === otherParticipantEmail);
       const convoMessages = messages
         .filter(m => m.conversationId === convo.id)
         .sort((a, b) => b.timestamp - a.timestamp);
@@ -28,7 +30,7 @@ const ChatListView: React.FC<ChatListViewProps> = ({ conversations, messages, mo
         lastMessage,
       };
     }).sort((a,b) => (b.lastMessage?.timestamp || 0) - (a.lastMessage?.timestamp || 0));
-  }, [conversations, messages, motorcycles, currentUser]);
+  }, [conversations, messages, motorcycles, currentUser, users]);
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -50,7 +52,7 @@ const ChatListView: React.FC<ChatListViewProps> = ({ conversations, messages, mo
               <div className="flex-grow overflow-hidden">
                 <p className="font-bold truncate">{convo.motorcycle?.make} {convo.motorcycle?.model}</p>
                 <p className="text-sm text-foreground-muted-light dark:text-foreground-muted-dark truncate">
-                    Chat con {convo.otherParticipant}
+                    Chat con {convo.otherParticipant?.name || convo.otherParticipant?.email}
                 </p>
                 {convo.lastMessage && (
                   <p className="text-sm text-foreground-light dark:text-foreground-dark truncate mt-1">
