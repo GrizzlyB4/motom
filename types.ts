@@ -13,6 +13,7 @@ export interface Motorcycle {
   sellerEmail: string;
   category: Exclude<MotorcycleCategory, 'All'>;
   status: 'for-sale' | 'sold';
+  featured?: boolean;
 }
 
 export interface User {
