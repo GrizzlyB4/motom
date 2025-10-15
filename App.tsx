@@ -1,6 +1,5 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
-import { Motorcycle, User, MotorcycleCategory } from './types';
+import { Motorcycle, User, MotorcycleCategory, ChatConversation, ChatMessage } from './types';
 import Header from './components/Header';
 import MotorcycleList from './components/MotorcycleList';
 import MotorcycleDetailView from './components/MotorcycleDetailView';
@@ -9,24 +8,40 @@ import SellForm from './components/SellForm';
 import ProfileView from './components/ProfileView';
 import BottomNav from './components/BottomNav';
 import FilterModal from './components/FilterModal';
+import ChatListView from './components/ChatListView';
+import ChatDetailView from './components/ChatDetailView';
+import FavoritesView from './components/FavoritesView';
+
 
 const mockMotorcycles: Motorcycle[] = [
-    { id: 1, make: 'Honda', model: 'CB650R', year: 2021, price: 7500, mileage: 8500, engineSize: 649, description: 'Como nueva...', imageUrl: 'https://images.unsplash.com/photo-1621115132957-81df81347053?q=80&w=800&auto=format&fit=crop', sellerEmail: 'seller1@example.com', category: 'Sport' },
-    { id: 2, make: 'Kawasaki', model: 'Z900', year: 2020, price: 8200, mileage: 12000, engineSize: 948, description: 'Vendo Kawasaki Z900...', imageUrl: 'https://images.unsplash.com/photo-1623563720235-3a0639f60324?q=80&w=800&auto=format&fit=crop', sellerEmail: 'user@motomarket.com', category: 'Sport' },
-    { id: 3, make: 'Yamaha', model: 'MT-07', year: 2022, price: 6800, mileage: 4500, engineSize: 689, description: 'Yamaha MT-07 del 2022...', imageUrl: 'https://images.unsplash.com/photo-1640890656113-3a137250abfa?q=80&w=800&auto=format&fit=crop', sellerEmail: 'seller2@example.com', category: 'Sport' },
-    { id: 4, make: 'BMW', model: 'R1250GS', year: 2021, price: 21500, mileage: 15000, engineSize: 1254, description: 'Impresionante R1250GS...', imageUrl: 'https://images.unsplash.com/photo-1623563720275-2c86b2253245?q=80&w=800&auto=format&fit=crop', sellerEmail: 'user@motomarket.com', category: 'Touring' },
-    { id: 5, make: 'Ducati', model: 'Panigale V2', year: 2020, price: 16000, mileage: 9800, engineSize: 955, description: 'Ducati Panigale V2...', imageUrl: 'https://images.unsplash.com/photo-1600761343111-a0a623e1d6d8?q=80&w=800&auto=format&fit=crop', sellerEmail: 'seller3@example.com', category: 'Sport' },
-    { id: 8, make: 'Harley-Davidson', model: 'Iron 883', year: 2018, price: 9200, mileage: 18000, engineSize: 883, description: 'Icónica Iron 883...', imageUrl: 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800&auto=format&fit=crop', sellerEmail: 'seller6@example.com', category: 'Cruiser' },
-    { id: 9, make: 'KTM', model: '390 Adventure', year: 2022, price: 6500, mileage: 5000, engineSize: 373, description: 'Perfecta trail ligera...', imageUrl: 'https://images.unsplash.com/photo-1627916699311-3a088371295b?q=80&w=800&auto=format&fit=crop', sellerEmail: 'user@motomarket.com', category: 'Off-Road' }
+    { id: 1, make: 'Honda', model: 'CB650R', year: 2021, price: 7500, mileage: 8500, engineSize: 649, description: 'Como nueva...', imageUrls: ['https://images.unsplash.com/photo-1621115132957-81df81347053?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller1@example.com', category: 'Sport' },
+    { id: 2, make: 'Kawasaki', model: 'Z900', year: 2020, price: 8200, mileage: 12000, engineSize: 948, description: 'Vendo Kawasaki Z900...', imageUrls: ['https://images.unsplash.com/photo-1623563720235-3a0639f60324?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Sport' },
+    { id: 3, make: 'Yamaha', model: 'MT-07', year: 2022, price: 6800, mileage: 4500, engineSize: 689, description: 'Yamaha MT-07 del 2022...', imageUrls: ['https://images.unsplash.com/photo-1640890656113-3a137250abfa?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller2@example.com', category: 'Sport' },
+    { id: 4, make: 'BMW', model: 'R1250GS', year: 2021, price: 21500, mileage: 15000, engineSize: 1254, description: 'Impresionante R1250GS...', imageUrls: ['https://images.unsplash.com/photo-1623563720275-2c86b2253245?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Touring' },
+    { id: 5, make: 'Ducati', model: 'Panigale V2', year: 2020, price: 16000, mileage: 9800, engineSize: 955, description: 'Ducati Panigale V2...', imageUrls: ['https://images.unsplash.com/photo-1600761343111-a0a623e1d6d8?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller3@example.com', category: 'Sport' },
+    { id: 8, make: 'Harley-Davidson', model: 'Iron 883', year: 2018, price: 9200, mileage: 18000, engineSize: 883, description: 'Icónica Iron 883...', imageUrls: ['https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller6@example.com', category: 'Cruiser' },
+    { id: 9, make: 'KTM', model: '390 Adventure', year: 2022, price: 6500, mileage: 5000, engineSize: 373, description: 'Perfecta trail ligera...', imageUrls: ['https://images.unsplash.com/photo-1627916699311-3a088371295b?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Off-Road' }
 ];
 
-export type View = 'home' | 'detail' | 'sell' | 'profile' | 'favorites' | 'chat' | 'login';
+const mockConversations: ChatConversation[] = [
+    { id: 'convo1', participants: ['user@motomarket.com', 'seller1@example.com'], motorcycleId: 1 },
+];
+
+const mockMessages: ChatMessage[] = [
+    { id: 'msg1', conversationId: 'convo1', senderEmail: 'user@motomarket.com', text: 'Hola, ¿sigue disponible la Honda CB650R?', timestamp: Date.now() - 1000 * 60 * 5 },
+    { id: 'msg2', conversationId: 'convo1', senderEmail: 'seller1@example.com', text: '¡Hola! Sí, todavía está a la venta.', timestamp: Date.now() - 1000 * 60 * 4 },
+];
+
+export type View = 'home' | 'detail' | 'sell' | 'profile' | 'favorites' | 'chat' | 'chatList' | 'chatDetail' | 'login';
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>('home');
   const [selectedMotorcycle, setSelectedMotorcycle] = useState<Motorcycle | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [motorcycles, setMotorcycles] = useState<Motorcycle[]>(mockMotorcycles);
+  const [conversations, setConversations] = useState<ChatConversation[]>(mockConversations);
+  const [messages, setMessages] = useState<ChatMessage[]>(mockMessages);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
@@ -34,26 +49,56 @@ const App: React.FC = () => {
   const [engineSizeCategory, setEngineSizeCategory] = useState('any');
   const [selectedCategory, setSelectedCategory] = useState<MotorcycleCategory>('All');
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  
+  const [favorites, setFavorites] = useState<number[]>([]);
+
+  useEffect(() => {
+    try {
+      const storedFavorites = window.localStorage.getItem('motoMarketFavorites');
+      if (storedFavorites) {
+        setFavorites(JSON.parse(storedFavorites));
+      }
+    } catch (error) {
+      console.error("Failed to parse favorites from localStorage", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem('motoMarketFavorites', JSON.stringify(favorites));
+  }, [favorites]);
+
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [view, selectedMotorcycle]);
+  }, [view, selectedMotorcycle, selectedConversationId]);
 
   const handleNavigate = (newView: View) => {
-    setView(newView);
+    if (newView === 'chat') {
+        setView('chatList');
+    } else {
+        setView(newView);
+    }
   };
 
   const handleSelectMotorcycle = (moto: Motorcycle) => { setSelectedMotorcycle(moto); setView('detail'); };
-  const handleBackToPrevView = () => { setSelectedMotorcycle(null); setView('home'); };
+  const handleBackToPrevView = () => {
+    if (view === 'chatDetail') {
+        setSelectedConversationId(null);
+        setView('chatList');
+    } else {
+        setSelectedMotorcycle(null);
+        setView('home');
+    }
+  };
   const handleLoginSuccess = (user: User) => { setCurrentUser(user); setView('home'); };
   const handleLogout = () => { setCurrentUser(null); setView('home'); };
 
-  const handlePublish = (newMotoData: Omit<Motorcycle, 'id' | 'imageUrl' | 'sellerEmail' | 'category'>) => {
+  const handlePublish = (newMotoData: Omit<Motorcycle, 'id' | 'sellerEmail' | 'category'>) => {
     if(!currentUser) { return; }
     const newMoto: Motorcycle = {
         ...newMotoData,
         id: motorcycles.length + 1,
-        imageUrl: `https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=800&auto=format&fit=crop`,
+        imageUrls: newMotoData.imageUrls.length > 0 ? newMotoData.imageUrls : [`https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=800&auto=format&fit=crop`],
         sellerEmail: currentUser.email,
         category: 'Sport', // Default category for now
     };
@@ -66,6 +111,70 @@ const App: React.FC = () => {
     setPriceRange({ min: '', max: '' });
     setYearRange({ min: '', max: '' });
     setEngineSizeCategory('any');
+  };
+  
+  const handleStartOrGoToChat = (motorcycle: Motorcycle) => {
+    if (!currentUser || currentUser.email === motorcycle.sellerEmail) {
+        alert("No puedes iniciar un chat contigo mismo.");
+        return;
+    };
+
+    const existingConversation = conversations.find(c => 
+        c.motorcycleId === motorcycle.id && c.participants.includes(currentUser.email)
+    );
+
+    if (existingConversation) {
+        setSelectedConversationId(existingConversation.id);
+        setView('chatDetail');
+    } else {
+        const newConversation: ChatConversation = {
+            id: `convo${conversations.length + 1}`,
+            participants: [currentUser.email, motorcycle.sellerEmail],
+            motorcycleId: motorcycle.id,
+        };
+        setConversations(prev => [...prev, newConversation]);
+        setSelectedConversationId(newConversation.id);
+        setView('chatDetail');
+    }
+  };
+
+  const handleSendMessage = (conversationId: string, text: string) => {
+    if (!currentUser) return;
+    const newMessage: ChatMessage = {
+        id: `msg${Math.random()}`,
+        conversationId,
+        senderEmail: currentUser.email,
+        text,
+        timestamp: Date.now(),
+    };
+    setMessages(prev => [...prev, newMessage]);
+
+    // Simulate reply
+    const conversation = conversations.find(c => c.id === conversationId);
+    if (!conversation) return;
+    const otherUser = conversation.participants.find(p => p !== currentUser.email);
+    if (!otherUser) return;
+    
+    setTimeout(() => {
+        const reply: ChatMessage = {
+            id: `msg${Math.random()}`,
+            conversationId,
+            senderEmail: otherUser,
+            text: '¡Entendido! Lo reviso y te comento.',
+            timestamp: Date.now(),
+        };
+        setMessages(prev => [...prev, reply]);
+    }, 1500);
+  };
+  
+  const handleToggleFavorite = (motoId: number) => {
+    setFavorites(prev => {
+        if (prev.includes(motoId)) {
+            return prev.filter(id => id !== motoId);
+        } else {
+            return [...prev, motoId];
+        }
+    });
   };
 
   const filteredMotorcycles = useMemo(() => {
@@ -104,6 +213,10 @@ const App: React.FC = () => {
     return motorcycles.filter(moto => moto.sellerEmail === currentUser.email);
   }, [motorcycles, currentUser]);
   
+  const favoriteMotorcycles = useMemo(() => {
+    return motorcycles.filter(moto => favorites.includes(moto.id));
+  }, [motorcycles, favorites]);
+  
   const PlaceholderView = ({ title }: { title: string }) => (
     <div className="p-8 text-center h-full flex flex-col justify-center items-center">
         <h2 className="text-2xl font-bold text-foreground-light dark:text-foreground-dark">{title}</h2>
@@ -111,24 +224,57 @@ const App: React.FC = () => {
     </div>
   );
 
-  // If the user is not logged in, render only the LoginView.
   if (!currentUser) {
     return <LoginView onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // Main application content for logged-in users.
   const renderContent = () => {
     switch (view) {
       case 'detail':
-        return selectedMotorcycle && <MotorcycleDetailView motorcycle={selectedMotorcycle} onBack={handleBackToPrevView} />;
+        return selectedMotorcycle && <MotorcycleDetailView 
+            motorcycle={selectedMotorcycle} 
+            onBack={handleBackToPrevView} 
+            onStartChat={handleStartOrGoToChat} 
+            isFavorite={favorites.includes(selectedMotorcycle.id)}
+            onToggleFavorite={handleToggleFavorite}
+        />;
       case 'sell':
         return <SellForm onBack={() => setView('home')} onPublish={handlePublish} />;
       case 'profile':
         return <ProfileView currentUser={currentUser} userMotorcycles={userMotorcycles} onGoToSell={() => setView('sell')} onSelectMotorcycle={handleSelectMotorcycle} onLogout={handleLogout} />;
       case 'favorites':
-        return <PlaceholderView title="Favoritos" />;
-      case 'chat':
-        return <PlaceholderView title="Chat" />;
+        return <FavoritesView 
+            motorcycles={favoriteMotorcycles} 
+            onSelectMotorcycle={handleSelectMotorcycle}
+            favorites={favorites}
+            onToggleFavorite={handleToggleFavorite}
+        />;
+      case 'chatList':
+        return <ChatListView 
+            conversations={conversations.filter(c => c.participants.includes(currentUser.email))}
+            messages={messages}
+            motorcycles={motorcycles}
+            currentUser={currentUser}
+            onSelectConversation={(convoId) => {
+                setSelectedConversationId(convoId);
+                setView('chatDetail');
+            }}
+        />;
+      case 'chatDetail': {
+        const conversation = conversations.find(c => c.id === selectedConversationId);
+        const motorcycle = motorcycles.find(m => m.id === conversation?.motorcycleId);
+        if (!conversation || !motorcycle) {
+            return <PlaceholderView title="Error de Chat" />;
+        }
+        return <ChatDetailView
+            conversation={conversation}
+            messages={messages.filter(m => m.conversationId === selectedConversationId).sort((a,b) => a.timestamp - b.timestamp)}
+            motorcycle={motorcycle}
+            currentUser={currentUser}
+            onBack={handleBackToPrevView}
+            onSendMessage={handleSendMessage}
+        />;
+      }
       case 'home':
       default:
         return (
@@ -137,25 +283,33 @@ const App: React.FC = () => {
             onSelectMotorcycle={handleSelectMotorcycle}
             selectedCategory={selectedCategory}
             onSelectCategory={setSelectedCategory}
+            favorites={favorites}
+            onToggleFavorite={handleToggleFavorite}
           />
         );
     }
   };
   
+  const isHeaderVisible = view !== 'detail' && view !== 'chatDetail';
+  const isBottomNavVisible = view !== 'detail' && view !== 'chatDetail';
+  const mainContentPadding = isBottomNavVisible ? 'pb-24' : '';
+
+
   return (
     <div className="flex flex-col min-h-screen bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark">
-      {view !== 'detail' && (
+      {isHeaderVisible && (
         <Header 
+          currentView={view}
           searchTerm={searchTerm} 
           setSearchTerm={setSearchTerm} 
           onOpenFilters={() => setIsFilterModalOpen(true)}
         />
       )}
-      <main className={`flex-1 ${view !== 'detail' ? 'pb-24' : ''}`}>
+      <main className={`flex-1 ${mainContentPadding}`}>
         {renderContent()}
       </main>
-      {view !== 'detail' && (
-        <BottomNav currentView={view} onNavigate={handleNavigate} />
+      {isBottomNavVisible && (
+        <BottomNav currentView={view === 'chatList' || view === 'chatDetail' ? 'chat' : view} onNavigate={handleNavigate} />
       )}
       <FilterModal
         isOpen={isFilterModalOpen}

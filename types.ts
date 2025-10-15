@@ -9,11 +9,25 @@ export interface Motorcycle {
   mileage: number;
   engineSize: number;
   description: string;
-  imageUrl: string;
+  imageUrls: string[];
   sellerEmail: string;
   category: Exclude<MotorcycleCategory, 'All'>;
 }
 
 export interface User {
   email: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  senderEmail: string;
+  text: string;
+  timestamp: number;
+}
+
+export interface ChatConversation {
+  id: string;
+  participants: string[];
+  motorcycleId: number;
 }

@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { View } from '../App';
-import { HomeIcon, FavoritesIcon, PlusIcon, ChatIcon, ProfileIcon } from './Icons';
+import { MotorcycleIcon, HeartIcon, PlusIcon, ChatIcon, ProfileIcon } from './Icons';
 
 interface BottomNavProps {
   currentView: View;
@@ -9,8 +10,8 @@ interface BottomNavProps {
 
 const BottomNav: React.FC<BottomNavProps> = ({ currentView, onNavigate }) => {
   const navItems = [
-    { view: 'home', icon: HomeIcon, label: 'Home' },
-    { view: 'favorites', icon: FavoritesIcon, label: 'Favorites' },
+    { view: 'home', icon: MotorcycleIcon, label: 'Home' },
+    { view: 'favorites', icon: HeartIcon, label: 'Favorites' },
     { view: 'sell', icon: PlusIcon, label: 'Sell' },
     { view: 'chat', icon: ChatIcon, label: 'Chat' },
     { view: 'profile', icon: ProfileIcon, label: 'Profile' },

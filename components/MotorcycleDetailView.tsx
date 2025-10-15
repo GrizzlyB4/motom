@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Motorcycle } from '../types';
-import { ArrowLeftIcon, RoadIcon, EngineIcon, TagIcon, ProfileIcon } from './Icons';
+import { ArrowLeftIcon, RoadIcon, EngineIcon, TagIcon, ProfileIcon, HeartIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons';
 
 interface MotorcycleDetailViewProps {
   motorcycle: Motorcycle;
   onBack: () => void;
+  onStartChat: (motorcycle: Motorcycle) => void;
+  isFavorite: boolean;
+  onToggleFavorite: (motoId: number) => void;
 }
 
 const SpecItem: React.FC<{ icon: React.ReactNode; label: string; value: string | number }> = ({ icon, label, value }) => (
@@ -16,24 +19,62 @@ const SpecItem: React.FC<{ icon: React.ReactNode; label: string; value: string |
 );
 
 
-const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({ motorcycle, onBack }) => {
+const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({ motorcycle, onBack, onStartChat, isFavorite, onToggleFavorite }) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(motorcycle.price);
+
+  const nextImage = () => {
+    setCurrentImageIndex((prevIndex) => (prevIndex + 1) % motorcycle.imageUrls.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prevIndex) => (prevIndex - 1 + motorcycle.imageUrls.length) % motorcycle.imageUrls.length);
+  };
+
+  const hasMultipleImages = motorcycle.imageUrls.length > 1;
 
   return (
     <div className="bg-background-light dark:bg-background-dark min-h-screen">
        <header className="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm border-b border-border-light dark:border-border-dark">
-         <div className="px-4 py-3 h-[57px] flex items-center">
+         <div className="px-4 py-3 h-[57px] flex items-center justify-between">
             <button onClick={onBack} className="p-2 -ml-2">
                 <ArrowLeftIcon className="w-6 h-6 text-foreground-light dark:text-foreground-dark" />
+            </button>
+             <button onClick={() => onToggleFavorite(motorcycle.id)} className="p-2 -mr-2" aria-label="Añadir a favoritos">
+                <HeartIcon 
+                    filled={isFavorite} 
+                    className={`w-7 h-7 transition-colors ${isFavorite ? 'text-primary' : 'text-foreground-muted-light dark:text-foreground-muted-dark hover:text-primary'}`} 
+                />
             </button>
          </div>
        </header>
 
       <div>
-        <div 
-            className="w-full h-80 bg-center bg-no-repeat bg-cover"
-            style={{ backgroundImage: `url("${motorcycle.imageUrl}")` }}
-        ></div>
+        <div className="relative w-full h-80 bg-black">
+            <div 
+                className="w-full h-full bg-center bg-no-repeat bg-contain"
+                style={{ backgroundImage: `url("${motorcycle.imageUrls[currentImageIndex]}")` }}
+            ></div>
+
+            {hasMultipleImages && (
+                <>
+                    <button onClick={prevImage} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 text-white p-2 rounded-full hover:bg-black/60 transition-colors" aria-label="Imagen anterior">
+                        <ChevronLeftIcon className="w-6 h-6"/>
+                    </button>
+                    <button onClick={nextImage} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 text-white p-2 rounded-full hover:bg-black/60 transition-colors" aria-label="Siguiente imagen">
+                        <ChevronRightIcon className="w-6 h-6"/>
+                    </button>
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
+                        {motorcycle.imageUrls.map((_, index) => (
+                            <div
+                                key={index}
+                                className={`w-2 h-2 rounded-full ${index === currentImageIndex ? 'bg-white' : 'bg-white/50'}`}
+                            />
+                        ))}
+                    </div>
+                </>
+            )}
+        </div>
         
         <div className="p-4 pb-28">
             <div className="mb-6">
@@ -82,7 +123,7 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({ motorcycle,
       </div>
        <div className="fixed bottom-0 left-0 right-0 p-4 z-20 bg-gradient-to-t from-background-light dark:from-background-dark">
             <button 
-            onClick={() => alert('¡Mensaje enviado al vendedor!')}
+            onClick={() => onStartChat(motorcycle)}
             className="w-full bg-primary text-white font-bold py-4 px-8 rounded-xl hover:opacity-90 transition-opacity duration-300 shadow-lg">
             Contactar al Vendedor
             </button>

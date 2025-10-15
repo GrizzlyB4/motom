@@ -2,16 +2,18 @@ import React, { useState, useCallback } from 'react';
 import { Motorcycle } from '../types';
 import { generateAdDescription } from '../services/geminiService';
 import Spinner from './Spinner';
+import { UploadIcon, TrashIcon } from './Icons';
 
 interface SellFormProps {
   onBack: () => void;
-  onPublish: (moto: Omit<Motorcycle, 'id' | 'imageUrl' | 'sellerEmail' | 'category'>) => void;
+  onPublish: (moto: Omit<Motorcycle, 'id' | 'sellerEmail' | 'category'>) => void;
 }
 
 const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
   const [formData, setFormData] = useState({
     make: '', model: '', year: '', price: '', mileage: '', engineSize: '', description: '',
   });
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [aiKeywords, setAiKeywords] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -20,19 +22,49 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      const remainingSlots = 5 - imageUrls.length;
+      if (files.length > remainingSlots) {
+        alert(`Puedes subir un máximo de 5 imágenes. Ya tienes ${imageUrls.length}, puedes añadir ${remainingSlots} más.`);
+      }
+
+      const filesToProcess = files.slice(0, remainingSlots);
+
+      // FIX: Explicitly type `file` as `File` to resolve type errors on `file.type` and `readAsDataURL(file)`.
+      filesToProcess.forEach((file: File) => {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImageUrls(prev => [...prev, reader.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setImageUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleGenerateDescription = useCallback(async () => {
     setIsGenerating(true);
     const keywords = `Make: ${formData.make}, Model: ${formData.model}, Year: ${formData.year}, Extra notes: ${aiKeywords}`;
     const generatedDesc = await generateAdDescription(keywords);
     setFormData(prev => ({ ...prev, description: generatedDesc }));
     setIsGenerating(false);
-  }, [formData, aiKeywords]);
+  }, [formData.make, formData.model, formData.year, aiKeywords]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const { make, model, year, price, mileage, engineSize, description } = formData;
     if (!make || !model || !year || !price || !mileage || !engineSize || !description) {
         alert('Por favor, completa todos los campos.');
+        return;
+    }
+    if (imageUrls.length === 0) {
+        alert('Por favor, sube al menos una foto de la moto.');
         return;
     }
     onPublish({
@@ -42,6 +74,7 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
       mileage: parseInt(mileage, 10),
       engineSize: parseInt(engineSize, 10),
       description,
+      imageUrls,
     });
   };
 
@@ -49,8 +82,33 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
 
   return (
     <div className="p-4 max-w-2xl mx-auto">
-        <h2 className="text-2xl font-bold text-center mb-6">Vender mi Moto</h2>
       <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-foreground-light dark:text-foreground-dark mb-2">Fotos (hasta 5)</label>
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+            {imageUrls.map((url, index) => (
+              <div key={index} className="relative aspect-square">
+                <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover rounded-lg"/>
+                <button 
+                  type="button" 
+                  onClick={() => handleRemoveImage(index)}
+                  className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 hover:bg-black/80 transition-colors"
+                  aria-label="Eliminar imagen"
+                >
+                  <TrashIcon className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+            {imageUrls.length < 5 && (
+              <label className="flex flex-col items-center justify-center w-full aspect-square border-2 border-dashed border-border-light dark:border-border-dark rounded-lg cursor-pointer hover:bg-black/[.03] dark:hover:bg-white/[.05] transition-colors">
+                <UploadIcon className="w-8 h-8 text-foreground-muted-light dark:text-foreground-muted-dark"/>
+                <span className="text-xs text-center text-foreground-muted-light dark:text-foreground-muted-dark mt-1">Añadir foto</span>
+                <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
+              </label>
+            )}
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input type="text" name="make" placeholder="Marca" onChange={handleChange} value={formData.make} className="form-input" required />
           <input type="text" name="model" placeholder="Modelo" onChange={handleChange} value={formData.model} className="form-input" required />

@@ -7,11 +7,13 @@ interface MotorcycleListProps {
   onSelectMotorcycle: (moto: Motorcycle) => void;
   selectedCategory: MotorcycleCategory;
   onSelectCategory: (category: MotorcycleCategory) => void;
+  favorites: number[];
+  onToggleFavorite: (motoId: number) => void;
 }
 
 const categories: MotorcycleCategory[] = ['All', 'Sport', 'Cruiser', 'Off-Road', 'Touring'];
 
-const MotorcycleList: React.FC<MotorcycleListProps> = ({ motorcycles, onSelectMotorcycle, selectedCategory, onSelectCategory }) => {
+const MotorcycleList: React.FC<MotorcycleListProps> = ({ motorcycles, onSelectMotorcycle, selectedCategory, onSelectCategory, favorites, onToggleFavorite }) => {
   return (
     <div>
       <div className="px-4 py-3">
@@ -35,7 +37,13 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({ motorcycles, onSelectMo
       {motorcycles.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4">
           {motorcycles.map(moto => (
-            <MotorcycleCard key={moto.id} motorcycle={moto} onSelect={onSelectMotorcycle} />
+            <MotorcycleCard 
+                key={moto.id} 
+                motorcycle={moto} 
+                onSelect={onSelectMotorcycle} 
+                isFavorite={favorites.includes(moto.id)}
+                onToggleFavorite={onToggleFavorite}
+            />
           ))}
         </div>
       ) : (

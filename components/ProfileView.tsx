@@ -43,7 +43,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ currentUser, userMotorcycles,
                const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(moto.price);
                return (
                 <div key={moto.id} onClick={() => onSelectMotorcycle(moto)} className="bg-card-light dark:bg-card-dark p-4 rounded-xl flex items-center gap-4 cursor-pointer hover:bg-black/[.03] dark:hover:bg-white/[.05] transition-colors">
-                    <img src={moto.imageUrl} alt={`${moto.make} ${moto.model}`} className="w-24 h-16 object-cover rounded-lg flex-shrink-0" />
+                    <img src={moto.imageUrls[0]} alt={`${moto.make} ${moto.model}`} className="w-24 h-16 object-cover rounded-lg flex-shrink-0" />
                     <div className="flex-grow">
                         <p className="font-bold">{moto.make} {moto.model}</p>
                         <p className="text-sm text-primary">{formattedPrice}</p>

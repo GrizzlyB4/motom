@@ -1,22 +1,36 @@
 import React from 'react';
 import { Motorcycle } from '../types';
+import { HeartIcon } from './Icons';
 
 interface MotorcycleCardProps {
   motorcycle: Motorcycle;
   onSelect: (moto: Motorcycle) => void;
+  isFavorite: boolean;
+  onToggleFavorite: (id: number) => void;
 }
 
-const MotorcycleCard: React.FC<MotorcycleCardProps> = ({ motorcycle, onSelect }) => {
+const MotorcycleCard: React.FC<MotorcycleCardProps> = ({ motorcycle, onSelect, isFavorite, onToggleFavorite }) => {
   const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(motorcycle.price);
 
   return (
     <div 
-      className="bg-card-light dark:bg-card-dark rounded-xl overflow-hidden shadow-sm border border-border-light dark:border-border-dark cursor-pointer transition-transform duration-200 hover:scale-[1.02]"
+      className="relative bg-card-light dark:bg-card-dark rounded-xl overflow-hidden shadow-sm border border-border-light dark:border-border-dark cursor-pointer transition-transform duration-200 hover:scale-[1.02]"
       onClick={() => onSelect(motorcycle)}
     >
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleFavorite(motorcycle.id);
+        }}
+        className={`absolute top-3 right-3 p-1.5 bg-black/40 rounded-full transition-colors ${isFavorite ? 'text-primary' : 'text-white'}`}
+        aria-label="Añadir a favoritos"
+      >
+        <HeartIcon filled={isFavorite} className="w-6 h-6" />
+      </button>
+
       <div 
         className="w-full h-48 bg-center bg-no-repeat bg-cover" 
-        style={{ backgroundImage: `url("${motorcycle.imageUrl}")` }}
+        style={{ backgroundImage: `url("${motorcycle.imageUrls[0]}")` }}
       ></div>
       <div className="p-4">
         <h3 className="text-lg font-bold text-foreground-light dark:text-foreground-dark truncate">{motorcycle.make} {motorcycle.model}</h3>
