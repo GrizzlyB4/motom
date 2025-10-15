@@ -99,7 +99,7 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({
               <button onClick={() => onToggleFavorite(motorcycle.id)} className="p-2 -mr-2" aria-label="Añadir a favoritos">
                   <HeartIcon 
                       filled={isFavorite} 
-                      className={`w-7 h-7 transition-colors ${isFavorite ? 'text-primary' : 'text-foreground-muted-light dark:text-foreground-muted-dark hover:text-primary'}`} 
+                      className={`w-7 h-7 transition-all duration-200 ${isFavorite ? 'text-primary scale-110' : 'text-foreground-muted-light dark:text-foreground-muted-dark hover:text-primary'}`} 
                   />
               </button>
             </div>
@@ -134,14 +134,14 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({
         </div>
         
         <div className="p-4 pb-28">
-            <div className="mb-6">
+            <div className="animate-fade-in-up mb-6" style={{ animationDelay: '50ms' }}>
                 <h1 className="text-3xl font-bold text-foreground-light dark:text-foreground-dark">{motorcycle.make} {motorcycle.model}</h1>
                 <p className="text-lg text-foreground-muted-light dark:text-foreground-muted-dark mt-1">{motorcycle.year}</p>
                 <p className="text-3xl font-bold text-primary mt-2">{formattedPrice}</p>
             </div>
             
             <div className="space-y-8">
-                <div>
+                <div className="animate-fade-in-up" style={{ animationDelay: '150ms' }}>
                     <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark mb-3">Especificaciones Clave</h3>
                     <div className="grid grid-cols-3 gap-3">
                         <SpecItem 
@@ -162,12 +162,12 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({
                     </div>
                 </div>
 
-                <div>
+                <div className="animate-fade-in-up" style={{ animationDelay: '250ms' }}>
                     <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark mb-2">Descripción</h3>
                     <p className="text-foreground-light dark:text-foreground-dark leading-relaxed whitespace-pre-wrap">{motorcycle.description}</p>
                 </div>
 
-                <div>
+                <div className="animate-fade-in-up" style={{ animationDelay: '350ms' }}>
                     <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark mb-3">Vendedor</h3>
                     <div onClick={() => onViewPublicProfile(motorcycle.sellerEmail)} className="bg-card-light dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-4 flex items-center gap-3 cursor-pointer hover:bg-black/[.03] dark:hover:bg-white/[.05] transition-colors">
                         {seller.profileImageUrl ? (
@@ -194,7 +194,7 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({
                 </div>
 
                 {similarMotorcycles.length > 0 && (
-                    <div>
+                    <div className="animate-fade-in-up" style={{ animationDelay: '450ms' }}>
                         <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark mb-3">Motos Similares</h3>
                         <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 no-scrollbar">
                             {similarMotorcycles.map(moto => (
@@ -226,7 +226,7 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({
        <div className="fixed bottom-0 left-0 right-0 p-4 z-20 bg-gradient-to-t from-background-light dark:from-background-dark">
             <button 
             onClick={() => onStartChat(motorcycle)}
-            className="w-full bg-primary text-white font-bold py-4 px-8 rounded-xl hover:opacity-90 transition-opacity duration-300 shadow-lg">
+            className="w-full bg-primary text-white font-bold py-4 px-8 rounded-xl hover:opacity-90 transition-all duration-300 shadow-lg active:scale-95">
             Contactar al Vendedor
             </button>
         </div>

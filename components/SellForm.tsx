@@ -6,7 +6,8 @@ import { UploadIcon, TrashIcon } from './Icons';
 
 interface SellFormProps {
   onBack: () => void;
-  onPublish: (moto: Omit<Motorcycle, 'id' | 'sellerEmail' | 'category'>) => void;
+  // FIX: Align prop type with the implementation in App.tsx. The form should not be responsible for setting the status.
+  onPublish: (moto: Omit<Motorcycle, 'id' | 'sellerEmail' | 'category' | 'status'>) => void;
 }
 
 const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {

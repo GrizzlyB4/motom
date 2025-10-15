@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Motorcycle, User, MotorcycleCategory, ChatConversation, ChatMessage, HeatmapPoint, SavedSearch } from './types';
 import Header from './components/Header';
@@ -290,7 +291,8 @@ const App: React.FC = () => {
     }
   };
   
-  const handleLoginSuccess = (user: User) => {
+  // FIX: Update function signature to only require email, which is what LoginView provides.
+  const handleLoginSuccess = (user: { email: string }) => {
     const foundUser = users.find(u => u.email.toLowerCase() === user.email.toLowerCase());
     if (foundUser) {
         setCurrentUser(foundUser);
@@ -755,10 +757,14 @@ const App: React.FC = () => {
         />
       )}
       <main className={`flex-1 ${mainContentPadding}`}>
-        {renderContent()}
+        <div key={view} className="animate-view-transition">
+          {renderContent()}
+        </div>
       </main>
       {isBottomNavVisible && (
-        <BottomNav currentView={view === 'chatList' || view === 'chatDetail' ? 'chat' : view} onNavigate={handleNavigate} />
+        // FIX: Simplify the currentView prop to avoid a TypeScript type inference error.
+        // `startsWith` is a robust way to map 'chatList' and 'chatDetail' to the 'chat' nav item.
+        <BottomNav currentView={view.startsWith('chat') ? 'chat' : view} onNavigate={handleNavigate} />
       )}
       <FilterModal
         isOpen={isFilterModalOpen}

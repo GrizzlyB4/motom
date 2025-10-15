@@ -24,7 +24,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentView, onNavigate }) => {
           const isActive = currentView === item.view;
           if (item.view === 'sell') {
             return (
-              <button key={item.view} onClick={() => onNavigate(item.view)} className="flex flex-col items-center justify-center -mt-8" aria-label={item.label}>
+              <button key={item.view} onClick={() => onNavigate(item.view)} className="flex flex-col items-center justify-center -mt-8 transition-transform active:scale-90" aria-label={item.label}>
                 <div className="relative flex items-center justify-center w-16 h-16 rounded-full bg-primary text-white shadow-lg">
                   <item.icon />
                 </div>
@@ -35,7 +35,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentView, onNavigate }) => {
             <button
               key={item.view}
               onClick={() => onNavigate(item.view)}
-              className={`flex flex-col items-center gap-1 transition-colors ${
+              className={`flex flex-col items-center gap-1 transition-all duration-200 active:scale-90 ${
                 isActive ? 'text-primary' : 'text-foreground-muted-light dark:text-foreground-muted-dark hover:text-primary dark:hover:text-primary'
               }`}
               aria-label={item.label}

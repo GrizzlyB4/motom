@@ -3,7 +3,8 @@ import { User } from '../types';
 import { MotorcycleIcon } from './Icons';
 
 interface LoginViewProps {
-  onLoginSuccess: (user: User) => void;
+  // FIX: Update prop type to reflect that only email is passed on login.
+  onLoginSuccess: (user: { email: string }) => void;
   onNavigateToSignUp: () => void;
 }
 
