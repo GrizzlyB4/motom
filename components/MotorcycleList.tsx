@@ -1,7 +1,7 @@
 import React from 'react';
 import { Motorcycle, MotorcycleCategory } from '../types';
 import MotorcycleCard from './MotorcycleCard';
-import { HeartIcon } from './Icons';
+import { HeartIcon, BellIcon } from './Icons';
 
 interface MotorcycleListProps {
   motorcycles: Motorcycle[];
@@ -13,13 +13,16 @@ interface MotorcycleListProps {
   onToggleFavorite: (motoId: number) => void;
   onAddHeatmapPoint: (event: React.MouseEvent) => void;
   searchTerm: string;
+  onSaveSearch: () => void;
+  areFiltersActive: boolean;
 }
 
 const categories: MotorcycleCategory[] = ['All', 'Sport', 'Cruiser', 'Off-Road', 'Touring'];
 
 const MotorcycleList: React.FC<MotorcycleListProps> = ({ 
     motorcycles, onSelectMotorcycle, selectedCategory, onSelectCategory, 
-    favorites, onToggleFavorite, onAddHeatmapPoint, featuredMotorcycles, searchTerm
+    favorites, onToggleFavorite, onAddHeatmapPoint, featuredMotorcycles, searchTerm,
+    onSaveSearch, areFiltersActive
 }) => {
   
   const showFeatured = featuredMotorcycles.length > 0 && selectedCategory === 'All' && searchTerm === '';
@@ -88,6 +91,18 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
           ))}
         </div>
       </div>
+      
+      {areFiltersActive && (
+        <div className="px-4 pb-2">
+            <button
+                onClick={(e) => { e.stopPropagation(); onSaveSearch(); }}
+                className="w-full flex items-center justify-center gap-2 bg-primary/10 text-primary font-bold py-3 px-4 rounded-xl hover:bg-primary/20 transition-colors duration-300"
+            >
+                <BellIcon className="w-5 h-5" />
+                Crear alerta para esta búsqueda
+            </button>
+        </div>
+      )}
 
       {motorcycles.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4">

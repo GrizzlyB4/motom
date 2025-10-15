@@ -38,6 +38,15 @@ export interface ChatConversation {
   motorcycleId: number;
 }
 
+export interface SavedSearch {
+  id: string;
+  searchTerm: string;
+  category: MotorcycleCategory;
+  priceRange: { min: string; max: string };
+  yearRange: { min: string; max: string };
+  engineSizeCategory: string;
+}
+
 export interface HeatmapPoint {
   x: number;
   y: number;

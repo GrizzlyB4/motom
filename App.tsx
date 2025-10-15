@@ -1,5 +1,6 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
-import { Motorcycle, User, MotorcycleCategory, ChatConversation, ChatMessage, HeatmapPoint } from './types';
+import { Motorcycle, User, MotorcycleCategory, ChatConversation, ChatMessage, HeatmapPoint, SavedSearch } from './types';
 import Header from './components/Header';
 import MotorcycleList from './components/MotorcycleList';
 import MotorcycleDetailView from './components/MotorcycleDetailView';
@@ -92,22 +93,32 @@ const App: React.FC = () => {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   
   const [favorites, setFavorites] = useState<number[]>([]);
+  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [userRatings, setUserRatings] = useState<{ [sellerEmail: string]: number }>({});
   const [heatmapData, setHeatmapData] = useState<HeatmapPoint[]>([]);
   const [isHeatmapVisible, setIsHeatmapVisible] = useState(false);
+  const [isTyping, setIsTyping] = useState<{ [conversationId: string]: boolean }>({});
 
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
   const [motoToPublish, setMotoToPublish] = useState<Omit<Motorcycle, 'id' | 'sellerEmail' | 'category' | 'status'> | null>(null);
 
 
   useEffect(() => {
-    if ('Notification' in window) {
-      setNotificationPermission(Notification.permission);
+    // Check for saved user session first
+    try {
+      const storedUser = window.localStorage.getItem('motoMarketCurrentUser');
+      if (storedUser) {
+        const user: User = JSON.parse(storedUser);
+        setCurrentUser(user);
+        setView('home');
+      }
+    } catch (error) {
+      console.error("Failed to parse user data from localStorage", error);
+      window.localStorage.removeItem('motoMarketCurrentUser');
     }
-  }, []);
-
-  useEffect(() => {
+    
+    // Load other app data from localStorage
     try {
       const storedFavorites = window.localStorage.getItem('motoMarketFavorites');
       if (storedFavorites) setFavorites(JSON.parse(storedFavorites));
@@ -118,10 +129,19 @@ const App: React.FC = () => {
       const storedHeatmapData = window.localStorage.getItem('motoMarketHeatmapData');
       if (storedHeatmapData) setHeatmapData(JSON.parse(storedHeatmapData));
 
+      const storedSearches = window.localStorage.getItem('motoMarketSavedSearches');
+      if (storedSearches) setSavedSearches(JSON.parse(storedSearches));
+
     } catch (error) {
-      console.error("Failed to parse data from localStorage", error);
+      console.error("Failed to parse app data from localStorage", error);
+    }
+    
+    // Check notification permission status
+    if ('Notification' in window) {
+      setNotificationPermission(Notification.permission);
     }
   }, []);
+
 
   useEffect(() => {
     window.localStorage.setItem('motoMarketFavorites', JSON.stringify(favorites));
@@ -130,6 +150,10 @@ const App: React.FC = () => {
   useEffect(() => {
     window.localStorage.setItem('motoMarketUserRatings', JSON.stringify(userRatings));
   }, [userRatings]);
+
+  useEffect(() => {
+    window.localStorage.setItem('motoMarketSavedSearches', JSON.stringify(savedSearches));
+  }, [savedSearches]);
 
 
   useEffect(() => {
@@ -171,6 +195,75 @@ const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, [favorites, currentUser]);
 
+    // Simulate new motorcycle listings to trigger notifications for saved searches
+    useEffect(() => {
+        if (!currentUser || savedSearches.length === 0 || Notification.permission !== 'granted') return;
+
+        const doesMotoMatchSearch = (moto: Motorcycle, search: SavedSearch): boolean => {
+            if (search.searchTerm) {
+                const lowercasedFilter = search.searchTerm.toLowerCase();
+                if (!`${moto.make} ${moto.model} ${moto.year}`.toLowerCase().includes(lowercasedFilter)) return false;
+            }
+            if (search.category !== 'All' && moto.category !== search.category) return false;
+            const minPrice = parseFloat(search.priceRange.min);
+            if (!isNaN(minPrice) && moto.price < minPrice) return false;
+            const maxPrice = parseFloat(search.priceRange.max);
+            if (!isNaN(maxPrice) && moto.price > maxPrice) return false;
+            const minYear = parseInt(search.yearRange.min, 10);
+            if (!isNaN(minYear) && moto.year < minYear) return false;
+            const maxYear = parseInt(search.yearRange.max, 10);
+            if (!isNaN(maxYear) && moto.year > maxYear) return false;
+            if (search.engineSizeCategory !== 'any') {
+                let match = false;
+                switch (search.engineSizeCategory) {
+                    case '125': match = moto.engineSize <= 125; break;
+                    case '125-500': match = moto.engineSize > 125 && moto.engineSize <= 500; break;
+                    case '501-1000': match = moto.engineSize > 500 && moto.engineSize <= 1000; break;
+                    case '1000+': match = moto.engineSize > 1000; break;
+                    default: match = true;
+                }
+                if (!match) return false;
+            }
+            return true;
+        };
+
+        const interval = setInterval(() => {
+            // Create a new mock motorcycle that might match some criteria
+            const newMoto: Motorcycle = {
+                id: Date.now(),
+                make: 'Triumph',
+                model: 'Street Triple',
+                year: 2023,
+                price: 9500,
+                mileage: 1500,
+                engineSize: 765,
+                description: 'Casi nueva, una bestia ágil y potente. Perfecta para curvas.',
+                imageUrls: ['https://images.unsplash.com/photo-1618364210243-5b2a441a6f6c?q=80&w=800&auto=format&fit=crop'],
+                sellerEmail: 'new-seller@example.com',
+                category: 'Sport',
+                status: 'for-sale',
+            };
+
+            const matchingSearches = savedSearches.filter(search => doesMotoMatchSearch(newMoto, search));
+
+            if (matchingSearches.length > 0) {
+                setMotorcycles(prev => [newMoto, ...prev]);
+                
+                const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(newMoto.price);
+                sendNotification(
+                    '¡Nueva moto encontrada!',
+                    {
+                        body: `¡Hemos encontrado una ${newMoto.make} ${newMoto.model} por ${formattedPrice} que coincide con tu búsqueda!`,
+                        icon: newMoto.imageUrls[0],
+                        tag: `new-moto-${newMoto.id}`
+                    }
+                );
+            }
+        }, 20000); // Check every 20 seconds
+
+        return () => clearInterval(interval);
+    }, [savedSearches, currentUser, notificationPermission]);
+
   const handleNavigate = (newView: View) => {
     if (newView === 'chat') {
         setView('chatList');
@@ -201,6 +294,11 @@ const App: React.FC = () => {
     const foundUser = users.find(u => u.email.toLowerCase() === user.email.toLowerCase());
     if (foundUser) {
         setCurrentUser(foundUser);
+        try {
+            window.localStorage.setItem('motoMarketCurrentUser', JSON.stringify(foundUser));
+        } catch (error) {
+            console.error("Failed to save user data to localStorage", error);
+        }
         setView('home');
     } else {
         alert("Usuario no encontrado. Por favor, regístrate.");
@@ -216,11 +314,21 @@ const App: React.FC = () => {
     const userToSave: User = { name: newUser.name, email: newUser.email };
     setUsers(prev => [...prev, userToSave]);
     setCurrentUser(userToSave);
+     try {
+        window.localStorage.setItem('motoMarketCurrentUser', JSON.stringify(userToSave));
+    } catch (error) {
+        console.error("Failed to save user data to localStorage", error);
+    }
     setView('home');
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
+    try {
+        window.localStorage.removeItem('motoMarketCurrentUser');
+    } catch (error) {
+        console.error("Failed to remove user data from localStorage", error);
+    }
     setView('login');
   };
 
@@ -300,24 +408,28 @@ const App: React.FC = () => {
     // Simulate reply
     const conversation = conversations.find(c => c.id === conversationId);
     if (!conversation) return;
-    const otherUser = conversation.participants.find(p => p !== currentUser.email);
-    if (!otherUser) return;
+    const otherUserEmail = conversation.participants.find(p => p !== currentUser.email);
+    if (!otherUserEmail) return;
+
+    setIsTyping(prev => ({ ...prev, [conversationId]: true }));
     
     setTimeout(() => {
         const reply: ChatMessage = {
             id: `msg${Math.random()}`,
             conversationId,
-            senderEmail: otherUser,
+            senderEmail: otherUserEmail,
             text: '¡Entendido! Lo reviso y te comento.',
             timestamp: Date.now(),
         };
+        setIsTyping(prev => ({ ...prev, [conversationId]: false }));
         setMessages(prev => [...prev, reply]);
 
         // Send a notification if the user is not viewing this specific chat
         if (view !== 'chatDetail' || selectedConversationId !== conversationId) {
             const motorcycle = motorcycles.find(m => m.id === conversation.motorcycleId);
+            const sender = users.find(u => u.email === otherUserEmail);
             sendNotification(
-              `Nuevo mensaje sobre ${motorcycle?.make || 'una moto'}`,
+              `Nuevo mensaje de ${sender?.name || 'Vendedor'}`,
               {
                 body: reply.text,
                 icon: motorcycle?.imageUrls[0],
@@ -345,8 +457,10 @@ const App: React.FC = () => {
 
   const handleUpdateProfileImage = (imageUrl: string) => {
     if (currentUser) {
-      setCurrentUser(prevUser => prevUser ? { ...prevUser, profileImageUrl: imageUrl } : null);
+      const updatedUser = { ...currentUser, profileImageUrl: imageUrl };
+      setCurrentUser(updatedUser);
       setUsers(prevUsers => prevUsers.map(u => u.email === currentUser.email ? {...u, profileImageUrl: imageUrl} : u));
+      window.localStorage.setItem('motoMarketCurrentUser', JSON.stringify(updatedUser));
     }
   };
   
@@ -416,6 +530,39 @@ const App: React.FC = () => {
   
   const handleToggleHeatmap = () => {
     setIsHeatmapVisible(prev => !prev);
+  };
+
+  const handleSaveSearch = () => {
+      const searchCriteria: SavedSearch = {
+          id: `search-${Date.now()}`,
+          searchTerm,
+          category: selectedCategory,
+          priceRange,
+          yearRange,
+          engineSizeCategory,
+      };
+      // Check if an identical search already exists
+      const alreadyExists = savedSearches.some(s => 
+          s.searchTerm === searchCriteria.searchTerm &&
+          s.category === searchCriteria.category &&
+          s.priceRange.min === searchCriteria.priceRange.min &&
+          s.priceRange.max === searchCriteria.priceRange.max &&
+          s.yearRange.min === searchCriteria.yearRange.min &&
+          s.yearRange.max === searchCriteria.yearRange.max &&
+          s.engineSizeCategory === searchCriteria.engineSizeCategory
+      );
+      
+      if (alreadyExists) {
+          alert('Ya tienes una alerta guardada con estos criterios.');
+          return;
+      }
+
+      setSavedSearches(prev => [...prev, searchCriteria]);
+      alert('¡Alerta guardada! Te notificaremos cuando encontremos motos que coincidan.');
+  };
+
+  const handleDeleteSearch = (searchId: string) => {
+      setSavedSearches(prev => prev.filter(s => s.id !== searchId));
   };
 
   const filteredMotorcycles = useMemo(() => {
@@ -513,6 +660,8 @@ const App: React.FC = () => {
             onUpdateProfileImage={handleUpdateProfileImage}
             onEditMotorcycle={handleNavigateToEdit}
             onMarkAsSold={handleMarkAsSold}
+            savedSearches={savedSearches}
+            onDeleteSearch={handleDeleteSearch}
         />;
       case 'publicProfile': {
         const seller = users.find(u => u.email === selectedSellerEmail);
@@ -563,10 +712,12 @@ const App: React.FC = () => {
             users={users}
             onBack={handleBackToPrevView}
             onSendMessage={handleSendMessage}
+            isTyping={isTyping[selectedConversationId] || false}
         />;
       }
       case 'home':
       default:
+        const areFiltersActive = searchTerm !== '' || selectedCategory !== 'All' || priceRange.min !== '' || priceRange.max !== '' || yearRange.min !== '' || yearRange.max !== '' || engineSizeCategory !== 'any';
         return (
           <MotorcycleList 
             motorcycles={filteredMotorcycles} 
@@ -578,6 +729,8 @@ const App: React.FC = () => {
             onToggleFavorite={handleToggleFavorite}
             onAddHeatmapPoint={handleAddHeatmapPoint}
             searchTerm={searchTerm}
+            onSaveSearch={handleSaveSearch}
+            areFiltersActive={areFiltersActive}
           />
         );
     }

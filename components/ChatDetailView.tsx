@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatConversation, ChatMessage, Motorcycle, User } from '../types';
 import { ArrowLeftIcon, SendIcon } from './Icons';
@@ -10,9 +11,18 @@ interface ChatDetailViewProps {
   users: User[];
   onBack: () => void;
   onSendMessage: (conversationId: string, text: string) => void;
+  isTyping: boolean;
 }
 
-const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages, motorcycle, currentUser, users, onBack, onSendMessage }) => {
+const TypingIndicator: React.FC = () => (
+    <div className="flex items-center gap-1.5 p-1">
+        <span className="w-2 h-2 bg-foreground-muted-light dark:bg-foreground-muted-dark rounded-full animate-pulse-fast" style={{ animationDelay: '0s' }}></span>
+        <span className="w-2 h-2 bg-foreground-muted-light dark:bg-foreground-muted-dark rounded-full animate-pulse-fast" style={{ animationDelay: '0.15s' }}></span>
+        <span className="w-2 h-2 bg-foreground-muted-light dark:bg-foreground-muted-dark rounded-full animate-pulse-fast" style={{ animationDelay: '0.3s' }}></span>
+    </div>
+);
+
+const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages, motorcycle, currentUser, users, onBack, onSendMessage, isTyping }) => {
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -21,7 +31,7 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages,
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, isTyping]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +43,15 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages,
 
   return (
     <div className="flex flex-col h-screen bg-background-light dark:bg-background-dark">
+        <style>{`
+            @keyframes pulse-fast {
+                0%, 100% { opacity: 0.3; }
+                50% { opacity: 1; }
+            }
+            .animate-pulse-fast {
+                animation: pulse-fast 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            }
+        `}</style>
       <header className="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm border-b border-border-light dark:border-border-dark">
         <div className="px-4 py-3 h-[57px] flex items-center gap-3">
           <button onClick={onBack} className="p-2 -ml-2">
@@ -57,6 +76,13 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages,
             </div>
           );
         })}
+        {isTyping && (
+            <div className="flex justify-start">
+              <div className="max-w-xs md:max-w-md p-3 rounded-2xl bg-card-light dark:bg-card-dark rounded-bl-lg">
+                <TypingIndicator />
+              </div>
+            </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 

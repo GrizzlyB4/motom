@@ -1,6 +1,6 @@
 import React from 'react';
-import { User, Motorcycle } from '../types';
-import { ProfileIcon, LogoutIcon, EditIcon } from './Icons';
+import { User, Motorcycle, SavedSearch } from '../types';
+import { ProfileIcon, LogoutIcon, EditIcon, TrashIcon } from './Icons';
 import StarRating from './StarRating';
 
 interface ProfileViewProps {
@@ -14,12 +14,37 @@ interface ProfileViewProps {
   onUpdateProfileImage: (imageUrl: string) => void;
   onEditMotorcycle: (moto: Motorcycle) => void;
   onMarkAsSold: (motoId: number) => void;
+  savedSearches: SavedSearch[];
+  onDeleteSearch: (searchId: string) => void;
 }
+
+const formatSearchCriteria = (search: SavedSearch): string => {
+    const parts: string[] = [];
+    if (search.searchTerm) parts.push(`'${search.searchTerm}'`);
+    if (search.category !== 'All') parts.push(search.category);
+    if (search.priceRange.min && search.priceRange.max) parts.push(`$${search.priceRange.min}-$${search.priceRange.max}`);
+    else if (search.priceRange.min) parts.push(`> $${search.priceRange.min}`);
+    else if (search.priceRange.max) parts.push(`< $${search.priceRange.max}`);
+    if (search.yearRange.min && search.yearRange.max) parts.push(`${search.yearRange.min}-${search.yearRange.max}`);
+    else if (search.yearRange.min) parts.push(`> ${search.yearRange.min}`);
+    else if (search.yearRange.max) parts.push(`< ${search.yearRange.max}`);
+    if (search.engineSizeCategory !== 'any') {
+        const categories = {
+            '125': '<= 125cc',
+            '125-500': '125-500cc',
+            '501-1000': '501-1000cc',
+            '1000+': '> 1000cc'
+        };
+        parts.push(categories[search.engineSizeCategory as keyof typeof categories]);
+    }
+    if (parts.length === 0) return 'Cualquier moto';
+    return parts.join(', ');
+};
 
 const ProfileView: React.FC<ProfileViewProps> = ({ 
     currentUser, userMotorcycles, onGoToSell, onSelectMotorcycle, onLogout, 
     notificationPermission, onRequestPermission, onUpdateProfileImage, 
-    onEditMotorcycle, onMarkAsSold 
+    onEditMotorcycle, onMarkAsSold, savedSearches, onDeleteSearch 
 }) => {
 
   const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -166,6 +191,31 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                     Vender mi Moto
                 </button>
             </div>
+            )}
+        </div>
+
+        <div>
+            <h3 className="text-lg font-bold mb-4">Mis Alertas ({savedSearches.length})</h3>
+            {savedSearches.length > 0 ? (
+                <div className="space-y-3">
+                    {savedSearches.map(search => (
+                        <div key={search.id} className="bg-card-light dark:bg-card-dark p-3 rounded-xl flex items-center justify-between gap-3">
+                            <p className="flex-grow text-sm font-medium">{formatSearchCriteria(search)}</p>
+                            <button
+                                onClick={() => onDeleteSearch(search.id)}
+                                className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-primary rounded-full hover:bg-primary/10 transition-colors"
+                                aria-label="Eliminar alerta"
+                            >
+                                <TrashIcon className="w-5 h-5" />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="text-center py-12 border-2 border-dashed border-border-light dark:border-border-dark rounded-xl">
+                    <h4 className="text-lg font-semibold">No tienes alertas guardadas</h4>
+                    <p className="text-foreground-muted-light dark:text-foreground-muted-dark mt-2">Guarda una búsqueda para recibir notificaciones de nuevas motos.</p>
+                </div>
             )}
         </div>
         
