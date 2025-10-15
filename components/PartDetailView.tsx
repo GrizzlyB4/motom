@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Part, User } from '../types';
-import { ArrowLeftIcon, ProfileIcon, ChevronRightIcon, ShareIcon, MapPinIcon } from './Icons';
+import { ArrowLeftIcon, ProfileIcon, ChevronRightIcon, ShareIcon, MapPinIcon, HeartIcon, StarIcon } from './Icons';
 import StarRating from './StarRating';
 
 interface PartDetailViewProps {
@@ -8,10 +8,13 @@ interface PartDetailViewProps {
   seller: User;
   onBack: () => void;
   onViewPublicProfile: (sellerEmail: string) => void;
+  onStartChat: (part: Part) => void;
+  isFavorite: boolean;
+  onToggleFavorite: (partId: number) => void;
 }
 
 const PartDetailView: React.FC<PartDetailViewProps> = ({ 
-  part, seller, onBack, onViewPublicProfile
+  part, seller, onBack, onViewPublicProfile, onStartChat, isFavorite, onToggleFavorite
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(part.price);
@@ -54,8 +57,14 @@ const PartDetailView: React.FC<PartDetailViewProps> = ({
                 <ArrowLeftIcon className="w-6 h-6 text-foreground-light dark:text-foreground-dark" />
             </button>
             <div className="flex items-center gap-2">
-              <button onClick={handleShare} className="p-2 -mr-2" aria-label="Compartir">
+              <button onClick={handleShare} className="p-2" aria-label="Compartir">
                   <ShareIcon className="w-6 h-6 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-primary transition-colors" />
+              </button>
+              <button onClick={() => onToggleFavorite(part.id)} className="p-2 -mr-2" aria-label="Añadir a favoritos">
+                  <HeartIcon 
+                      filled={isFavorite} 
+                      className={`w-7 h-7 transition-all duration-200 ${isFavorite ? 'text-primary scale-110' : 'text-foreground-muted-light dark:text-foreground-muted-dark hover:text-primary'}`} 
+                  />
               </button>
             </div>
          </div>
@@ -71,7 +80,15 @@ const PartDetailView: React.FC<PartDetailViewProps> = ({
         
         <div className="p-4 pb-28">
             <div className="animate-fade-in-up mb-6" style={{ animationDelay: '50ms' }}>
-                <h1 className="text-3xl font-bold text-foreground-light dark:text-foreground-dark">{part.name}</h1>
+                 <div className="flex items-center gap-3 flex-wrap">
+                    <h1 className="text-3xl font-bold text-foreground-light dark:text-foreground-dark">{part.name}</h1>
+                    {part.featured && (
+                        <div className="flex-shrink-0 flex items-center gap-1.5 bg-yellow-400 text-black text-sm font-bold px-3 py-1 rounded-full">
+                            <StarIcon className="w-4 h-4"/>
+                            <span>DESTACADO</span>
+                        </div>
+                    )}
+                </div>
                 <p className="text-lg text-foreground-muted-light dark:text-foreground-muted-dark mt-1 capitalize">{conditionText[part.condition]} · {part.category}</p>
                 <div className="flex items-center text-foreground-muted-light dark:text-foreground-muted-dark mt-2">
                     <MapPinIcon className="w-5 h-5 mr-2 flex-shrink-0" />
@@ -127,6 +144,7 @@ const PartDetailView: React.FC<PartDetailViewProps> = ({
       </div>
        <div className="fixed bottom-0 left-0 right-0 p-4 z-20 bg-gradient-to-t from-background-light dark:from-background-dark">
             <button 
+            onClick={() => onStartChat(part)}
             className="w-full bg-primary text-white font-bold py-4 px-8 rounded-xl hover:opacity-90 transition-all duration-300 shadow-lg active:scale-95">
             Contactar al Vendedor
             </button>

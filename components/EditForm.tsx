@@ -1,13 +1,14 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Motorcycle } from '../types';
+import { Motorcycle, Part, PartCondition } from '../types';
 import { generateAdDescription } from '../services/geminiService';
 import Spinner from './Spinner';
 import { UploadIcon, TrashIcon, ArrowLeftIcon } from './Icons';
 
 interface EditFormProps {
-  motorcycle: Motorcycle;
+  motorcycle?: Motorcycle;
+  part?: Part;
   onBack: () => void;
-  onUpdate: (moto: Motorcycle) => void;
+  onUpdate: (item: Motorcycle | Part) => void;
 }
 
 const motorcycleData: { [make: string]: string[] } = {
@@ -27,10 +28,15 @@ const motorcycleData: { [make: string]: string[] } = {
 };
 
 
-const EditForm: React.FC<EditFormProps> = ({ motorcycle, onBack, onUpdate }) => {
-  const [formData, setFormData] = useState({
-    make: '', model: '', year: '', price: '', mileage: '', engineSize: '', description: '', location: '',
-  });
+const EditForm: React.FC<EditFormProps> = ({ motorcycle, part, onBack, onUpdate }) => {
+  const listingType = motorcycle ? 'motorcycle' : 'part';
+  
+  // Moto state
+  const [motoData, setMotoData] = useState({ make: '', model: '', year: '', mileage: '', engineSize: '' });
+  // Part state
+  const [partData, setPartData] = useState({ name: '', condition: 'new' as PartCondition, compatibility: '' });
+  // Common state
+  const [commonData, setCommonData] = useState({ price: '', description: '', location: '' });
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [aiKeywords, setAiKeywords] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -43,28 +49,39 @@ const EditForm: React.FC<EditFormProps> = ({ motorcycle, onBack, onUpdate }) => 
 
   useEffect(() => {
     if (motorcycle) {
-        setFormData({
+        setMotoData({
             make: motorcycle.make,
             model: motorcycle.model,
             year: String(motorcycle.year),
-            price: String(motorcycle.price),
             mileage: String(motorcycle.mileage),
             engineSize: String(motorcycle.engineSize),
+        });
+        setCommonData({
+            price: String(motorcycle.price),
             description: motorcycle.description,
             location: motorcycle.location,
         });
         setImageUrls(motorcycle.imageUrls);
+    } else if (part) {
+        setPartData({
+            name: part.name,
+            condition: part.condition,
+            compatibility: part.compatibility.join(', '),
+        });
+        setCommonData({
+            price: String(part.price),
+            description: part.description,
+            location: part.location,
+        });
+        setImageUrls(part.imageUrls);
     }
-  }, [motorcycle]);
+  }, [motorcycle, part]);
 
   const handleMakeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setFormData(prev => ({ ...prev, make: value, model: '' }));
+    setMotoData(prev => ({ ...prev, make: value, model: '' }));
     if (value) {
-      const filteredMakes = Object.keys(motorcycleData).filter(make =>
-        make.toLowerCase().includes(value.toLowerCase())
-      );
-      setMakeSuggestions(filteredMakes);
+      setMakeSuggestions(Object.keys(motorcycleData).filter(make => make.toLowerCase().includes(value.toLowerCase())));
     } else {
       setMakeSuggestions([]);
     }
@@ -72,52 +89,25 @@ const EditForm: React.FC<EditFormProps> = ({ motorcycle, onBack, onUpdate }) => 
 
   const handleModelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setFormData(prev => ({ ...prev, model: value }));
-    const makeKey = formData.make as keyof typeof motorcycleData;
+    setMotoData(prev => ({ ...prev, model: value }));
+    const makeKey = motoData.make as keyof typeof motorcycleData;
     if (value && makeKey && motorcycleData[makeKey]) {
-      const filteredModels = motorcycleData[makeKey].filter(model =>
-        model.toLowerCase().includes(value.toLowerCase())
-      );
-      setModelSuggestions(filteredModels);
+      setModelSuggestions(motorcycleData[makeKey].filter(model => model.toLowerCase().includes(value.toLowerCase())));
     } else {
       setModelSuggestions([]);
     }
   };
-
-  const handleSelectMake = (make: string) => {
-    setFormData(prev => ({ ...prev, make, model: '' }));
-    setMakeSuggestions([]);
-    setIsMakeFocused(false);
-    modelInputRef.current?.focus();
-  };
-
-  const handleSelectModel = (model: string) => {
-    setFormData(prev => ({ ...prev, model }));
-    setModelSuggestions([]);
-    setIsModelFocused(false);
-  };
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const handleSelectMake = (make: string) => { setMotoData(prev => ({ ...prev, make, model: '' })); setMakeSuggestions([]); setIsMakeFocused(false); modelInputRef.current?.focus(); };
+  const handleSelectModel = (model: string) => { setMotoData(prev => ({ ...prev, model })); setModelSuggestions([]); setIsModelFocused(false); };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const files = Array.from(e.target.files);
-      const remainingSlots = 5 - imageUrls.length;
-      if (files.length > remainingSlots) {
-        alert(`Puedes subir un máximo de 5 imágenes. Ya tienes ${imageUrls.length}, puedes añadir ${remainingSlots} más.`);
-      }
-
-      const filesToProcess = files.slice(0, remainingSlots);
-
-      filesToProcess.forEach((file: File) => {
+      const files = Array.from(e.target.files).slice(0, 5 - imageUrls.length);
+      files.forEach((file: File) => {
         if (!file.type.startsWith('image/')) return;
         const reader = new FileReader();
-        reader.onloadend = () => {
-          setImageUrls(prev => [...prev, reader.result as string]);
-        };
+        reader.onloadend = () => { setImageUrls(prev => [...prev, reader.result as string]); };
         reader.readAsDataURL(file);
       });
     }
@@ -129,36 +119,34 @@ const EditForm: React.FC<EditFormProps> = ({ motorcycle, onBack, onUpdate }) => 
 
   const handleGenerateDescription = useCallback(async () => {
     setIsGenerating(true);
-    const keywords = `Make: ${formData.make}, Model: ${formData.model}, Year: ${formData.year}, Extra notes: ${aiKeywords}`;
+    let keywords = '';
+    if (listingType === 'motorcycle') keywords = `Make: ${motoData.make}, Model: ${motoData.model}, Year: ${motoData.year}, Extra notes: ${aiKeywords}`;
+    else keywords = `Part name: ${partData.name}, Condition: ${partData.condition}, Extra notes: ${aiKeywords}`;
     const generatedDesc = await generateAdDescription(keywords);
-    setFormData(prev => ({ ...prev, description: generatedDesc }));
+    setCommonData(prev => ({ ...prev, description: generatedDesc }));
     setIsGenerating(false);
-  }, [formData.make, formData.model, formData.year, aiKeywords]);
+  }, [listingType, motoData, partData, aiKeywords]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const { make, model, year, price, mileage, engineSize, description, location } = formData;
-    if (!make || !model || !year || !price || !mileage || !engineSize || !description || !location) {
-        alert('Por favor, completa todos los campos.');
-        return;
-    }
-    if (imageUrls.length === 0) {
-        alert('Por favor, sube al menos una foto de la moto.');
-        return;
-    }
-    onUpdate({
-      ...motorcycle, // Keep original id, sellerEmail, status, etc.
-      make, model, location,
-      year: parseInt(year, 10),
-      price: parseFloat(price),
-      mileage: parseInt(mileage, 10),
-      engineSize: parseInt(engineSize, 10),
-      description,
-      imageUrls,
-    });
-  };
+    if (imageUrls.length === 0) { alert('Por favor, sube al menos una foto.'); return; }
 
-  const formIsFilledForAI = formData.make && formData.model && formData.year;
+    if (listingType === 'motorcycle' && motorcycle) {
+        onUpdate({
+            ...motorcycle, ...commonData, ...motoData, imageUrls,
+            year: parseInt(motoData.year, 10),
+            price: parseFloat(commonData.price),
+            mileage: parseInt(motoData.mileage, 10),
+            engineSize: parseInt(motoData.engineSize, 10),
+        });
+    } else if (listingType === 'part' && part) {
+        onUpdate({
+            ...part, ...commonData, ...partData, imageUrls,
+            price: parseFloat(commonData.price),
+            compatibility: partData.compatibility.split(',').map(item => item.trim()),
+        });
+    }
+  };
 
   return (
     <div>
@@ -173,138 +161,78 @@ const EditForm: React.FC<EditFormProps> = ({ motorcycle, onBack, onUpdate }) => 
         <div className="p-4 max-w-2xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-            <label className="block text-sm font-medium text-foreground-light dark:text-foreground-dark mb-2">Fotos (hasta 5)</label>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                {imageUrls.map((url, index) => (
-                <div key={index} className="relative aspect-square">
-                    <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover rounded-lg"/>
-                    <button 
-                    type="button" 
-                    onClick={() => handleRemoveImage(index)}
-                    className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 hover:bg-black/80 transition-colors"
-                    aria-label="Eliminar imagen"
-                    >
-                    <TrashIcon className="w-4 h-4" />
-                    </button>
+              <label className="block text-sm font-medium text-foreground-light dark:text-foreground-dark mb-2">Fotos (hasta 5)</label>
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                  {imageUrls.map((url, index) => (
+                  <div key={index} className="relative aspect-square">
+                      <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover rounded-lg"/>
+                      <button type="button" onClick={() => handleRemoveImage(index)} className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 hover:bg-black/80 transition-colors" aria-label="Eliminar imagen">
+                        <TrashIcon className="w-4 h-4" />
+                      </button>
+                  </div>
+                  ))}
+                  {imageUrls.length < 5 && (
+                  <label className="flex flex-col items-center justify-center w-full aspect-square border-2 border-dashed border-border-light dark:border-border-dark rounded-lg cursor-pointer hover:bg-black/[.03] dark:hover:bg-white/[.05] transition-colors">
+                      <UploadIcon className="w-8 h-8 text-foreground-muted-light dark:text-foreground-muted-dark"/>
+                      <span className="text-xs text-center text-foreground-muted-light dark:text-foreground-muted-dark mt-1">Añadir foto</span>
+                      <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
+                  </label>
+                  )}
+              </div>
+            </div>
+
+            {listingType === 'motorcycle' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="relative">
+                    <input type="text" name="make" placeholder="Marca" onChange={handleMakeChange} onFocus={() => setIsMakeFocused(true)} onBlur={() => setTimeout(() => setIsMakeFocused(false), 150)} value={motoData.make} className="form-input" required autoComplete="off" />
+                    {isMakeFocused && makeSuggestions.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark rounded-md shadow-lg max-h-48 overflow-y-auto">
+                        {makeSuggestions.map(suggestion => (
+                          <div key={suggestion} onMouseDown={(e) => { e.preventDefault(); handleSelectMake(suggestion); }} className="px-4 py-2 cursor-pointer hover:bg-primary/10">{suggestion}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <input type="text" name="model" placeholder="Modelo" onChange={handleModelChange} onFocus={() => { setIsModelFocused(true); const makeKey = motoData.make as keyof typeof motorcycleData; if (makeKey && motorcycleData[makeKey]) { setModelSuggestions(motorcycleData[makeKey]); } }} onBlur={() => setTimeout(() => setIsModelFocused(false), 150)} value={motoData.model} className="form-input" required ref={modelInputRef} disabled={!motoData.make || !motorcycleData.hasOwnProperty(motoData.make)} autoComplete="off" />
+                    {isModelFocused && modelSuggestions.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark rounded-md shadow-lg max-h-48 overflow-y-auto">
+                        {modelSuggestions.map(suggestion => (
+                          <div key={suggestion} onMouseDown={(e) => { e.preventDefault(); handleSelectModel(suggestion); }} className="px-4 py-2 cursor-pointer hover:bg-primary/10">{suggestion}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <input type="number" name="year" placeholder="Año" onChange={(e) => setMotoData(p => ({...p, year: e.target.value}))} value={motoData.year} className="form-input" required />
+                  <input type="number" name="mileage" placeholder="Kilometraje (km)" onChange={(e) => setMotoData(p => ({...p, mileage: e.target.value}))} value={motoData.mileage} className="form-input" required />
+                  <input type="number" name="engineSize" placeholder="Cilindrada (cc)" onChange={(e) => setMotoData(p => ({...p, engineSize: e.target.value}))} value={motoData.engineSize} className="form-input" required />
                 </div>
-                ))}
-                {imageUrls.length < 5 && (
-                <label className="flex flex-col items-center justify-center w-full aspect-square border-2 border-dashed border-border-light dark:border-border-dark rounded-lg cursor-pointer hover:bg-black/[.03] dark:hover:bg-white/[.05] transition-colors">
-                    <UploadIcon className="w-8 h-8 text-foreground-muted-light dark:text-foreground-muted-dark"/>
-                    <span className="text-xs text-center text-foreground-muted-light dark:text-foreground-muted-dark mt-1">Añadir foto</span>
-                    <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
-                </label>
-                )}
-            </div>
-            </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" name="name" placeholder="Nombre de la pieza" onChange={(e) => setPartData(p => ({...p, name: e.target.value}))} value={partData.name} className="form-input md:col-span-2" required />
+                    <select name="condition" onChange={(e) => setPartData(p => ({...p, condition: e.target.value as PartCondition}))} value={partData.condition} className="form-input" required>
+                        <option value="new">Nueva</option>
+                        <option value="used">Usada</option>
+                        <option value="refurbished">Restaurada</option>
+                    </select>
+                    <input type="text" name="compatibility" placeholder="Compatibilidad (ej: Yamaha MT-07)" onChange={(e) => setPartData(p => ({...p, compatibility: e.target.value}))} value={partData.compatibility} className="form-input" required />
+                </div>
+            )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="relative">
-                <input
-                  type="text"
-                  name="make"
-                  placeholder="Marca"
-                  onChange={handleMakeChange}
-                  onFocus={() => setIsMakeFocused(true)}
-                  onBlur={() => setTimeout(() => setIsMakeFocused(false), 150)}
-                  value={formData.make}
-                  className="form-input"
-                  required
-                  autoComplete="off"
-                />
-                {isMakeFocused && makeSuggestions.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark rounded-md shadow-lg max-h-48 overflow-y-auto">
-                    {makeSuggestions.map(suggestion => (
-                      <div
-                        key={suggestion}
-                        onMouseDown={(e) => { e.preventDefault(); handleSelectMake(suggestion); }}
-                        className="px-4 py-2 cursor-pointer hover:bg-primary/10"
-                      >
-                        {suggestion}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="relative">
-                <input
-                  type="text"
-                  name="model"
-                  placeholder="Modelo"
-                  onChange={handleModelChange}
-                  onFocus={() => {
-                      setIsModelFocused(true);
-                      const makeKey = formData.make as keyof typeof motorcycleData;
-                      if (makeKey && motorcycleData[makeKey]) {
-                          setModelSuggestions(motorcycleData[makeKey]);
-                      }
-                  }}
-                  onBlur={() => setTimeout(() => setIsModelFocused(false), 150)}
-                  value={formData.model}
-                  className="form-input"
-                  required
-                  ref={modelInputRef}
-                  disabled={!formData.make || !motorcycleData.hasOwnProperty(formData.make)}
-                  autoComplete="off"
-                />
-                {isModelFocused && modelSuggestions.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark rounded-md shadow-lg max-h-48 overflow-y-auto">
-                    {modelSuggestions.map(suggestion => (
-                      <div
-                        key={suggestion}
-                        onMouseDown={(e) => { e.preventDefault(); handleSelectModel(suggestion); }}
-                        className="px-4 py-2 cursor-pointer hover:bg-primary/10"
-                      >
-                        {suggestion}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <input type="number" name="year" placeholder="Año" onChange={handleChange} value={formData.year} className="form-input" required />
-              <input type="number" name="price" placeholder="Precio ($)" onChange={handleChange} value={formData.price} className="form-input" required />
-              <input type="number" name="mileage" placeholder="Kilometraje (km)" onChange={handleChange} value={formData.mileage} className="form-input" required />
-              <input type="number" name="engineSize" placeholder="Cilindrada (cc)" onChange={handleChange} value={formData.engineSize} className="form-input" required />
-            </div>
+            <input type="number" name="price" placeholder="Precio ($)" onChange={(e) => setCommonData(p => ({...p, price: e.target.value}))} value={commonData.price} className="form-input" required />
+            <input type="text" name="location" placeholder="Ubicación (ej: Madrid, España)" onChange={(e) => setCommonData(p => ({...p, location: e.target.value}))} value={commonData.location} className="form-input" required />
             
-            <div>
-                <input type="text" name="location" placeholder="Ubicación (ej: Madrid, España)" onChange={handleChange} value={formData.location} className="form-input" required />
-            </div>
-
             <div className="bg-card-light dark:bg-card-dark p-4 rounded-xl border border-border-light dark:border-border-dark space-y-3">
                 <p className="font-bold">Descripción con IA (Opcional)</p>
-                <p className="text-sm text-foreground-muted-light dark:text-foreground-muted-dark">Añade notas para que la IA cree una descripción atractiva.</p>
-                <input 
-                    type="text" 
-                    placeholder="Ej: único dueño, escape Akrapovic..."
-                    value={aiKeywords}
-                    onChange={(e) => setAiKeywords(e.target.value)}
-                    className="form-input"
-                />
-                <button 
-                    type="button" 
-                    onClick={handleGenerateDescription}
-                    disabled={!formIsFilledForAI || isGenerating}
-                    className="w-full flex items-center justify-center gap-2 bg-primary/20 text-primary font-bold py-2 px-4 rounded-lg hover:bg-primary/30 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <input type="text" placeholder="Ej: único dueño, escape Akrapovic..." value={aiKeywords} onChange={(e) => setAiKeywords(e.target.value)} className="form-input" />
+                <button type="button" onClick={handleGenerateDescription} disabled={isGenerating} className="w-full flex items-center justify-center gap-2 bg-primary/20 text-primary font-bold py-2 px-4 rounded-lg hover:bg-primary/30 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
                     {isGenerating ? <Spinner /> : '✨'}
                     {isGenerating ? 'Generando...' : 'Generar Descripción'}
                 </button>
             </div>
 
-            <textarea
-                name="description"
-                rows={6}
-                placeholder="Descripción del anuncio..."
-                onChange={handleChange}
-                value={formData.description}
-                className="form-input"
-                required
-            />
-
-            <button type="submit" className="w-full bg-primary text-white font-bold py-3 px-4 rounded-xl hover:opacity-90 transition-opacity duration-300 text-lg">
-            Guardar Cambios
-            </button>
+            <textarea name="description" rows={6} placeholder="Descripción del anuncio..." onChange={(e) => setCommonData(p => ({...p, description: e.target.value}))} value={commonData.description} className="form-input" required />
+            <button type="submit" className="w-full bg-primary text-white font-bold py-3 px-4 rounded-xl hover:opacity-90 transition-opacity duration-300 text-lg"> Guardar Cambios </button>
         </form>
         <style>{`.form-input { width: 100%; background-color: transparent; border: 1px solid #2a3c46; border-radius: 0.75rem; padding: 0.75rem 1rem; color: inherit; transition: all 0.2s; } .form-input:focus { outline: none; border-color: #1193d4; box-shadow: 0 0 0 2px rgba(17, 147, 212, 0.5); }`}</style>
         </div>

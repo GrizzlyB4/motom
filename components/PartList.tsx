@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { Part, PartCategory } from '../types';
 import PartCard from './PartCard';
+import { HeartIcon, BellIcon } from './Icons';
 
 interface PartListProps {
   parts: Part[];
@@ -8,13 +10,17 @@ interface PartListProps {
   selectedCategory: PartCategory;
   onSelectCategory: (category: PartCategory) => void;
   onAddHeatmapPoint: (event: React.MouseEvent) => void;
+  onSaveSearch: () => void;
+  areFiltersActive: boolean;
+  favorites: number[];
+  onToggleFavorite: (partId: number) => void;
 }
 
 const categories: PartCategory[] = ['All', 'Exhausts', 'Brakes', 'Tires', 'Suspension', 'Electronics'];
 
 const PartList: React.FC<PartListProps> = ({ 
     parts, onSelectPart, selectedCategory, onSelectCategory, 
-    onAddHeatmapPoint
+    onAddHeatmapPoint, onSaveSearch, areFiltersActive, favorites, onToggleFavorite
 }) => {
   
   return (
@@ -24,15 +30,8 @@ const PartList: React.FC<PartListProps> = ({
           {categories.map((category) => (
             <button
               key={category}
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelectCategory(category);
-              }}
-              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 active:scale-95 ${
-                selectedCategory === category
-                  ? 'bg-primary text-white'
-                  : 'text-foreground-light dark:text-foreground-dark bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark'
-              }`}
+              onClick={(e) => { e.stopPropagation(); onSelectCategory(category); }}
+              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 active:scale-95 ${ selectedCategory === category ? 'bg-primary text-white' : 'text-foreground-light dark:text-foreground-dark bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark' }`}
             >
               {category === 'All' ? 'Todo' : category}
             </button>
@@ -40,6 +39,15 @@ const PartList: React.FC<PartListProps> = ({
         </div>
       </div>
       
+      {areFiltersActive && (
+        <div className="px-4 pb-2 animate-fade-in-up" style={{animationDelay: '100ms'}}>
+            <button onClick={(e) => { e.stopPropagation(); onSaveSearch(); }} className="w-full flex items-center justify-center gap-2 bg-primary/10 text-primary font-bold py-3 px-4 rounded-xl hover:bg-primary/20 transition-colors duration-300 active:scale-95">
+                <BellIcon className="w-5 h-5" />
+                Crear alerta para esta búsqueda
+            </button>
+        </div>
+      )}
+
       {parts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4">
           {parts.map((part, index) => (
@@ -47,6 +55,8 @@ const PartList: React.FC<PartListProps> = ({
                 key={part.id} 
                 part={part} 
                 onSelect={onSelectPart} 
+                isFavorite={favorites.includes(part.id)}
+                onToggleFavorite={onToggleFavorite}
                 className="animate-fade-in-up"
                 style={{ animationDelay: `${index * 50}ms` }}
             />

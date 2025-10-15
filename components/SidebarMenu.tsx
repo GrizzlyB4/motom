@@ -1,6 +1,5 @@
 import React from 'react';
 import { User } from '../types';
-// fix: Import ProfileIcon and MotorcycleIcon which are available in Icons.tsx.
 import { ProfileIcon, CloseIcon, MotorcycleIcon } from './Icons';
 
 interface SidebarMenuProps {
@@ -70,7 +69,6 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, onClose, currentUser,
             </div>
 
             <nav className="flex-grow p-4 space-y-2">
-              {/* FIX: Changed navigation view from 'list' to 'home' */}
               <NavItem onClick={() => handleNavigation('home')} label="Comprar" />
               <NavItem onClick={() => handleNavigation('sell')} label="Vender mi Moto" />
               <NavItem onClick={() => handleNavigation('profile')} label="Mi Perfil" />

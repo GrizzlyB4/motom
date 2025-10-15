@@ -1,21 +1,25 @@
 import React, { useMemo } from 'react';
-import { ChatConversation, ChatMessage, Motorcycle, User } from '../types';
+import { ChatConversation, ChatMessage, Motorcycle, User, Part } from '../types';
 import { ChatIcon } from './Icons';
 
 interface ChatListViewProps {
   conversations: ChatConversation[];
   messages: ChatMessage[];
   motorcycles: Motorcycle[];
+  parts: Part[];
   currentUser: User;
   users: User[];
   onSelectConversation: (conversationId: string) => void;
 }
 
-const ChatListView: React.FC<ChatListViewProps> = ({ conversations, messages, motorcycles, currentUser, users, onSelectConversation }) => {
+const ChatListView: React.FC<ChatListViewProps> = ({ conversations, messages, motorcycles, parts, currentUser, users, onSelectConversation }) => {
 
   const conversationsWithDetails = useMemo(() => {
     return conversations.map(convo => {
-      const motorcycle = motorcycles.find(m => m.id === convo.motorcycleId);
+      const item = convo.motorcycleId
+        ? motorcycles.find(m => m.id === convo.motorcycleId)
+        : parts.find(p => p.id === convo.partId);
+
       const otherParticipantEmail = convo.participants.find(p => p !== currentUser.email);
       const otherParticipant = users.find(u => u.email === otherParticipantEmail);
       const convoMessages = messages
@@ -25,12 +29,12 @@ const ChatListView: React.FC<ChatListViewProps> = ({ conversations, messages, mo
 
       return {
         ...convo,
-        motorcycle,
+        item,
         otherParticipant,
         lastMessage,
       };
     }).sort((a,b) => (b.lastMessage?.timestamp || 0) - (a.lastMessage?.timestamp || 0));
-  }, [conversations, messages, motorcycles, currentUser, users]);
+  }, [conversations, messages, motorcycles, parts, currentUser, users]);
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -42,15 +46,15 @@ const ChatListView: React.FC<ChatListViewProps> = ({ conversations, messages, mo
                 onClick={() => onSelectConversation(convo.id)} 
                 className="bg-card-light dark:bg-card-dark p-4 rounded-xl flex items-center gap-4 cursor-pointer hover:bg-black/[.03] dark:hover:bg-white/[.05] transition-colors"
             >
-              {convo.motorcycle && (
+              {convo.item && (
                 <img 
-                    src={convo.motorcycle.imageUrls[0]} 
-                    alt={`${convo.motorcycle.make} ${convo.motorcycle.model}`} 
+                    src={convo.item.imageUrls[0]} 
+                    alt={'make' in convo.item ? `${convo.item.make} ${convo.item.model}` : convo.item.name}
                     className="w-20 h-16 object-cover rounded-lg flex-shrink-0" 
                 />
               )}
               <div className="flex-grow overflow-hidden">
-                <p className="font-bold truncate">{convo.motorcycle?.make} {convo.motorcycle?.model}</p>
+                <p className="font-bold truncate">{convo.item && ('make' in convo.item ? `${convo.item.make} ${convo.item.model}` : convo.item.name)}</p>
                 <p className="text-sm text-foreground-muted-light dark:text-foreground-muted-dark truncate">
                     Chat con {convo.otherParticipant?.name || convo.otherParticipant?.email}
                 </p>

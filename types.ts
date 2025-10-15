@@ -31,6 +31,7 @@ export interface Part {
   compatibility: string[]; // e.g., ['Yamaha MT-07 2021-2023', 'Yamaha R7']
   status: 'for-sale' | 'sold';
   location: string;
+  featured?: boolean;
 }
 
 export interface User {
@@ -53,17 +54,22 @@ export interface ChatMessage {
 export interface ChatConversation {
   id: string;
   participants: string[];
-  motorcycleId: number;
+  motorcycleId?: number;
+  partId?: number;
 }
 
 export interface SavedSearch {
   id: string;
+  searchType: 'motorcycle' | 'part';
   searchTerm: string;
   locationFilter: string;
-  category: MotorcycleCategory;
   priceRange: { min: string; max: string };
-  yearRange: { min: string; max: string };
-  engineSizeCategory: string;
+  // Motorcycle specific
+  motorcycleCategory?: MotorcycleCategory;
+  yearRange?: { min: string; max: string };
+  engineSizeCategory?: string;
+  // Part specific
+  partCategory?: PartCategory;
 }
 
 export interface HeatmapPoint {

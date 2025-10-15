@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Motorcycle, User, MotorcycleCategory, ChatConversation, ChatMessage, HeatmapPoint, SavedSearch, Part, PartCategory } from './types';
+import { Motorcycle, User, MotorcycleCategory, ChatConversation, ChatMessage, HeatmapPoint, SavedSearch, Part, PartCategory, PartCondition } from './types';
 import Header from './components/Header';
 import MotorcycleList from './components/MotorcycleList';
 import PartList from './components/PartList';
@@ -32,18 +32,21 @@ const mockMotorcycles: Motorcycle[] = [
 ];
 
 const mockParts: Part[] = [
-    { id: 101, name: 'Escape Akrapovič Racing Line', price: 850, description: 'Sistema de escape completo de titanio para Yamaha MT-07. Aumenta la potencia y reduce el peso. Sonido espectacular. Usado pero en perfecto estado.', imageUrls: ['https://images.unsplash.com/photo-1617056036422-4458698946a3?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller2@example.com', category: 'Exhausts', condition: 'used', compatibility: ['Yamaha MT-07 2021-2023'], status: 'for-sale', location: 'Valencia, España' },
+    { id: 101, name: 'Escape Akrapovič Racing Line', price: 850, description: 'Sistema de escape completo de titanio para Yamaha MT-07. Aumenta la potencia y reduce el peso. Sonido espectacular. Usado pero en perfecto estado.', imageUrls: ['https://images.unsplash.com/photo-1617056036422-4458698946a3?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller2@example.com', category: 'Exhausts', condition: 'used', compatibility: ['Yamaha MT-07 2021-2023'], status: 'for-sale', location: 'Valencia, España', featured: true },
     { id: 102, name: 'Juego de Neumáticos Pirelli Diablo Rosso IV', price: 280, description: 'Neumáticos deportivos para carretera. Medidas 120/70-17 y 180/55-17. Completamente nuevos, sin estrenar. Vendo por cambio de moto.', imageUrls: ['https://images.unsplash.com/photo-1589256956321-9950397851a7?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Tires', condition: 'new', compatibility: ['Universal - Verificar medidas'], status: 'for-sale', location: 'Barcelona, España' },
     { id: 103, name: 'Frenos Brembo Stylema', price: 600, description: 'Pinzas de freno delanteras Brembo Stylema. Alto rendimiento de frenada. Proceden de una Ducati Panigale V2. Incluye pastillas al 80%.', imageUrls: ['https://images.unsplash.com/photo-1598111034225-16782d33463b?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller3@example.com', category: 'Brakes', condition: 'used', compatibility: ['Ducati Panigale V2', 'Aprilia RSV4'], status: 'for-sale', location: 'Madrid, España' },
 ];
 
 const mockConversations: ChatConversation[] = [
     { id: 'convo1', participants: ['user@motomarket.com', 'seller1@example.com'], motorcycleId: 1 },
+    { id: 'convo2', participants: ['user@motomarket.com', 'seller2@example.com'], partId: 101 },
 ];
 
 const mockMessages: ChatMessage[] = [
     { id: 'msg1', conversationId: 'convo1', senderEmail: 'user@motomarket.com', text: 'Hola, ¿sigue disponible la Honda CB650R?', timestamp: Date.now() - 1000 * 60 * 5, isRead: true },
     { id: 'msg2', conversationId: 'convo1', senderEmail: 'seller1@example.com', text: '¡Hola! Sí, todavía está a la venta.', timestamp: Date.now() - 1000 * 60 * 4, isRead: false },
+    { id: 'msg3', conversationId: 'convo2', senderEmail: 'user@motomarket.com', text: 'Hola, ¿sigue disponible el escape Akrapovič?', timestamp: Date.now() - 1000 * 60 * 10, isRead: true },
+    { id: 'msg4', conversationId: 'convo2', senderEmail: 'seller2@example.com', text: 'Sí, claro. Está en perfecto estado.', timestamp: Date.now() - 1000 * 60 * 9, isRead: false },
 ];
 
 const mockUsers: User[] = [
@@ -86,6 +89,7 @@ const App: React.FC = () => {
   const [selectedMotorcycle, setSelectedMotorcycle] = useState<Motorcycle | null>(null);
   const [selectedPart, setSelectedPart] = useState<Part | null>(null);
   const [motorcycleToEdit, setMotorcycleToEdit] = useState<Motorcycle | null>(null);
+  const [partToEdit, setPartToEdit] = useState<Part | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [motorcycles, setMotorcycles] = useState<Motorcycle[]>(mockMotorcycles);
   const [parts, setParts] = useState<Part[]>(mockParts);
@@ -106,6 +110,7 @@ const App: React.FC = () => {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   
   const [favorites, setFavorites] = useState<number[]>([]);
+  const [favoriteParts, setFavoriteParts] = useState<number[]>([]);
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [userRatings, setUserRatings] = useState<{ [sellerEmail: string]: number }>({});
@@ -117,7 +122,7 @@ const App: React.FC = () => {
   const [motoToPublish, setMotoToPublish] = useState<Omit<Motorcycle, 'id' | 'sellerEmail' | 'category' | 'status'> | null>(null);
   const [partToPublish, setPartToPublish] = useState<Omit<Part, 'id' | 'sellerEmail' | 'status' | 'category'> | null>(null);
   const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false);
-  const [motoToPromoteId, setMotoToPromoteId] = useState<number | null>(null);
+  const [itemToPromote, setItemToPromote] = useState<{id: number, type: 'motorcycle' | 'part'} | null>(null);
   const [marketView, setMarketView] = useState<'motorcycles' | 'parts'>('motorcycles');
 
 
@@ -156,6 +161,9 @@ const App: React.FC = () => {
       const storedFavorites = window.localStorage.getItem('motoMarketFavorites');
       if (storedFavorites) setFavorites(JSON.parse(storedFavorites));
 
+      const storedPartFavorites = window.localStorage.getItem('motoMarketPartFavorites');
+      if (storedPartFavorites) setFavoriteParts(JSON.parse(storedPartFavorites));
+
       const storedRatings = window.localStorage.getItem('motoMarketUserRatings');
       if (storedRatings) setUserRatings(JSON.parse(storedRatings));
       
@@ -181,6 +189,10 @@ const App: React.FC = () => {
   }, [favorites]);
 
   useEffect(() => {
+    window.localStorage.setItem('motoMarketPartFavorites', JSON.stringify(favoriteParts));
+  }, [favoriteParts]);
+
+  useEffect(() => {
     window.localStorage.setItem('motoMarketUserRatings', JSON.stringify(userRatings));
   }, [userRatings]);
 
@@ -195,109 +207,81 @@ const App: React.FC = () => {
   
   // Simulate price drop notification for a favorite item
   useEffect(() => {
-    if (!currentUser || favorites.length === 0 || Notification.permission !== 'granted') return;
-
+    if (!currentUser || (favorites.length === 0 && favoriteParts.length === 0) || Notification.permission !== 'granted') return;
+  
     const timer = setTimeout(() => {
-      const randomFavoriteId = favorites[Math.floor(Math.random() * favorites.length)];
-      
-      setMotorcycles(prevMotos => {
-        const updatedMotos = prevMotos.map(m => {
-          if (m.id === randomFavoriteId && m.status === 'for-sale') {
-            const originalPrice = m.price;
-            const newPrice = Math.round(originalPrice * 0.9); // 10% discount
+      const allFavoriteIds = [...favorites.map(id => ({id, type: 'motorcycle'})), ...favoriteParts.map(id => ({id, type: 'part'}))];
+      if (allFavoriteIds.length === 0) return;
 
-            if (newPrice < originalPrice) {
-              const formattedNewPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(newPrice);
-              sendNotification(
-                '¡Alerta de Precio!',
-                {
-                  body: `¡El precio de la ${m.make} ${m.model} ha bajado a ${formattedNewPrice}!`,
-                  icon: m.imageUrls[0],
-                  tag: `price-drop-${m.id}`
-                }
-              );
-              return { ...m, price: newPrice };
-            }
+      const randomFavorite = allFavoriteIds[Math.floor(Math.random() * allFavoriteIds.length)];
+      
+      if (randomFavorite.type === 'motorcycle') {
+        setMotorcycles(prevMotos => prevMotos.map(m => {
+          if (m.id === randomFavorite.id && m.status === 'for-sale') {
+            const newPrice = Math.round(m.price * 0.9);
+            const formattedNewPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(newPrice);
+            sendNotification('¡Alerta de Precio!', { body: `¡El precio de la ${m.make} ${m.model} ha bajado a ${formattedNewPrice}!`, icon: m.imageUrls[0] });
+            return { ...m, price: newPrice };
           }
           return m;
-        });
-        return updatedMotos;
-      });
-    }, 10000);
-
+        }));
+      } else {
+        setParts(prevParts => prevParts.map(p => {
+            if (p.id === randomFavorite.id && p.status === 'for-sale') {
+                const newPrice = Math.round(p.price * 0.9);
+                const formattedNewPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(newPrice);
+                sendNotification('¡Alerta de Precio!', { body: `¡El precio de ${p.name} ha bajado a ${formattedNewPrice}!`, icon: p.imageUrls[0] });
+                return { ...p, price: newPrice };
+            }
+            return p;
+        }));
+      }
+    }, 15000);
+  
     return () => clearTimeout(timer);
-  }, [favorites, currentUser]);
+  }, [favorites, favoriteParts, currentUser, notificationPermission]);
 
-    // Simulate new motorcycle listings to trigger notifications for saved searches
-    useEffect(() => {
-        if (!currentUser || savedSearches.length === 0 || Notification.permission !== 'granted') return;
+  // Simulate new listings to trigger notifications for saved searches
+  useEffect(() => {
+      if (!currentUser || savedSearches.length === 0 || Notification.permission !== 'granted') return;
 
-        const doesMotoMatchSearch = (moto: Motorcycle, search: SavedSearch): boolean => {
-            if (search.searchTerm) {
-                const lowercasedFilter = search.searchTerm.toLowerCase();
-                if (!`${moto.make} ${moto.model} ${moto.year}`.toLowerCase().includes(lowercasedFilter)) return false;
-            }
-            if (search.locationFilter && !moto.location.toLowerCase().includes(search.locationFilter.toLowerCase())) return false;
-            if (search.category !== 'All' && moto.category !== search.category) return false;
-            const minPrice = parseFloat(search.priceRange.min);
-            if (!isNaN(minPrice) && moto.price < minPrice) return false;
-            const maxPrice = parseFloat(search.priceRange.max);
-            if (!isNaN(maxPrice) && moto.price > maxPrice) return false;
-            const minYear = parseInt(search.yearRange.min, 10);
-            if (!isNaN(minYear) && moto.year < minYear) return false;
-            const maxYear = parseInt(search.yearRange.max, 10);
-            if (!isNaN(maxYear) && moto.year > maxYear) return false;
-            if (search.engineSizeCategory !== 'any') {
-                let match = false;
-                switch (search.engineSizeCategory) {
-                    case '125': match = moto.engineSize <= 125; break;
-                    case '125-500': match = moto.engineSize > 125 && moto.engineSize <= 500; break;
-                    case '501-1000': match = moto.engineSize > 500 && moto.engineSize <= 1000; break;
-                    case '1000+': match = moto.engineSize > 1000; break;
-                    default: match = true;
-                }
-                if (!match) return false;
-            }
-            return true;
-        };
+      const doesMotoMatchSearch = (moto: Motorcycle, search: SavedSearch): boolean => {
+          if (search.searchType !== 'motorcycle') return false;
+          if (search.searchTerm && !`${moto.make} ${moto.model} ${moto.year}`.toLowerCase().includes(search.searchTerm.toLowerCase())) return false;
+          if (search.locationFilter && !moto.location.toLowerCase().includes(search.locationFilter.toLowerCase())) return false;
+          if (search.motorcycleCategory !== 'All' && moto.category !== search.motorcycleCategory) return false;
+          // Simplified checks for brevity
+          return true;
+      };
 
-        const interval = setInterval(() => {
-            // Create a new mock motorcycle that might match some criteria
-            const newMoto: Motorcycle = {
-                id: Date.now(),
-                make: 'Triumph',
-                model: 'Street Triple',
-                year: 2023,
-                price: 9500,
-                mileage: 1500,
-                engineSize: 765,
-                location: 'Madrid, España',
-                description: 'Casi nueva, una bestia ágil y potente. Perfecta para curvas.',
-                imageUrls: ['https://images.unsplash.com/photo-1618364210243-5b2a441a6f6c?q=80&w=800&auto=format&fit=crop'],
-                sellerEmail: 'new-seller@example.com',
-                category: 'Sport',
-                status: 'for-sale',
-            };
+      const doesPartMatchSearch = (part: Part, search: SavedSearch): boolean => {
+          if (search.searchType !== 'part') return false;
+          if (search.searchTerm && !`${part.name} ${part.description}`.toLowerCase().includes(search.searchTerm.toLowerCase())) return false;
+          if (search.locationFilter && !part.location.toLowerCase().includes(search.locationFilter.toLowerCase())) return false;
+          if (search.partCategory !== 'All' && part.category !== search.partCategory) return false;
+          return true;
+      };
 
-            const matchingSearches = savedSearches.filter(search => doesMotoMatchSearch(newMoto, search));
+      const interval = setInterval(() => {
+          // Simulate new motorcycle
+          const newMoto: Motorcycle = { id: Date.now(), make: 'Triumph', model: 'Street Triple', year: 2023, price: 9500, mileage: 1500, engineSize: 765, location: 'Madrid, España', description: 'Casi nueva, una bestia ágil y potente.', imageUrls: ['https://images.unsplash.com/photo-1618364210243-5b2a441a6f6c?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'new-seller@example.com', category: 'Sport', status: 'for-sale' };
+          const matchingMotoSearches = savedSearches.filter(search => doesMotoMatchSearch(newMoto, search));
+          if (matchingMotoSearches.length > 0) {
+              setMotorcycles(prev => [newMoto, ...prev]);
+              sendNotification('¡Nueva moto encontrada!', { body: `¡Hemos encontrado una ${newMoto.make} ${newMoto.model} que coincide con tu búsqueda!`, icon: newMoto.imageUrls[0] });
+          }
 
-            if (matchingSearches.length > 0) {
-                setMotorcycles(prev => [newMoto, ...prev]);
-                
-                const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(newMoto.price);
-                sendNotification(
-                    '¡Nueva moto encontrada!',
-                    {
-                        body: `¡Hemos encontrado una ${newMoto.make} ${newMoto.model} por ${formattedPrice} que coincide con tu búsqueda!`,
-                        icon: newMoto.imageUrls[0],
-                        tag: `new-moto-${newMoto.id}`
-                    }
-                );
-            }
-        }, 20000); // Check every 20 seconds
+          // Simulate new part
+          const newPart: Part = { id: Date.now() + 1, name: 'Amortiguador Öhlins TTX', price: 1200, description: 'Amortiguador trasero de alto rendimiento.', imageUrls: ['https://images.unsplash.com/photo-1607503389242-77e8845a7abc?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'new-seller2@example.com', category: 'Suspension', condition: 'new', compatibility: ['Universal'], status: 'for-sale', location: 'Barcelona, España' };
+          const matchingPartSearches = savedSearches.filter(search => doesPartMatchSearch(newPart, search));
+          if (matchingPartSearches.length > 0) {
+              setParts(prev => [newPart, ...prev]);
+              sendNotification('¡Nueva pieza encontrada!', { body: `¡Hemos encontrado un ${newPart.name} que coincide con tu búsqueda!`, icon: newPart.imageUrls[0] });
+          }
+      }, 25000);
 
-        return () => clearInterval(interval);
-    }, [savedSearches, currentUser, notificationPermission]);
+      return () => clearInterval(interval);
+  }, [savedSearches, currentUser, notificationPermission]);
 
   const handleNavigate = (newView: View) => {
     if (newView === 'chat') {
@@ -317,6 +301,7 @@ const App: React.FC = () => {
         setView('detail');
     } else if (view === 'edit') {
         setMotorcycleToEdit(null);
+        setPartToEdit(null);
         setView('profile');
     }
     else {
@@ -387,7 +372,7 @@ const App: React.FC = () => {
           id: Date.now(),
           imageUrls: motoToPublish.imageUrls.length > 0 ? motoToPublish.imageUrls : [`https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=800&auto=format&fit=crop`],
           sellerEmail: currentUser.email,
-          category: 'Sport',
+          category: 'Sport', // Simplified for demo
           status: 'for-sale',
           featured: false,
         };
@@ -399,7 +384,7 @@ const App: React.FC = () => {
           id: Date.now(),
           imageUrls: partToPublish.imageUrls.length > 0 ? partToPublish.imageUrls : ['https://images.unsplash.com/photo-1559795632-520a8e7a016f?q=80&w=800&auto=format&fit=crop'],
           sellerEmail: currentUser.email,
-          category: 'Exhausts',
+          category: 'Exhausts', // Simplified for demo
           status: 'for-sale',
         };
         setParts(prev => [newPart, ...prev]);
@@ -419,19 +404,25 @@ const App: React.FC = () => {
     setEngineSizeCategory('any');
   };
   
-  const handleStartOrGoToChat = (motorcycle: Motorcycle) => {
-    if (!currentUser || currentUser.email === motorcycle.sellerEmail) {
+  const handleStartOrGoToChat = (item: Motorcycle | Part) => {
+    if (!currentUser || currentUser.email === item.sellerEmail) {
         alert("No puedes iniciar un chat contigo mismo.");
         return;
     };
-    if (motorcycle.status === 'sold') {
-        alert("Esta moto ya ha sido vendida.");
+    if (item.status === 'sold') {
+        alert("Este artículo ya ha sido vendido.");
         return;
     }
 
-    const existingConversation = conversations.find(c => 
-        c.motorcycleId === motorcycle.id && c.participants.includes(currentUser.email)
-    );
+    const isMotorcycle = 'make' in item;
+
+    const existingConversation = conversations.find(c => {
+        if (isMotorcycle) {
+            return c.motorcycleId === item.id && c.participants.includes(currentUser.email);
+        } else {
+            return c.partId === item.id && c.participants.includes(currentUser.email);
+        }
+    });
 
     if (existingConversation) {
         setSelectedConversationId(existingConversation.id);
@@ -439,9 +430,13 @@ const App: React.FC = () => {
     } else {
         const newConversation: ChatConversation = {
             id: `convo${conversations.length + 1}`,
-            participants: [currentUser.email, motorcycle.sellerEmail],
-            motorcycleId: motorcycle.id,
+            participants: [currentUser.email, item.sellerEmail],
         };
+        if (isMotorcycle) {
+            newConversation.motorcycleId = item.id;
+        } else {
+            newConversation.partId = item.id;
+        }
         setConversations(prev => [...prev, newConversation]);
         setSelectedConversationId(newConversation.id);
         setView('chatDetail');
@@ -481,13 +476,15 @@ const App: React.FC = () => {
         setMessages(prev => [...prev, reply]);
 
         if (view !== 'chatDetail' || selectedConversationId !== conversationId) {
-            const motorcycle = motorcycles.find(m => m.id === conversation.motorcycleId);
+            const item = conversation.motorcycleId
+              ? motorcycles.find(m => m.id === conversation.motorcycleId)
+              : parts.find(p => p.id === conversation.partId);
             const sender = users.find(u => u.email === otherUserEmail);
             sendNotification(
               `Nuevo mensaje de ${sender?.name || 'Vendedor'}`,
               {
                 body: reply.text,
-                icon: motorcycle?.imageUrls[0],
+                icon: item?.imageUrls[0],
                 tag: `new-message-${conversation.id}`
               }
             );
@@ -496,13 +493,11 @@ const App: React.FC = () => {
   };
   
   const handleToggleFavorite = (motoId: number) => {
-    setFavorites(prev => {
-        if (prev.includes(motoId)) {
-            return prev.filter(id => id !== motoId);
-        } else {
-            return [...prev, motoId];
-        }
-    });
+    setFavorites(prev => prev.includes(motoId) ? prev.filter(id => id !== motoId) : [...prev, motoId]);
+  };
+  
+  const handleTogglePartFavorite = (partId: number) => {
+    setFavoriteParts(prev => prev.includes(partId) ? prev.filter(id => id !== partId) : [...prev, partId]);
   };
 
   const handleRequestNotificationPermission = async () => {
@@ -524,43 +519,64 @@ const App: React.FC = () => {
       setView('publicProfile');
   };
 
-  const handleMarkAsSold = (motoId: number) => {
-    if (window.confirm('¿Estás seguro de que quieres marcar esta moto como vendida?')) {
-        setMotorcycles(prev => prev.map(moto => 
-            moto.id === motoId ? { ...moto, status: 'sold' } : moto
-        ));
+  const handleMarkAsSold = (itemId: number, type: 'motorcycle' | 'part') => {
+    const message = type === 'motorcycle' 
+        ? '¿Estás seguro de que quieres marcar esta moto como vendida?' 
+        : '¿Estás seguro de que quieres marcar esta pieza como vendida?';
+
+    if (window.confirm(message)) {
+        if (type === 'motorcycle') {
+            setMotorcycles(prev => prev.map(item => item.id === itemId ? { ...item, status: 'sold' } : item));
+        } else {
+            setParts(prev => prev.map(item => item.id === itemId ? { ...item, status: 'sold' } : item));
+        }
     }
   };
 
-  const handleNavigateToEdit = (moto: Motorcycle) => {
-    setMotorcycleToEdit(moto);
+  const handleNavigateToEdit = (item: Motorcycle | Part) => {
+    if ('make' in item) {
+      setMotorcycleToEdit(item);
+      setPartToEdit(null);
+    } else {
+      setPartToEdit(item);
+      setMotorcycleToEdit(null);
+    }
     setView('edit');
   };
 
-  const handleUpdateMotorcycle = (updatedMoto: Motorcycle) => {
-    setMotorcycles(prev => prev.map(moto => 
-      moto.id === updatedMoto.id ? updatedMoto : moto
-    ));
+  const handleUpdateItem = (updatedItem: Motorcycle | Part) => {
+    if ('make' in updatedItem) {
+      setMotorcycles(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
+    } else {
+      setParts(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
+    }
     setMotorcycleToEdit(null);
+    setPartToEdit(null);
     setView('profile');
     alert('¡Anuncio actualizado con éxito!');
   };
 
-  const handlePromoteMotorcycle = (motoId: number) => {
-    setMotoToPromoteId(motoId);
+  const handlePromoteItem = (itemId: number, type: 'motorcycle' | 'part') => {
+    setItemToPromote({ id: itemId, type });
     setIsPromoteModalOpen(true);
   };
 
   const handleConfirmPromote = () => {
-    if (motoToPromoteId === null) return;
+    if (!itemToPromote) return;
 
-    setMotorcycles(prev => prev.map(moto =>
-      moto.id === motoToPromoteId ? { ...moto, featured: true } : moto
-    ));
+    if (itemToPromote.type === 'motorcycle') {
+        setMotorcycles(prev => prev.map(moto =>
+          moto.id === itemToPromote.id ? { ...moto, featured: true } : moto
+        ));
+    } else {
+        setParts(prev => prev.map(part =>
+          part.id === itemToPromote.id ? { ...part, featured: true } : part
+        ));
+    }
     alert('¡Anuncio promocionado con éxito!');
     
     setIsPromoteModalOpen(false);
-    setMotoToPromoteId(null);
+    setItemToPromote(null);
   };
 
   const handleRateUser = (sellerEmail: string, rating: number) => {
@@ -579,57 +595,43 @@ const App: React.FC = () => {
         })
     );
 
-    setUserRatings(prevRatings => ({
-        ...prevRatings,
-        [sellerEmail]: rating,
-    }));
-    
+    setUserRatings(prevRatings => ({ ...prevRatings, [sellerEmail]: rating }));
     alert(`Has valorado a ${sellerEmail} con ${rating} estrellas. ¡Gracias!`);
   };
 
   const handleAddHeatmapPoint = (e: React.MouseEvent) => {
-    const newPoint: HeatmapPoint = {
-      x: e.pageX,
-      y: e.pageY,
-      value: 1,
-    };
+    const newPoint: HeatmapPoint = { x: e.pageX, y: e.pageY, value: 1 };
     const updatedData = [...heatmapData, newPoint];
     setHeatmapData(updatedData);
     window.localStorage.setItem('motoMarketHeatmapData', JSON.stringify(updatedData));
   };
   
-  const handleToggleHeatmap = () => {
-    setIsHeatmapVisible(prev => !prev);
-  };
+  const handleToggleHeatmap = () => setIsHeatmapVisible(prev => !prev);
 
-  const handleSaveSearch = () => {
-      const searchCriteria: SavedSearch = {
+  const handleSaveSearch = (type: 'motorcycle' | 'part') => {
+      const baseCriteria = {
           id: `search-${Date.now()}`,
+          searchType: type,
           searchTerm,
           locationFilter,
-          category: selectedCategory,
           priceRange,
-          yearRange,
-          engineSizeCategory,
       };
-      const alreadyExists = savedSearches.some(s => 
-          s.searchTerm === searchCriteria.searchTerm &&
-          s.locationFilter === searchCriteria.locationFilter &&
-          s.category === searchCriteria.category &&
-          s.priceRange.min === searchCriteria.priceRange.min &&
-          s.priceRange.max === searchCriteria.priceRange.max &&
-          s.yearRange.min === searchCriteria.yearRange.min &&
-          s.yearRange.max === searchCriteria.yearRange.max &&
-          s.engineSizeCategory === searchCriteria.engineSizeCategory
-      );
+
+      let searchCriteria: SavedSearch;
+      if (type === 'motorcycle') {
+          searchCriteria = { ...baseCriteria, motorcycleCategory: selectedCategory, yearRange, engineSizeCategory };
+      } else {
+          searchCriteria = { ...baseCriteria, partCategory: selectedPartCategory };
+      }
       
+      const alreadyExists = savedSearches.some(s => JSON.stringify(s) === JSON.stringify(searchCriteria));
       if (alreadyExists) {
           alert('Ya tienes una alerta guardada con estos criterios.');
           return;
       }
 
       setSavedSearches(prev => [...prev, searchCriteria]);
-      alert('¡Alerta guardada! Te notificaremos cuando encontremos motos que coincidan.');
+      alert('¡Alerta guardada! Te notificaremos cuando encontremos nuevos artículos que coincidan.');
   };
 
   const handleDeleteSearch = (searchId: string) => {
@@ -639,15 +641,9 @@ const App: React.FC = () => {
   const filteredMotorcycles = useMemo(() => {
     let filtered = motorcycles.filter(m => m.status === 'for-sale');
     const lowercasedFilter = searchTerm.toLowerCase();
-    if (lowercasedFilter) {
-      filtered = filtered.filter(m => `${m.make} ${m.model} ${m.year}`.toLowerCase().includes(lowercasedFilter));
-    }
-    if (locationFilter) {
-      filtered = filtered.filter(m => m.location.toLowerCase().includes(locationFilter.toLowerCase()));
-    }
-    if (selectedCategory !== 'All') {
-      filtered = filtered.filter(m => m.category === selectedCategory);
-    }
+    if (lowercasedFilter) filtered = filtered.filter(m => `${m.make} ${m.model} ${m.year}`.toLowerCase().includes(lowercasedFilter));
+    if (locationFilter) filtered = filtered.filter(m => m.location.toLowerCase().includes(locationFilter.toLowerCase()));
+    if (selectedCategory !== 'All') filtered = filtered.filter(m => m.category === selectedCategory);
     const minPrice = parseFloat(priceRange.min);
     if (!isNaN(minPrice)) filtered = filtered.filter(m => m.price >= minPrice);
     const maxPrice = parseFloat(priceRange.max);
@@ -673,15 +669,9 @@ const App: React.FC = () => {
   const filteredParts = useMemo(() => {
     let filtered = parts.filter(p => p.status === 'for-sale');
     const lowercasedFilter = searchTerm.toLowerCase();
-     if (lowercasedFilter) {
-      filtered = filtered.filter(p => `${p.name} ${p.description}`.toLowerCase().includes(lowercasedFilter));
-    }
-    if (locationFilter) {
-      filtered = filtered.filter(p => p.location.toLowerCase().includes(locationFilter.toLowerCase()));
-    }
-    if (selectedPartCategory !== 'All') {
-      filtered = filtered.filter(p => p.category === selectedPartCategory);
-    }
+     if (lowercasedFilter) filtered = filtered.filter(p => `${p.name} ${p.description}`.toLowerCase().includes(lowercasedFilter));
+    if (locationFilter) filtered = filtered.filter(p => p.location.toLowerCase().includes(locationFilter.toLowerCase()));
+    if (selectedPartCategory !== 'All') filtered = filtered.filter(p => p.category === selectedPartCategory);
     const minPrice = parseFloat(priceRange.min);
     if (!isNaN(minPrice)) filtered = filtered.filter(p => p.price >= minPrice);
     const maxPrice = parseFloat(priceRange.max);
@@ -690,33 +680,19 @@ const App: React.FC = () => {
     return filtered;
   }, [parts, searchTerm, locationFilter, priceRange, selectedPartCategory]);
   
-  const featuredMotorcycles = useMemo(() => {
-    return motorcycles.filter(moto => moto.featured && moto.status === 'for-sale');
-  }, [motorcycles]);
+  const featuredMotorcycles = useMemo(() => motorcycles.filter(moto => moto.featured && moto.status === 'for-sale'), [motorcycles]);
 
-  const userMotorcycles = useMemo(() => {
-    if (!currentUser) return [];
-    return motorcycles.filter(moto => moto.sellerEmail === currentUser.email);
-  }, [motorcycles, currentUser]);
+  const userMotorcycles = useMemo(() => currentUser ? motorcycles.filter(moto => moto.sellerEmail === currentUser.email) : [], [motorcycles, currentUser]);
+  const userParts = useMemo(() => currentUser ? parts.filter(part => part.sellerEmail === currentUser.email) : [], [parts, currentUser]);
   
-  const userParts = useMemo(() => {
-      if (!currentUser) return [];
-      return parts.filter(part => part.sellerEmail === currentUser.email);
-  }, [parts, currentUser]);
-  
-  const favoriteMotorcycles = useMemo(() => {
-    return motorcycles.filter(moto => favorites.includes(moto.id));
-  }, [motorcycles, favorites]);
+  const favoriteMotorcycles = useMemo(() => motorcycles.filter(moto => favorites.includes(moto.id)), [motorcycles, favorites]);
+  const favoritePartsList = useMemo(() => parts.filter(part => favoriteParts.includes(part.id)), [parts, favoriteParts]);
   
   const unreadMessagesCount = useMemo(() => {
     if (!currentUser) return 0;
     return messages.filter(msg => {
         const conversation = conversations.find(c => c.id === msg.conversationId);
-        return (
-            !msg.isRead &&
-            msg.senderEmail !== currentUser.email &&
-            conversation?.participants.includes(currentUser.email)
-        );
+        return !msg.isRead && msg.senderEmail !== currentUser.email && conversation?.participants.includes(currentUser.email);
     }).length;
   }, [messages, currentUser, conversations]);
 
@@ -728,9 +704,7 @@ const App: React.FC = () => {
   );
 
   if (!currentUser) {
-    if (view === 'signup') {
-      return <SignUpView onSignUpSuccess={handleSignUpSuccess} onNavigateToLogin={() => setView('login')} />;
-    }
+    if (view === 'signup') return <SignUpView onSignUpSuccess={handleSignUpSuccess} onNavigateToLogin={() => setView('login')} />;
     return <LoginView onLoginSuccess={handleLoginSuccess} onNavigateToSignUp={() => setView('signup')} />;
   }
 
@@ -739,147 +713,52 @@ const App: React.FC = () => {
       case 'detail': {
         const seller = users.find(u => u.email === selectedMotorcycle?.sellerEmail);
         if (!selectedMotorcycle || !seller) return <PlaceholderView title="Anuncio no encontrado" />;
-        return <MotorcycleDetailView 
-            motorcycle={selectedMotorcycle} 
-            seller={seller}
-            allMotorcycles={motorcycles}
-            onBack={handleBackToPrevView} 
-            onStartChat={handleStartOrGoToChat} 
-            isFavorite={favorites.includes(selectedMotorcycle.id)}
-            onToggleFavorite={handleToggleFavorite}
-            onViewPublicProfile={handleViewPublicProfile}
-            onSelectMotorcycle={handleSelectMotorcycle}
-        />;
+        return <MotorcycleDetailView motorcycle={selectedMotorcycle} seller={seller} allMotorcycles={motorcycles} onBack={handleBackToPrevView} onStartChat={handleStartOrGoToChat} isFavorite={favorites.includes(selectedMotorcycle.id)} onToggleFavorite={handleToggleFavorite} onViewPublicProfile={handleViewPublicProfile} onSelectMotorcycle={handleSelectMotorcycle} />;
       }
       case 'partDetail': {
         const seller = users.find(u => u.email === selectedPart?.sellerEmail);
         if (!selectedPart || !seller) return <PlaceholderView title="Anuncio no encontrado" />;
-        return <PartDetailView 
-            part={selectedPart} 
-            seller={seller}
-            onBack={handleBackToPrevView} 
-            onViewPublicProfile={handleViewPublicProfile}
-        />;
+        return <PartDetailView part={selectedPart} seller={seller} onBack={handleBackToPrevView} onViewPublicProfile={handleViewPublicProfile} onStartChat={handleStartOrGoToChat} isFavorite={favoriteParts.includes(selectedPart.id)} onToggleFavorite={handleTogglePartFavorite} />;
       }
       case 'sell':
         return <SellForm onBack={() => setView('home')} onPublish={handlePublish} />;
       case 'edit':
-        return motorcycleToEdit && <EditForm
-            motorcycle={motorcycleToEdit}
-            onBack={handleBackToPrevView}
-            onUpdate={handleUpdateMotorcycle}
-        />;
+        return <EditForm motorcycle={motorcycleToEdit} part={partToEdit} onBack={handleBackToPrevView} onUpdate={handleUpdateItem} />;
       case 'profile':
-        return <ProfileView 
-            currentUser={currentUser} 
-            userMotorcycles={userMotorcycles} 
-            userParts={userParts}
-            onGoToSell={() => setView('sell')} 
-            onSelectMotorcycle={handleSelectMotorcycle} 
-            onLogout={handleLogout} 
-            notificationPermission={notificationPermission}
-            onRequestPermission={handleRequestNotificationPermission}
-            onUpdateProfileImage={handleUpdateProfileImage}
-            onEditMotorcycle={handleNavigateToEdit}
-            onMarkAsSold={handleMarkAsSold}
-            onPromoteMotorcycle={handlePromoteMotorcycle}
-            savedSearches={savedSearches}
-            onDeleteSearch={handleDeleteSearch}
-        />;
+        return <ProfileView currentUser={currentUser} userMotorcycles={userMotorcycles} userParts={userParts} onGoToSell={() => setView('sell')} onSelectMotorcycle={handleSelectMotorcycle} onLogout={handleLogout} notificationPermission={notificationPermission} onRequestPermission={handleRequestNotificationPermission} onUpdateProfileImage={handleUpdateProfileImage} onEditItem={handleNavigateToEdit} onMarkAsSold={handleMarkAsSold} onPromoteItem={handlePromoteItem} savedSearches={savedSearches} onDeleteSearch={handleDeleteSearch} />;
       case 'publicProfile': {
         const seller = users.find(u => u.email === selectedSellerEmail);
         const sellerMotorcycles = motorcycles.filter(m => m.sellerEmail === selectedSellerEmail);
         if (!seller) return <PlaceholderView title="Vendedor no encontrado" />;
-        return <PublicProfileView 
-            seller={seller}
-            motorcycles={sellerMotorcycles}
-            onBack={handleBackToPrevView}
-            onSelectMotorcycle={handleSelectMotorcycle}
-            favorites={favorites}
-            onToggleFavorite={handleToggleFavorite}
-            currentUser={currentUser}
-            userRating={userRatings[seller.email]}
-            onRateUser={handleRateUser}
-        />;
+        return <PublicProfileView seller={seller} motorcycles={sellerMotorcycles} onBack={handleBackToPrevView} onSelectMotorcycle={handleSelectMotorcycle} favorites={favorites} onToggleFavorite={handleToggleFavorite} currentUser={currentUser} userRating={userRatings[seller.email]} onRateUser={handleRateUser} />;
       }
       case 'favorites':
-        return <FavoritesView 
-            motorcycles={favoriteMotorcycles} 
-            onSelectMotorcycle={handleSelectMotorcycle}
-            favorites={favorites}
-            onToggleFavorite={handleToggleFavorite}
-        />;
+        return <FavoritesView motorcycles={favoriteMotorcycles} parts={favoritePartsList} onSelectMotorcycle={handleSelectMotorcycle} onSelectPart={handleSelectPart} onToggleFavorite={handleToggleFavorite} onTogglePartFavorite={handleTogglePartFavorite} />;
       case 'chatList':
-        return <ChatListView 
-            conversations={conversations.filter(c => c.participants.includes(currentUser.email))}
-            messages={messages}
-            motorcycles={motorcycles}
-            currentUser={currentUser}
-            users={users}
-            onSelectConversation={(convoId) => {
-                setMessages(prev => prev.map(msg => 
-                    (msg.conversationId === convoId && msg.senderEmail !== currentUser.email) 
-                        ? { ...msg, isRead: true } 
-                        : msg
-                ));
-                setSelectedConversationId(convoId);
-                setView('chatDetail');
-            }}
-        />;
+        return <ChatListView conversations={conversations.filter(c => c.participants.includes(currentUser.email))} messages={messages} motorcycles={motorcycles} parts={parts} currentUser={currentUser} users={users} onSelectConversation={(convoId) => { setMessages(prev => prev.map(msg => (msg.conversationId === convoId && msg.senderEmail !== currentUser.email) ? { ...msg, isRead: true } : msg )); setSelectedConversationId(convoId); setView('chatDetail'); }} />;
       case 'chatDetail': {
         const conversation = conversations.find(c => c.id === selectedConversationId);
-        const motorcycle = motorcycles.find(m => m.id === conversation?.motorcycleId);
-        if (!conversation || !motorcycle) {
-            return <PlaceholderView title="Error de Chat" />;
-        }
-        return <ChatDetailView
-            conversation={conversation}
-            messages={messages.filter(m => m.conversationId === selectedConversationId).sort((a,b) => a.timestamp - b.timestamp)}
-            motorcycle={motorcycle}
-            currentUser={currentUser}
-            users={users}
-            onBack={handleBackToPrevView}
-            onSendMessage={handleSendMessage}
-            isTyping={isTyping[selectedConversationId] || false}
-        />;
+        if (!conversation) return <PlaceholderView title="Error de Chat" />;
+        const item = conversation.motorcycleId ? motorcycles.find(m => m.id === conversation.motorcycleId) : parts.find(p => p.id === conversation.partId);
+        if (!item) return <PlaceholderView title="Artículo no encontrado" />;
+        return <ChatDetailView conversation={conversation} messages={messages.filter(m => m.conversationId === selectedConversationId).sort((a,b) => a.timestamp - b.timestamp)} item={item} currentUser={currentUser} users={users} onBack={handleBackToPrevView} onSendMessage={handleSendMessage} isTyping={isTyping[selectedConversationId] || false} />;
       }
       case 'home':
       default:
-        const areFiltersActive = searchTerm !== '' || locationFilter !== '' || selectedCategory !== 'All' || priceRange.min !== '' || priceRange.max !== '' || yearRange.min !== '' || yearRange.max !== '' || engineSizeCategory !== 'any';
+        const areMotoFiltersActive = searchTerm !== '' || locationFilter !== '' || selectedCategory !== 'All' || priceRange.min !== '' || priceRange.max !== '' || yearRange.min !== '' || yearRange.max !== '' || engineSizeCategory !== 'any';
+        const arePartFiltersActive = searchTerm !== '' || locationFilter !== '' || selectedPartCategory !== 'All' || priceRange.min !== '' || priceRange.max !== '';
         return (
           <div>
             <div className="p-4 bg-background-light dark:bg-background-dark">
                 <div className="flex w-full bg-card-light dark:bg-card-dark p-1 rounded-full border border-border-light dark:border-border-dark">
-                    <button onClick={() => setMarketView('motorcycles')} className={`w-1/2 py-2 rounded-full text-sm font-bold transition-colors ${marketView === 'motorcycles' ? 'bg-primary text-white' : 'text-foreground-light dark:text-foreground-dark'}`}>
-                        Motos
-                    </button>
-                    <button onClick={() => setMarketView('parts')} className={`w-1/2 py-2 rounded-full text-sm font-bold transition-colors ${marketView === 'parts' ? 'bg-primary text-white' : 'text-foreground-light dark:text-foreground-dark'}`}>
-                        Piezas
-                    </button>
+                    <button onClick={() => setMarketView('motorcycles')} className={`w-1/2 py-2 rounded-full text-sm font-bold transition-colors ${marketView === 'motorcycles' ? 'bg-primary text-white' : 'text-foreground-light dark:text-foreground-dark'}`}> Motos </button>
+                    <button onClick={() => setMarketView('parts')} className={`w-1/2 py-2 rounded-full text-sm font-bold transition-colors ${marketView === 'parts' ? 'bg-primary text-white' : 'text-foreground-light dark:text-foreground-dark'}`}> Piezas </button>
                 </div>
             </div>
             {marketView === 'motorcycles' ? (
-              <MotorcycleList 
-                motorcycles={filteredMotorcycles} 
-                featuredMotorcycles={featuredMotorcycles}
-                onSelectMotorcycle={handleSelectMotorcycle}
-                selectedCategory={selectedCategory}
-                onSelectCategory={setSelectedCategory}
-                favorites={favorites}
-                onToggleFavorite={handleToggleFavorite}
-                onAddHeatmapPoint={handleAddHeatmapPoint}
-                searchTerm={searchTerm}
-                onSaveSearch={handleSaveSearch}
-                areFiltersActive={areFiltersActive}
-              />
+              <MotorcycleList motorcycles={filteredMotorcycles} featuredMotorcycles={featuredMotorcycles} onSelectMotorcycle={handleSelectMotorcycle} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} favorites={favorites} onToggleFavorite={handleToggleFavorite} onAddHeatmapPoint={handleAddHeatmapPoint} searchTerm={searchTerm} onSaveSearch={() => handleSaveSearch('motorcycle')} areFiltersActive={areMotoFiltersActive} />
             ) : (
-              <PartList 
-                parts={filteredParts}
-                onSelectPart={handleSelectPart}
-                selectedCategory={selectedPartCategory}
-                onSelectCategory={setSelectedPartCategory}
-                onAddHeatmapPoint={handleAddHeatmapPoint}
-              />
+              <PartList parts={filteredParts} onSelectPart={handleSelectPart} selectedCategory={selectedPartCategory} onSelectCategory={setSelectedPartCategory} onAddHeatmapPoint={handleAddHeatmapPoint} onSaveSearch={() => handleSaveSearch('part')} areFiltersActive={arePartFiltersActive} favorites={favoriteParts} onToggleFavorite={handleTogglePartFavorite} />
             )}
           </div>
         );
@@ -895,14 +774,7 @@ const App: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark overflow-x-hidden">
       {isHeatmapVisible && <HeatmapOverlay data={heatmapData} />}
       {isHeaderVisible && (
-        <Header 
-          currentView={view}
-          searchTerm={searchTerm} 
-          setSearchTerm={setSearchTerm} 
-          onOpenFilters={() => setIsFilterModalOpen(true)}
-          isHeatmapVisible={isHeatmapVisible}
-          onToggleHeatmap={handleToggleHeatmap}
-        />
+        <Header currentView={view} searchTerm={searchTerm} setSearchTerm={setSearchTerm} onOpenFilters={() => setIsFilterModalOpen(true)} isHeatmapVisible={isHeatmapVisible} onToggleHeatmap={handleToggleHeatmap} />
       )}
       <main className={`flex-1 ${mainContentPadding}`}>
         <div key={`${view}-${marketView}`} className="animate-view-transition">
@@ -910,50 +782,11 @@ const App: React.FC = () => {
         </div>
       </main>
       {isBottomNavVisible && (
-        <BottomNav 
-            currentView={view.startsWith('chat') ? 'chat' : view} 
-            onNavigate={handleNavigate}
-            unreadMessagesCount={unreadMessagesCount}
-        />
+        <BottomNav currentView={view.startsWith('chat') ? 'chat' : view} onNavigate={handleNavigate} unreadMessagesCount={unreadMessagesCount} />
       )}
-      <FilterModal
-        isOpen={isFilterModalOpen}
-        onClose={() => setIsFilterModalOpen(false)}
-        priceRange={priceRange}
-        setPriceRange={setPriceRange}
-        yearRange={yearRange}
-        setYearRange={setYearRange}
-        engineSizeCategory={engineSizeCategory}
-        setEngineSizeCategory={setEngineSizeCategory}
-        locationFilter={locationFilter}
-        setLocationFilter={setLocationFilter}
-        onResetFilters={handleResetFilters}
-      />
-      <ConfirmationModal
-        isOpen={isConfirmationModalOpen}
-        onClose={() => {
-          setIsConfirmationModalOpen(false);
-          setMotoToPublish(null);
-          setPartToPublish(null);
-        }}
-        onConfirm={handleConfirmPublish}
-        title="Confirmar Publicación"
-        message="¿Estás seguro de que quieres publicar este anuncio? Por favor, revisa que todos los detalles sean correctos."
-        confirmText="Sí, Publicar"
-        cancelText="Revisar"
-      />
-      <ConfirmationModal
-        isOpen={isPromoteModalOpen}
-        onClose={() => {
-          setIsPromoteModalOpen(false);
-          setMotoToPromoteId(null);
-        }}
-        onConfirm={handleConfirmPromote}
-        title="Promocionar Anuncio"
-        message="Promocionar este anuncio tiene un coste de $5.00. Esto lo mostrará en la sección 'Destacadas' en la página principal. ¿Deseas continuar?"
-        confirmText="Sí, Promocionar ($5.00)"
-        cancelText="Cancelar"
-      />
+      <FilterModal isOpen={isFilterModalOpen} onClose={() => setIsFilterModalOpen(false)} priceRange={priceRange} setPriceRange={setPriceRange} yearRange={yearRange} setYearRange={setYearRange} engineSizeCategory={engineSizeCategory} setEngineSizeCategory={setEngineSizeCategory} locationFilter={locationFilter} setLocationFilter={setLocationFilter} onResetFilters={handleResetFilters} />
+      <ConfirmationModal isOpen={isConfirmationModalOpen} onClose={() => { setIsConfirmationModalOpen(false); setMotoToPublish(null); setPartToPublish(null); }} onConfirm={handleConfirmPublish} title="Confirmar Publicación" message="¿Estás seguro de que quieres publicar este anuncio? Por favor, revisa que todos los detalles sean correctos." confirmText="Sí, Publicar" cancelText="Revisar" />
+      <ConfirmationModal isOpen={isPromoteModalOpen} onClose={() => { setIsPromoteModalOpen(false); setItemToPromote(null); }} onConfirm={handleConfirmPromote} title="Promocionar Anuncio" message="Promocionar este anuncio tiene un coste de $5.00. Esto lo mostrará en la sección 'Destacadas' en la página principal. ¿Deseas continuar?" confirmText="Sí, Promocionar ($5.00)" cancelText="Cancelar" />
     </div>
   );
 };

@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ChatConversation, ChatMessage, Motorcycle, User } from '../types';
+import { ChatConversation, ChatMessage, Motorcycle, User, Part } from '../types';
 import { ArrowLeftIcon, SendIcon } from './Icons';
 
 interface ChatDetailViewProps {
   conversation: ChatConversation;
   messages: ChatMessage[];
-  motorcycle: Motorcycle;
+  item: Motorcycle | Part;
   currentUser: User;
   users: User[];
   onBack: () => void;
@@ -22,7 +22,7 @@ const TypingIndicator: React.FC = () => (
     </div>
 );
 
-const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages, motorcycle, currentUser, users, onBack, onSendMessage, isTyping }) => {
+const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages, item, currentUser, users, onBack, onSendMessage, isTyping }) => {
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -41,6 +41,8 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages,
     }
   };
 
+  const itemName = 'make' in item ? `${item.make} ${item.model}` : item.name;
+
   return (
     <div className="flex flex-col h-screen bg-background-light dark:bg-background-dark">
         <style>{`
@@ -57,9 +59,9 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages,
           <button onClick={onBack} className="p-2 -ml-2">
             <ArrowLeftIcon className="w-6 h-6 text-foreground-light dark:text-foreground-dark" />
           </button>
-          <img src={motorcycle.imageUrls[0]} alt={motorcycle.model} className="w-10 h-10 object-cover rounded-md" />
+          <img src={item.imageUrls[0]} alt={itemName} className="w-10 h-10 object-cover rounded-md" />
           <div>
-             <h2 className="font-bold text-foreground-light dark:text-foreground-dark leading-tight">{motorcycle.make} {motorcycle.model}</h2>
+             <h2 className="font-bold text-foreground-light dark:text-foreground-dark leading-tight">{itemName}</h2>
              <p className="text-xs text-foreground-muted-light dark:text-foreground-muted-dark">Chat con {otherParticipant?.name || otherParticipantEmail}</p>
           </div>
         </div>

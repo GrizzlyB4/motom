@@ -13,9 +13,9 @@ interface ProfileViewProps {
   notificationPermission: NotificationPermission;
   onRequestPermission: () => void;
   onUpdateProfileImage: (imageUrl: string) => void;
-  onEditMotorcycle: (moto: Motorcycle) => void;
-  onMarkAsSold: (motoId: number) => void;
-  onPromoteMotorcycle: (motoId: number) => void;
+  onEditItem: (item: Motorcycle | Part) => void;
+  onMarkAsSold: (itemId: number, type: 'motorcycle' | 'part') => void;
+  onPromoteItem: (itemId: number, type: 'motorcycle' | 'part') => void;
   savedSearches: SavedSearch[];
   onDeleteSearch: (searchId: string) => void;
 }
@@ -24,30 +24,28 @@ const formatSearchCriteria = (search: SavedSearch): string => {
     const parts: string[] = [];
     if (search.searchTerm) parts.push(`'${search.searchTerm}'`);
     if (search.locationFilter) parts.push(`en '${search.locationFilter}'`);
-    if (search.category !== 'All') parts.push(search.category);
-    if (search.priceRange.min && search.priceRange.max) parts.push(`$${search.priceRange.min}-$${search.priceRange.max}`);
-    else if (search.priceRange.min) parts.push(`> $${search.priceRange.min}`);
-    else if (search.priceRange.max) parts.push(`< $${search.priceRange.max}`);
-    if (search.yearRange.min && search.yearRange.max) parts.push(`${search.yearRange.min}-${search.yearRange.max}`);
-    else if (search.yearRange.min) parts.push(`> ${search.yearRange.min}`);
-    else if (search.yearRange.max) parts.push(`< ${search.yearRange.max}`);
-    if (search.engineSizeCategory !== 'any') {
-        const categories = {
-            '125': '<= 125cc',
-            '125-500': '125-500cc',
-            '501-1000': '501-1000cc',
-            '1000+': '> 1000cc'
-        };
-        parts.push(categories[search.engineSizeCategory as keyof typeof categories]);
+    
+    if (search.searchType === 'motorcycle') {
+        if (search.motorcycleCategory && search.motorcycleCategory !== 'All') parts.push(search.motorcycleCategory);
+        if (search.priceRange && search.priceRange.min && search.priceRange.max) parts.push(`$${search.priceRange.min}-$${search.priceRange.max}`);
+        if (search.yearRange && search.yearRange.min && search.yearRange.max) parts.push(`${search.yearRange.min}-${search.yearRange.max}`);
+        if (search.engineSizeCategory && search.engineSizeCategory !== 'any') {
+            const categories = {'125': '<= 125cc', '125-500': '125-500cc', '501-1000': '501-1000cc', '1000+': '> 1000cc'};
+            parts.push(categories[search.engineSizeCategory as keyof typeof categories]);
+        }
+    } else {
+        if (search.partCategory && search.partCategory !== 'All') parts.push(search.partCategory);
+        if (search.priceRange && search.priceRange.min && search.priceRange.max) parts.push(`$${search.priceRange.min}-$${search.priceRange.max}`);
     }
-    if (parts.length === 0) return 'Cualquier moto';
-    return parts.join(', ');
+
+    if (parts.length === 0) return search.searchType === 'motorcycle' ? 'Cualquier moto' : 'Cualquier pieza';
+    return `${search.searchType === 'motorcycle' ? 'Motos' : 'Piezas'}: ${parts.join(', ')}`;
 };
 
 const ProfileView: React.FC<ProfileViewProps> = ({ 
     currentUser, userMotorcycles, userParts, onGoToSell, onSelectMotorcycle, onLogout, 
     notificationPermission, onRequestPermission, onUpdateProfileImage, 
-    onEditMotorcycle, onMarkAsSold, onPromoteMotorcycle, savedSearches, onDeleteSearch 
+    onEditItem, onMarkAsSold, onPromoteItem, savedSearches, onDeleteSearch 
 }) => {
 
   const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,8 +65,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({
       }
   };
   
-  const activeListings = userMotorcycles.filter(m => m.status === 'for-sale');
-  const soldListings = userMotorcycles.filter(m => m.status === 'sold');
+  const activeMotorcycleListings = userMotorcycles.filter(m => m.status === 'for-sale');
+  const soldMotorcycleListings = userMotorcycles.filter(m => m.status === 'sold');
+  const activePartListings = userParts.filter(p => p.status === 'for-sale');
   const userRating = (currentUser.totalRatingPoints && currentUser.numberOfRatings)
     ? currentUser.totalRatingPoints / currentUser.numberOfRatings
     : 0;
@@ -127,7 +126,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({
         ) : (
           <>
             <p className="text-foreground-muted-light dark:text-foreground-muted-dark mb-4 text-sm">
-              Recibe alertas sobre nuevos mensajes y caídas de precio en tus motos favoritas.
+              Recibe alertas sobre nuevos mensajes, caídas de precio y nuevos anuncios.
             </p>
             <button
               onClick={onRequestPermission}
@@ -142,7 +141,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({
       <div className="space-y-8">
         <div>
             <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold">Mis Anuncios de Motos ({activeListings.length})</h3>
+                <h3 className="text-lg font-bold">Mis Anuncios de Motos ({activeMotorcycleListings.length})</h3>
                 <button
                     onClick={onGoToSell}
                     className="bg-primary/20 text-primary font-bold py-2 px-4 rounded-lg hover:bg-primary/30 transition-colors duration-300 text-sm"
@@ -151,9 +150,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                 </button>
             </div>
 
-            {activeListings.length > 0 ? (
+            {activeMotorcycleListings.length > 0 ? (
             <div className="space-y-4">
-                {activeListings.map(moto => {
+                {activeMotorcycleListings.map(moto => {
                 const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(moto.price);
                 return (
                     <div key={moto.id} className="bg-card-light dark:bg-card-dark p-3 rounded-xl flex items-center gap-3">
@@ -171,26 +170,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                                     <span>Promocionado</span>
                                 </div>
                             ) : (
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); onPromoteMotorcycle(moto.id); }}
-                                    className="text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-md transition-colors"
-                                >
-                                    Promocionar
-                                </button>
+                                <button onClick={(e) => { e.stopPropagation(); onPromoteItem(moto.id, 'motorcycle'); }} className="text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-md transition-colors"> Promocionar </button>
                             )}
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onEditMotorcycle(moto); }}
-                                className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-blue-500 rounded-full hover:bg-blue-500/10 transition-colors"
-                                aria-label="Editar anuncio"
-                            >
-                                <EditIcon className="w-5 h-5" />
-                            </button>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onMarkAsSold(moto.id); }}
-                                className="text-xs font-semibold text-green-600 bg-green-500/10 hover:bg-green-500/20 px-3 py-2 rounded-md transition-colors"
-                            >
-                                Vendido
-                            </button>
+                            <button onClick={(e) => { e.stopPropagation(); onEditItem(moto); }} className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-blue-500 rounded-full hover:bg-blue-500/10 transition-colors" aria-label="Editar anuncio"> <EditIcon className="w-5 h-5" /> </button>
+                            <button onClick={(e) => { e.stopPropagation(); onMarkAsSold(moto.id, 'motorcycle'); }} className="text-xs font-semibold text-green-600 bg-green-500/10 hover:bg-green-500/20 px-3 py-2 rounded-md transition-colors"> Vendido </button>
                         </div>
                     </div>
                 );
@@ -200,21 +183,16 @@ const ProfileView: React.FC<ProfileViewProps> = ({
             <div className="text-center py-12 border-2 border-dashed border-border-light dark:border-border-dark rounded-xl">
                 <h4 className="text-lg font-semibold">Aún no has publicado ninguna moto</h4>
                 <p className="text-foreground-muted-light dark:text-foreground-muted-dark mt-2 mb-6">¡Anímate a vender!</p>
-                <button
-                    onClick={onGoToSell}
-                    className="bg-primary text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity"
-                >
-                    Vender mi Moto
-                </button>
+                <button onClick={onGoToSell} className="bg-primary text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity"> Vender mi Moto </button>
             </div>
             )}
         </div>
         
         <div>
-            <h3 className="text-lg font-bold mb-4">Mis Piezas en Venta ({userParts.length})</h3>
-             {userParts.length > 0 ? (
+            <h3 className="text-lg font-bold mb-4">Mis Piezas en Venta ({activePartListings.length})</h3>
+             {activePartListings.length > 0 ? (
             <div className="space-y-4">
-                {userParts.map(part => {
+                {activePartListings.map(part => {
                 const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(part.price);
                 return (
                     <div key={part.id} className="bg-card-light dark:bg-card-dark p-3 rounded-xl flex items-center gap-3">
@@ -226,12 +204,16 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                             </div>
                         </div>
                         <div className="flex items-center gap-1 sm:gap-2">
-                           <button className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-blue-500 rounded-full hover:bg-blue-500/10 transition-colors" aria-label="Editar anuncio">
-                                <EditIcon className="w-5 h-5" />
-                            </button>
-                            <button className="text-xs font-semibold text-green-600 bg-green-500/10 hover:bg-green-500/20 px-3 py-2 rounded-md transition-colors">
-                                Vendido
-                            </button>
+                           {part.featured ? (
+                                <div className="flex items-center gap-1 text-xs font-semibold text-yellow-500 bg-yellow-500/10 px-3 py-2 rounded-md">
+                                    <StarIcon className="w-4 h-4" />
+                                    <span>Promocionado</span>
+                                </div>
+                            ) : (
+                                <button onClick={(e) => { e.stopPropagation(); onPromoteItem(part.id, 'part'); }} className="text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-md transition-colors"> Promocionar </button>
+                            )}
+                           <button onClick={(e) => { e.stopPropagation(); onEditItem(part); }} className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-blue-500 rounded-full hover:bg-blue-500/10 transition-colors" aria-label="Editar anuncio"> <EditIcon className="w-5 h-5" /> </button>
+                           <button onClick={(e) => { e.stopPropagation(); onMarkAsSold(part.id, 'part'); }} className="text-xs font-semibold text-green-600 bg-green-500/10 hover:bg-green-500/20 px-3 py-2 rounded-md transition-colors"> Vendido </button>
                         </div>
                     </div>
                 );
@@ -251,11 +233,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                     {savedSearches.map(search => (
                         <div key={search.id} className="bg-card-light dark:bg-card-dark p-3 rounded-xl flex items-center justify-between gap-3">
                             <p className="flex-grow text-sm font-medium">{formatSearchCriteria(search)}</p>
-                            <button
-                                onClick={() => onDeleteSearch(search.id)}
-                                className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-primary rounded-full hover:bg-primary/10 transition-colors"
-                                aria-label="Eliminar alerta"
-                            >
+                            <button onClick={() => onDeleteSearch(search.id)} className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-primary rounded-full hover:bg-primary/10 transition-colors" aria-label="Eliminar alerta">
                                 <TrashIcon className="w-5 h-5" />
                             </button>
                         </div>
@@ -264,16 +242,16 @@ const ProfileView: React.FC<ProfileViewProps> = ({
             ) : (
                 <div className="text-center py-12 border-2 border-dashed border-border-light dark:border-border-dark rounded-xl">
                     <h4 className="text-lg font-semibold">No tienes alertas guardadas</h4>
-                    <p className="text-foreground-muted-light dark:text-foreground-muted-dark mt-2">Guarda una búsqueda para recibir notificaciones de nuevas motos.</p>
+                    <p className="text-foreground-muted-light dark:text-foreground-muted-dark mt-2">Guarda una búsqueda para recibir notificaciones de nuevos artículos.</p>
                 </div>
             )}
         </div>
         
-        {soldListings.length > 0 && (
+        {soldMotorcycleListings.length > 0 && (
             <div>
-                <h3 className="text-lg font-bold mb-4">Motos Vendidas ({soldListings.length})</h3>
+                <h3 className="text-lg font-bold mb-4">Motos Vendidas ({soldMotorcycleListings.length})</h3>
                 <div className="space-y-4">
-                    {soldListings.map(moto => {
+                    {soldMotorcycleListings.map(moto => {
                     const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(moto.price);
                     return (
                         <div key={moto.id} onClick={() => onSelectMotorcycle(moto)} className="bg-card-light dark:bg-card-dark p-4 rounded-xl flex items-center gap-4 cursor-pointer">
@@ -293,7 +271,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                 </div>
             </div>
         )}
-
       </div>
     </div>
   );

@@ -1,29 +1,20 @@
+
 import React from 'react';
 import { Part } from '../types';
-import { MapPinIcon } from './Icons';
+import { MapPinIcon, HeartIcon, StarIcon } from './Icons';
 
 interface PartCardProps {
   part: Part;
   onSelect: (part: Part) => void;
+  isFavorite: boolean;
+  onToggleFavorite: (id: number) => void;
   className?: string;
   style?: React.CSSProperties;
 }
 
-const PartCard: React.FC<PartCardProps> = ({ part, onSelect, className, style }) => {
+const PartCard: React.FC<PartCardProps> = ({ part, onSelect, isFavorite, onToggleFavorite, className, style }) => {
   const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(part.price);
   const isSold = part.status === 'sold';
-
-  const conditionText = {
-    'new': 'Nuevo',
-    'used': 'Usado',
-    'refurbished': 'Restaurado'
-  };
-
-  const conditionColor = {
-      'new': 'bg-green-500',
-      'used': 'bg-yellow-500',
-      'refurbished': 'bg-blue-500'
-  };
 
   return (
     <div 
@@ -37,9 +28,21 @@ const PartCard: React.FC<PartCardProps> = ({ part, onSelect, className, style })
               className="w-full h-48 bg-center bg-no-repeat bg-cover" 
               style={{ backgroundImage: `url("${part.imageUrls[0]}")` }}
             ></div>
-             <div className={`absolute top-3 left-3 z-10 text-white text-xs font-bold px-2 py-1 rounded-full ${conditionColor[part.condition]}`}>
-                {conditionText[part.condition]}
-            </div>
+             {!isSold && (
+                <button
+                onClick={(e) => { e.stopPropagation(); onToggleFavorite(part.id); }}
+                className={`absolute top-3 right-3 z-10 p-1.5 bg-black/40 rounded-full transition-colors ${isFavorite ? 'text-primary' : 'text-white'}`}
+                aria-label="Añadir a favoritos"
+                >
+                <HeartIcon filled={isFavorite} className="w-6 h-6" />
+                </button>
+            )}
+            {part.featured && !isSold && (
+                <div className="absolute top-12 right-3 z-10 flex items-center gap-1 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-full">
+                    <StarIcon className="w-3 h-3"/>
+                    <span>DESTACADO</span>
+                </div>
+            )}
         </div>
         <div className="p-4">
           <h3 className="text-lg font-bold text-foreground-light dark:text-foreground-dark truncate">{part.name}</h3>
