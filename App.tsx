@@ -34,8 +34,8 @@ const mockConversations: ChatConversation[] = [
 ];
 
 const mockMessages: ChatMessage[] = [
-    { id: 'msg1', conversationId: 'convo1', senderEmail: 'user@motomarket.com', text: 'Hola, ¿sigue disponible la Honda CB650R?', timestamp: Date.now() - 1000 * 60 * 5 },
-    { id: 'msg2', conversationId: 'convo1', senderEmail: 'seller1@example.com', text: '¡Hola! Sí, todavía está a la venta.', timestamp: Date.now() - 1000 * 60 * 4 },
+    { id: 'msg1', conversationId: 'convo1', senderEmail: 'user@motomarket.com', text: 'Hola, ¿sigue disponible la Honda CB650R?', timestamp: Date.now() - 1000 * 60 * 5, isRead: true },
+    { id: 'msg2', conversationId: 'convo1', senderEmail: 'seller1@example.com', text: '¡Hola! Sí, todavía está a la venta.', timestamp: Date.now() - 1000 * 60 * 4, isRead: false },
 ];
 
 const mockUsers: User[] = [
@@ -409,6 +409,7 @@ const App: React.FC = () => {
         senderEmail: currentUser.email,
         text,
         timestamp: Date.now(),
+        isRead: true,
     };
     setMessages(prev => [...prev, newMessage]);
 
@@ -427,6 +428,7 @@ const App: React.FC = () => {
             senderEmail: otherUserEmail,
             text: '¡Entendido! Lo reviso y te comento.',
             timestamp: Date.now(),
+            isRead: false,
         };
         setIsTyping(prev => ({ ...prev, [conversationId]: false }));
         setMessages(prev => [...prev, reply]);
@@ -639,6 +641,19 @@ const App: React.FC = () => {
     return motorcycles.filter(moto => favorites.includes(moto.id));
   }, [motorcycles, favorites]);
   
+  const unreadMessagesCount = useMemo(() => {
+    if (!currentUser) return 0;
+    // Count unread messages sent to the current user
+    return messages.filter(msg => {
+        const conversation = conversations.find(c => c.id === msg.conversationId);
+        return (
+            !msg.isRead &&
+            msg.senderEmail !== currentUser.email &&
+            conversation?.participants.includes(currentUser.email)
+        );
+    }).length;
+  }, [messages, currentUser, conversations]);
+
   const PlaceholderView = ({ title }: { title: string }) => (
     <div className="p-8 text-center h-full flex flex-col justify-center items-center">
         <h2 className="text-2xl font-bold text-foreground-light dark:text-foreground-dark">{title}</h2>
@@ -725,6 +740,11 @@ const App: React.FC = () => {
             currentUser={currentUser}
             users={users}
             onSelectConversation={(convoId) => {
+                setMessages(prev => prev.map(msg => 
+                    (msg.conversationId === convoId && msg.senderEmail !== currentUser.email) 
+                        ? { ...msg, isRead: true } 
+                        : msg
+                ));
                 setSelectedConversationId(convoId);
                 setView('chatDetail');
             }}
@@ -793,7 +813,11 @@ const App: React.FC = () => {
       {isBottomNavVisible && (
         // FIX: Simplify the currentView prop to avoid a TypeScript type inference error.
         // `startsWith` is a robust way to map 'chatList' and 'chatDetail' to the 'chat' nav item.
-        <BottomNav currentView={view.startsWith('chat') ? 'chat' : view} onNavigate={handleNavigate} />
+        <BottomNav 
+            currentView={view.startsWith('chat') ? 'chat' : view} 
+            onNavigate={handleNavigate}
+            unreadMessagesCount={unreadMessagesCount}
+        />
       )}
       <FilterModal
         isOpen={isFilterModalOpen}

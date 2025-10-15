@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { View } from '../App';
 import { MotorcycleIcon, HeartIcon, PlusIcon, ChatIcon, ProfileIcon } from './Icons';
@@ -6,9 +7,10 @@ import { MotorcycleIcon, HeartIcon, PlusIcon, ChatIcon, ProfileIcon } from './Ic
 interface BottomNavProps {
   currentView: View;
   onNavigate: (view: View) => void;
+  unreadMessagesCount: number;
 }
 
-const BottomNav: React.FC<BottomNavProps> = ({ currentView, onNavigate }) => {
+const BottomNav: React.FC<BottomNavProps> = ({ currentView, onNavigate, unreadMessagesCount }) => {
   const navItems = [
     { view: 'home', icon: MotorcycleIcon, label: 'Home' },
     { view: 'favorites', icon: HeartIcon, label: 'Favorites' },
@@ -40,7 +42,14 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentView, onNavigate }) => {
               }`}
               aria-label={item.label}
             >
-              <item.icon />
+              <div className="relative">
+                <item.icon />
+                {item.view === 'chat' && unreadMessagesCount > 0 && (
+                    <span className="absolute top-[-4px] right-[-8px] flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white text-xs font-bold ring-2 ring-background-light dark:ring-background-dark">
+                        {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
+                    </span>
+                )}
+              </div>
               <span className="text-xs font-medium">{item.label}</span>
             </button>
           );

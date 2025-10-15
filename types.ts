@@ -31,6 +31,7 @@ export interface ChatMessage {
   senderEmail: string;
   text: string;
   timestamp: number;
+  isRead?: boolean;
 }
 
 export interface ChatConversation {
