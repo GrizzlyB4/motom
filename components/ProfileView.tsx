@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { User, Motorcycle, SavedSearch, Part } from '../types';
 import { ProfileIcon, LogoutIcon, EditIcon, TrashIcon, StarIcon } from './Icons';
@@ -10,6 +11,7 @@ interface ProfileViewProps {
   userParts: Part[];
   onGoToSell: () => void;
   onSelectMotorcycle: (moto: Motorcycle) => void;
+  onSelectPart: (part: Part) => void;
   onLogout: () => void;
   notificationPermission: NotificationPermission;
   onRequestPermission: () => void;
@@ -44,7 +46,7 @@ const formatSearchCriteria = (search: SavedSearch): string => {
 };
 
 const ProfileView: React.FC<ProfileViewProps> = ({ 
-    currentUser, userMotorcycles, userParts, onGoToSell, onSelectMotorcycle, onLogout, 
+    currentUser, userMotorcycles, userParts, onGoToSell, onSelectMotorcycle, onSelectPart, onLogout, 
     notificationPermission, onRequestPermission, onUpdateProfileImage, 
     onEditItem, onMarkAsSold, onPromoteItem, savedSearches, onDeleteSearch 
 }) => {
@@ -69,9 +71,15 @@ const ProfileView: React.FC<ProfileViewProps> = ({
   const activeMotorcycleListings = userMotorcycles.filter(m => m.status === 'for-sale');
   const soldMotorcycleListings = userMotorcycles.filter(m => m.status === 'sold');
   const activePartListings = userParts.filter(p => p.status === 'for-sale');
+  const soldPartListings = userParts.filter(p => p.status === 'sold');
   const userRating = (currentUser.totalRatingPoints && currentUser.numberOfRatings)
     ? currentUser.totalRatingPoints / currentUser.numberOfRatings
     : 0;
+  
+  const allSoldItems = [
+    ...soldMotorcycleListings.map(item => ({ ...item, type: 'motorcycle' as const })),
+    ...soldPartListings.map(item => ({ ...item, type: 'part' as const }))
+  ].sort((a, b) => b.id - a.id); // Sort by ID, assuming newer items have higher IDs
 
   return (
     <div className="p-4 max-w-4xl mx-auto">
@@ -197,7 +205,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                 const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(part.price);
                 return (
                     <div key={part.id} className="bg-card-light dark:bg-card-dark p-3 rounded-xl flex items-center gap-3">
-                        <div className="flex-grow flex items-center gap-3 cursor-pointer">
+                        <div onClick={() => onSelectPart(part)} className="flex-grow flex items-center gap-3 cursor-pointer">
                             <img src={part.imageUrls[0]} alt={part.name} className="w-24 h-16 object-cover rounded-lg flex-shrink-0" />
                             <div className="flex-grow">
                                 <p className="font-bold">{part.name}</p>
@@ -248,26 +256,29 @@ const ProfileView: React.FC<ProfileViewProps> = ({
             )}
         </div>
         
-        {soldMotorcycleListings.length > 0 && (
+        {allSoldItems.length > 0 && (
             <div>
-                <h3 className="text-lg font-bold mb-4">Motos Vendidas ({soldMotorcycleListings.length})</h3>
+                <h3 className="text-lg font-bold mb-4">Historial de Ventas ({allSoldItems.length})</h3>
                 <div className="space-y-4">
-                    {soldMotorcycleListings.map(moto => {
-                    const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(moto.price);
-                    return (
-                        <div key={moto.id} onClick={() => onSelectMotorcycle(moto)} className="bg-card-light dark:bg-card-dark p-4 rounded-xl flex items-center gap-4 cursor-pointer">
-                            <div className="relative flex-shrink-0">
-                                <img src={moto.imageUrls[0]} alt={`${moto.make} ${moto.model}`} className="w-24 h-16 object-cover rounded-lg opacity-50" />
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg">
-                                    <span className="bg-green-600 text-white text-xs font-bold px-2 py-1 rounded">VENDIDO</span>
+                    {allSoldItems.map(item => {
+                        const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(item.price);
+                        const itemName = item.type === 'motorcycle' ? `${item.make} ${item.model}` : item.name;
+                        const onSelectItem = () => item.type === 'motorcycle' ? onSelectMotorcycle(item as Motorcycle) : onSelectPart(item as Part);
+                        
+                        return (
+                            <div key={item.id} onClick={onSelectItem} className="bg-card-light dark:bg-card-dark p-4 rounded-xl flex items-center gap-4 cursor-pointer">
+                                <div className="relative flex-shrink-0">
+                                    <img src={item.imageUrls[0]} alt={itemName} className="w-24 h-16 object-cover rounded-lg opacity-50" />
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg">
+                                        <span className="bg-green-600 text-white text-xs font-bold px-2 py-1 rounded">VENDIDO</span>
+                                    </div>
+                                </div>
+                                <div className="flex-grow opacity-60">
+                                    <p className="font-bold">{itemName}</p>
+                                    <p className="text-sm text-primary">{formattedPrice}</p>
                                 </div>
                             </div>
-                            <div className="flex-grow opacity-60">
-                                <p className="font-bold">{moto.make} {moto.model}</p>
-                                <p className="text-sm text-primary">{formattedPrice}</p>
-                            </div>
-                        </div>
-                    );
+                        );
                     })}
                 </div>
             </div>

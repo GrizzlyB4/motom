@@ -1,25 +1,32 @@
 
+
 import React from 'react';
-import { Motorcycle, User } from '../types';
+import { Motorcycle, User, Part } from '../types';
 import { ArrowLeftIcon, ProfileIcon } from './Icons';
 import MotorcycleCard from './MotorcycleCard';
+import PartCard from './PartCard';
 import StarRating from './StarRating';
 
 interface PublicProfileViewProps {
   seller: User;
   motorcycles: Motorcycle[];
+  parts: Part[];
   onBack: () => void;
   onSelectMotorcycle: (moto: Motorcycle) => void;
+  onSelectPart: (part: Part) => void;
   favorites: number[];
   onToggleFavorite: (motoId: number) => void;
+  favoriteParts: number[];
+  onTogglePartFavorite: (partId: number) => void;
   currentUser: User;
   userRating?: number;
   onRateUser: (sellerEmail: string, rating: number) => void;
 }
 
 const PublicProfileView: React.FC<PublicProfileViewProps> = ({ 
-  seller, motorcycles, onBack, onSelectMotorcycle, 
-  favorites, onToggleFavorite, currentUser, userRating, onRateUser 
+  seller, motorcycles, parts, onBack, onSelectMotorcycle, onSelectPart,
+  favorites, onToggleFavorite, favoriteParts, onTogglePartFavorite,
+  currentUser, userRating, onRateUser 
 }) => {
 
   const sellerRating = (seller.totalRatingPoints && seller.numberOfRatings)
@@ -29,7 +36,15 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({
   const canRate = currentUser.email !== seller.email && !userRating;
 
   const activeListings = motorcycles.filter(m => m.status === 'for-sale');
+  const activePartListings = parts.filter(p => p.status === 'for-sale');
   const soldListings = motorcycles.filter(m => m.status === 'sold');
+  const soldPartListings = parts.filter(p => p.status === 'sold');
+  const totalListings = activeListings.length + activePartListings.length;
+
+  const allSoldItems = [
+    ...soldListings.map(item => ({ ...item, type: 'motorcycle' as const })),
+    ...soldPartListings.map(item => ({ ...item, type: 'part' as const }))
+  ].sort((a, b) => b.id - a.id);
 
   return (
     <div className="bg-background-light dark:bg-background-dark min-h-screen">
@@ -64,7 +79,7 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({
                 <p className="text-sm text-foreground-muted-light dark:text-foreground-muted-dark">Sin valoraciones</p>
             )}
           </div>
-          <p className="text-foreground-muted-light dark:text-foreground-muted-dark mt-2">{motorcycles.length} {motorcycles.length === 1 ? 'anuncio publicado' : 'anuncios publicados'}</p>
+          <p className="text-foreground-muted-light dark:text-foreground-muted-dark mt-2">{motorcycles.length + parts.length} {motorcycles.length + parts.length === 1 ? 'anuncio publicado' : 'anuncios publicados'}</p>
         </div>
         
         {canRate && (
@@ -88,7 +103,7 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({
         <div className="p-4 space-y-8">
             {activeListings.length > 0 && (
               <div>
-                <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark mb-4">Anuncios en Venta ({activeListings.length})</h3>
+                <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark mb-4">Motos en Venta ({activeListings.length})</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {activeListings.map(moto => (
                       <MotorcycleCard 
@@ -103,29 +118,54 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({
               </div>
             )}
             
-            {soldListings.length > 0 && (
+            {activePartListings.length > 0 && (
               <div>
-                <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark mb-4">Motos Vendidas ({soldListings.length})</h3>
+                <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark mb-4">Piezas en Venta ({activePartListings.length})</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {soldListings.map(moto => (
-                      <MotorcycleCard 
-                          key={moto.id} 
-                          motorcycle={moto} 
-                          onSelect={onSelectMotorcycle} 
-                          isFavorite={favorites.includes(moto.id)}
-                          onToggleFavorite={onToggleFavorite}
+                  {activePartListings.map(part => (
+                      <PartCard 
+                          key={part.id} 
+                          part={part} 
+                          onSelect={onSelectPart} 
+                          isFavorite={favoriteParts.includes(part.id)}
+                          onToggleFavorite={onTogglePartFavorite}
                       />
                   ))}
                 </div>
               </div>
             )}
 
-            {motorcycles.length === 0 ? (
+            {allSoldItems.length > 0 && (
+              <div>
+                <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark mb-4">Historial de Ventas ({allSoldItems.length})</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {allSoldItems.map(item => (
+                    item.type === 'motorcycle' 
+                    ? <MotorcycleCard 
+                        key={item.id} 
+                        motorcycle={item as Motorcycle} 
+                        onSelect={onSelectMotorcycle} 
+                        isFavorite={favorites.includes(item.id)}
+                        onToggleFavorite={onToggleFavorite}
+                      />
+                    : <PartCard 
+                        key={item.id} 
+                        part={item as Part} 
+                        onSelect={onSelectPart} 
+                        isFavorite={favoriteParts.includes(item.id)}
+                        onToggleFavorite={onTogglePartFavorite}
+                      />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {(totalListings === 0 && allSoldItems.length === 0) && (
                 <div className="text-center py-16">
                     <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark">Este vendedor no tiene anuncios</h3>
                     <p className="text-foreground-muted-light dark:text-foreground-muted-dark mt-2">Vuelve más tarde para ver si ha publicado algo nuevo.</p>
                 </div>
-            ) : null}
+            )}
         </div>
       </main>
     </div>
