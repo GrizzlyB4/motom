@@ -24,6 +24,7 @@ export interface Motorcycle {
   engineSize: number;
   description: string;
   imageUrls: string[];
+  videoUrl?: string;
   sellerEmail: string;
   category: Exclude<MotorcycleCategory, 'All'>;
   status: 'for-sale' | 'sold' | 'reserved';
@@ -38,6 +39,7 @@ export interface Part {
   price: number;
   description: string;
   imageUrls: string[];
+  videoUrl?: string;
   sellerEmail: string;
   category: Exclude<PartCategory, 'All'>;
   condition: PartCondition;

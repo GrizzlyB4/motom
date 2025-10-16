@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Motorcycle, Part, PartCondition } from '../types';
 import { generateAdDescription } from '../services/geminiService';
 import Spinner from './Spinner';
-import { UploadIcon, TrashIcon, ArrowLeftIcon } from './Icons';
+import { UploadIcon, TrashIcon, ArrowLeftIcon, PlayIcon } from './Icons';
 
 interface EditFormProps {
   motorcycle?: Motorcycle;
@@ -38,6 +38,7 @@ const EditForm: React.FC<EditFormProps> = ({ motorcycle, part, onBack, onUpdate 
   // Common state
   const [commonData, setCommonData] = useState({ price: '', description: '', location: '' });
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [aiKeywords, setAiKeywords] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -62,6 +63,7 @@ const EditForm: React.FC<EditFormProps> = ({ motorcycle, part, onBack, onUpdate 
             location: motorcycle.location,
         });
         setImageUrls(motorcycle.imageUrls);
+        setVideoUrl(motorcycle.videoUrl || null);
     } else if (part) {
         setPartData({
             name: part.name,
@@ -74,6 +76,7 @@ const EditForm: React.FC<EditFormProps> = ({ motorcycle, part, onBack, onUpdate 
             location: part.location,
         });
         setImageUrls(part.imageUrls);
+        setVideoUrl(part.videoUrl || null);
     }
   }, [motorcycle, part]);
 
@@ -116,6 +119,31 @@ const EditForm: React.FC<EditFormProps> = ({ motorcycle, part, onBack, onUpdate 
   const handleRemoveImage = (index: number) => {
     setImageUrls(prev => prev.filter((_, i) => i !== index));
   };
+  
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('video/')) {
+        alert('Por favor, selecciona un archivo de video.');
+        return;
+      }
+      const videoElement = document.createElement('video');
+      videoElement.preload = 'metadata';
+      videoElement.onloadedmetadata = () => {
+        window.URL.revokeObjectURL(videoElement.src);
+        if (videoElement.duration > 30) {
+          alert('El video no puede durar más de 30 segundos.');
+        } else {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setVideoUrl(reader.result as string);
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+      videoElement.src = URL.createObjectURL(file);
+    }
+  };
 
   const handleGenerateDescription = useCallback(async () => {
     setIsGenerating(true);
@@ -134,6 +162,7 @@ const EditForm: React.FC<EditFormProps> = ({ motorcycle, part, onBack, onUpdate 
     if (listingType === 'motorcycle' && motorcycle) {
         onUpdate({
             ...motorcycle, ...commonData, ...motoData, imageUrls,
+            videoUrl: videoUrl || undefined,
             year: parseInt(motoData.year, 10),
             price: parseFloat(commonData.price),
             mileage: parseInt(motoData.mileage, 10),
@@ -142,6 +171,7 @@ const EditForm: React.FC<EditFormProps> = ({ motorcycle, part, onBack, onUpdate 
     } else if (listingType === 'part' && part) {
         onUpdate({
             ...part, ...commonData, ...partData, imageUrls,
+            videoUrl: videoUrl || undefined,
             price: parseFloat(commonData.price),
             compatibility: partData.compatibility.split(',').map(item => item.trim()),
         });
@@ -161,7 +191,7 @@ const EditForm: React.FC<EditFormProps> = ({ motorcycle, part, onBack, onUpdate 
         <div className="p-4 max-w-2xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-foreground-light dark:text-foreground-dark mb-2">Fotos (hasta 5)</label>
+              <label className="block text-sm font-medium text-foreground-light dark:text-foreground-dark mb-2">Fotos y Video</label>
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {imageUrls.map((url, index) => (
                   <div key={index} className="relative aspect-square">
@@ -179,6 +209,22 @@ const EditForm: React.FC<EditFormProps> = ({ motorcycle, part, onBack, onUpdate 
                   </label>
                   )}
               </div>
+               <div className="mt-4">
+                 {videoUrl ? (
+                    <div className="relative aspect-video">
+                        <video src={videoUrl} controls className="w-full h-full object-cover rounded-lg" />
+                        <button type="button" onClick={() => setVideoUrl(null)} className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 hover:bg-black/80 transition-colors" aria-label="Eliminar video">
+                        <TrashIcon className="w-4 h-4" />
+                        </button>
+                    </div>
+                    ) : (
+                    <label className="flex flex-col items-center justify-center w-full py-6 border-2 border-dashed border-border-light dark:border-border-dark rounded-lg cursor-pointer hover:bg-black/[.03] dark:hover:bg-white/[.05] transition-colors">
+                        <PlayIcon className="w-8 h-8 text-foreground-muted-light dark:text-foreground-muted-dark"/>
+                        <span className="text-sm text-center text-foreground-muted-light dark:text-foreground-muted-dark mt-2">Añadir video (max 30s)</span>
+                        <input type="file" accept="video/*" onChange={handleVideoUpload} className="hidden" />
+                    </label>
+                )}
+            </div>
             </div>
 
             {listingType === 'motorcycle' ? (

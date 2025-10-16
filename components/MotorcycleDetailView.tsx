@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Motorcycle, User, Offer } from '../types';
-import { ArrowLeftIcon, RoadIcon, EngineIcon, TagIcon, ProfileIcon, HeartIcon, ChevronLeftIcon, ChevronRightIcon, ShareIcon, MapPinIcon, StarIcon } from './Icons';
+import { ArrowLeftIcon, RoadIcon, EngineIcon, TagIcon, ProfileIcon, HeartIcon, ChevronLeftIcon, ChevronRightIcon, ShareIcon, MapPinIcon, StarIcon, PlayIcon } from './Icons';
 import StarRating from './StarRating';
 
 interface MotorcycleDetailViewProps {
@@ -32,8 +32,19 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({
   onViewPublicProfile, allMotorcycles, onSelectMotorcycle,
   onOpenOfferModal, pendingOffer, currentUser
 }) => {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(motorcycle.price);
+
+  const media = useMemo(() => {
+    const items: { type: 'video' | 'image'; url: string }[] = [];
+    if (motorcycle.videoUrl) {
+      items.push({ type: 'video', url: motorcycle.videoUrl });
+    }
+    motorcycle.imageUrls.forEach(url => {
+      items.push({ type: 'image', url });
+    });
+    return items;
+  }, [motorcycle]);
 
   const sellerRating = (seller.totalRatingPoints && seller.numberOfRatings) 
     ? seller.totalRatingPoints / seller.numberOfRatings 
@@ -53,12 +64,12 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({
     ).slice(0, 4);
   }, [allMotorcycles, motorcycle]);
 
-  const nextImage = () => {
-    setCurrentImageIndex((prevIndex) => (prevIndex + 1) % motorcycle.imageUrls.length);
+  const nextMedia = () => {
+    setCurrentMediaIndex((prevIndex) => (prevIndex + 1) % media.length);
   };
 
-  const prevImage = () => {
-    setCurrentImageIndex((prevIndex) => (prevIndex - 1 + motorcycle.imageUrls.length) % motorcycle.imageUrls.length);
+  const prevMedia = () => {
+    setCurrentMediaIndex((prevIndex) => (prevIndex - 1 + media.length) % media.length);
   };
 
   const handleShare = async () => {
@@ -87,7 +98,7 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({
     }
   };
 
-  const hasMultipleImages = motorcycle.imageUrls.length > 1;
+  const hasMultipleMedia = media.length > 1;
   const isSeller = currentUser.email === motorcycle.sellerEmail;
   const canMakeOffer = !isSeller && motorcycle.status === 'for-sale';
   const canContact = !isSeller && motorcycle.status !== 'sold' && (motorcycle.status !== 'reserved' || motorcycle.reservedBy === currentUser.email);
@@ -115,11 +126,15 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({
        </header>
 
       <div>
-        <div className="relative w-full h-80 bg-black">
-            <div 
-                className="w-full h-full bg-center bg-no-repeat bg-contain"
-                style={{ backgroundImage: `url("${motorcycle.imageUrls[currentImageIndex]}")` }}
-            ></div>
+        <div className="relative w-full h-80 bg-black group">
+            {media[currentMediaIndex].type === 'image' ? (
+                 <div 
+                    className="w-full h-full bg-center bg-no-repeat bg-contain"
+                    style={{ backgroundImage: `url("${media[currentMediaIndex].url}")` }}
+                ></div>
+            ) : (
+                <video src={media[currentMediaIndex].url} className="w-full h-full object-contain" controls autoPlay playsInline />
+            )}
             
             {motorcycle.status === 'reserved' && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center pointer-events-none">
@@ -127,25 +142,34 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({
                 </div>
             )}
 
-            {hasMultipleImages && (
+            {hasMultipleMedia && (
                 <>
-                    <button onClick={prevImage} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 text-white p-2 rounded-full hover:bg-black/60 transition-colors" aria-label="Imagen anterior">
+                    <button onClick={prevMedia} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 text-white p-2 rounded-full hover:bg-black/60 transition-colors opacity-0 group-hover:opacity-100" aria-label="Anterior">
                         <ChevronLeftIcon className="w-6 h-6"/>
                     </button>
-                    <button onClick={nextImage} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 text-white p-2 rounded-full hover:bg-black/60 transition-colors" aria-label="Siguiente imagen">
+                    <button onClick={nextMedia} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 text-white p-2 rounded-full hover:bg-black/60 transition-colors opacity-0 group-hover:opacity-100" aria-label="Siguiente">
                         <ChevronRightIcon className="w-6 h-6"/>
                     </button>
-                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
-                        {motorcycle.imageUrls.map((_, index) => (
-                            <div
-                                key={index}
-                                className={`w-2 h-2 rounded-full ${index === currentImageIndex ? 'bg-white' : 'bg-white/50'}`}
-                            />
-                        ))}
-                    </div>
                 </>
             )}
         </div>
+
+        {hasMultipleMedia && (
+            <div className="p-2 bg-background-light dark:bg-background-dark">
+                <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                    {media.map((item, index) => (
+                        <button key={index} onClick={() => setCurrentMediaIndex(index)} className={`relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 ${index === currentMediaIndex ? 'border-primary' : 'border-transparent'}`}>
+                             <img src={item.type === 'image' ? item.url : motorcycle.imageUrls[0]} alt={`Thumbnail ${index + 1}`} className="w-full h-full object-cover" />
+                            {item.type === 'video' && (
+                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                    <PlayIcon className="w-8 h-8 text-white" />
+                                </div>
+                            )}
+                        </button>
+                    ))}
+                </div>
+            </div>
+        )}
         
         <div className="p-4 pb-28">
             <div className="animate-fade-in-up mb-6" style={{ animationDelay: '50ms' }}>

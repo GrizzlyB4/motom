@@ -24,7 +24,7 @@ import OffersView from './components/OffersView';
 
 
 const mockMotorcycles: Motorcycle[] = [
-    { id: 1, make: 'Honda', model: 'CB650R', year: 2021, price: 7500, mileage: 8500, engineSize: 649, description: 'Como nueva...', imageUrls: ['https://images.unsplash.com/photo-1621115132957-81df81347053?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller1@example.com', category: 'Sport', status: 'for-sale', location: 'Madrid, España', featured: true },
+    { id: 1, make: 'Honda', model: 'CB650R', year: 2021, price: 7500, mileage: 8500, engineSize: 649, description: 'Como nueva...', imageUrls: ['https://images.unsplash.com/photo-1621115132957-81df81347053?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller1@example.com', category: 'Sport', status: 'for-sale', location: 'Madrid, España', featured: true, videoUrl: 'https://videos.pexels.com/video-files/5985396/5985396-sd_640_360_30fps.mp4' },
     { id: 2, make: 'Kawasaki', model: 'Z900', year: 2020, price: 8200, mileage: 12000, engineSize: 948, description: 'Vendo Kawasaki Z900...', imageUrls: ['https://images.unsplash.com/photo-1623563720235-3a0639f60324?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Sport', status: 'for-sale', location: 'Barcelona, España', featured: false },
     { id: 3, make: 'Yamaha', model: 'MT-07', year: 2022, price: 6800, mileage: 4500, engineSize: 689, description: 'Yamaha MT-07 del 2022...', imageUrls: ['https://images.unsplash.com/photo-1640890656113-3a137250abfa?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller2@example.com', category: 'Sport', status: 'for-sale', location: 'Valencia, España', featured: false },
     // FIX: Corrected category to 'Touring' and added status 'reserved' to match the type definition.

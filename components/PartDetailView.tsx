@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Part, User, Offer } from '../types';
-import { ArrowLeftIcon, ProfileIcon, ChevronRightIcon, ShareIcon, MapPinIcon, HeartIcon, StarIcon } from './Icons';
+import { ArrowLeftIcon, ProfileIcon, ChevronRightIcon, ShareIcon, MapPinIcon, HeartIcon, StarIcon, PlayIcon } from './Icons';
 import StarRating from './StarRating';
 
 interface PartDetailViewProps {
@@ -20,8 +20,19 @@ const PartDetailView: React.FC<PartDetailViewProps> = ({
   part, seller, onBack, onViewPublicProfile, onStartChat, isFavorite, onToggleFavorite,
   onOpenOfferModal, pendingOffer, currentUser
 }) => {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(part.price);
+
+  const media = useMemo(() => {
+    const items: { type: 'video' | 'image'; url: string }[] = [];
+    if (part.videoUrl) {
+      items.push({ type: 'video', url: part.videoUrl });
+    }
+    part.imageUrls.forEach(url => {
+      items.push({ type: 'image', url });
+    });
+    return items;
+  }, [part]);
 
   const sellerRating = (seller.totalRatingPoints && seller.numberOfRatings) 
     ? seller.totalRatingPoints / seller.numberOfRatings 
@@ -56,6 +67,7 @@ const PartDetailView: React.FC<PartDetailViewProps> = ({
   const isSeller = currentUser.email === part.sellerEmail;
   const canMakeOffer = !isSeller && part.status === 'for-sale';
   const canContact = !isSeller && part.status !== 'sold' && (part.status !== 'reserved' || part.reservedBy === currentUser.email);
+  const hasMultipleMedia = media.length > 1;
 
   return (
     <div className="bg-background-light dark:bg-background-dark min-h-screen">
@@ -79,17 +91,39 @@ const PartDetailView: React.FC<PartDetailViewProps> = ({
        </header>
 
       <div>
-        <div className="relative w-full h-80 bg-black">
-            <div 
-                className="w-full h-full bg-center bg-no-repeat bg-contain"
-                style={{ backgroundImage: `url("${part.imageUrls[currentImageIndex]}")` }}
-            ></div>
+        <div className="relative w-full h-80 bg-black group">
+             {media[currentMediaIndex].type === 'image' ? (
+                <div 
+                    className="w-full h-full bg-center bg-no-repeat bg-contain"
+                    style={{ backgroundImage: `url("${media[currentMediaIndex].url}")` }}
+                ></div>
+            ) : (
+                <video src={media[currentMediaIndex].url} className="w-full h-full object-contain" controls autoPlay playsInline />
+            )}
+
             {part.status === 'reserved' && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center pointer-events-none">
                     <div className="bg-blue-600 text-white text-base font-bold px-4 py-2 rounded shadow-lg transform -rotate-6">RESERVADO</div>
                 </div>
             )}
         </div>
+
+        {hasMultipleMedia && (
+             <div className="p-2 bg-background-light dark:bg-background-dark">
+                <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                    {media.map((item, index) => (
+                        <button key={index} onClick={() => setCurrentMediaIndex(index)} className={`relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 ${index === currentMediaIndex ? 'border-primary' : 'border-transparent'}`}>
+                             <img src={item.type === 'image' ? item.url : part.imageUrls[0]} alt={`Thumbnail ${index + 1}`} className="w-full h-full object-cover" />
+                            {item.type === 'video' && (
+                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                    <PlayIcon className="w-8 h-8 text-white" />
+                                </div>
+                            )}
+                        </button>
+                    ))}
+                </div>
+            </div>
+        )}
         
         <div className="p-4 pb-28">
             <div className="animate-fade-in-up mb-6" style={{ animationDelay: '50ms' }}>
