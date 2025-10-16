@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Motorcycle } from '../types';
 import { HeartIcon, MapPinIcon, StarIcon } from './Icons';
@@ -15,14 +14,15 @@ interface MotorcycleCardProps {
 const MotorcycleCard: React.FC<MotorcycleCardProps> = ({ motorcycle, onSelect, isFavorite, onToggleFavorite, className, style }) => {
   const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(motorcycle.price);
   const isSold = motorcycle.status === 'sold';
+  const isReserved = motorcycle.status === 'reserved';
 
   return (
     <div 
-      className={`relative ${isSold ? 'cursor-default' : 'cursor-pointer'} ${className || ''}`}
-      onClick={() => !isSold && onSelect(motorcycle)}
+      className={`relative ${isSold || isReserved ? 'cursor-default' : 'cursor-pointer'} ${className || ''}`}
+      onClick={() => !isSold && !isReserved && onSelect(motorcycle)}
       style={style}
     >
-      <div className={`h-full bg-card-light dark:bg-card-dark rounded-xl overflow-hidden shadow-sm border border-border-light dark:border-border-dark transition-transform duration-200 ${!isSold ? 'hover:scale-[1.02] active:scale-95' : ''}`}>
+      <div className={`h-full bg-card-light dark:bg-card-dark rounded-xl overflow-hidden shadow-sm border border-border-light dark:border-border-dark transition-transform duration-200 ${!isSold && !isReserved ? 'hover:scale-[1.02] active:scale-95' : ''}`}>
         {motorcycle.featured && !isSold && (
             <div className="absolute top-3 left-3 z-10 flex items-center gap-1 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-full">
                 <StarIcon className="w-3 h-3"/>
@@ -56,9 +56,11 @@ const MotorcycleCard: React.FC<MotorcycleCardProps> = ({ motorcycle, onSelect, i
           <p className="text-xl font-bold text-primary mt-2">{formattedPrice}</p>
         </div>
       </div>
-      {isSold && (
+      {(isSold || isReserved) && (
         <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center pointer-events-none">
-            <div className="bg-green-600 text-white text-base font-bold px-4 py-2 rounded shadow-lg transform -rotate-6">VENDIDO</div>
+            <div className={`${isSold ? 'bg-green-600' : 'bg-blue-600'} text-white text-base font-bold px-4 py-2 rounded shadow-lg transform -rotate-6`}>
+                {isSold ? 'VENDIDO' : 'RESERVADO'}
+            </div>
         </div>
       )}
     </div>

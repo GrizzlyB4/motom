@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Part, User } from '../types';
+import { Part, User, Offer } from '../types';
 import { ArrowLeftIcon, ProfileIcon, ChevronRightIcon, ShareIcon, MapPinIcon, HeartIcon, StarIcon } from './Icons';
 import StarRating from './StarRating';
 
@@ -11,10 +11,14 @@ interface PartDetailViewProps {
   onStartChat: (part: Part) => void;
   isFavorite: boolean;
   onToggleFavorite: (partId: number) => void;
+  onOpenOfferModal: (item: Part) => void;
+  pendingOffer?: Offer;
+  currentUser: User;
 }
 
 const PartDetailView: React.FC<PartDetailViewProps> = ({ 
-  part, seller, onBack, onViewPublicProfile, onStartChat, isFavorite, onToggleFavorite
+  part, seller, onBack, onViewPublicProfile, onStartChat, isFavorite, onToggleFavorite,
+  onOpenOfferModal, pendingOffer, currentUser
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(part.price);
@@ -48,6 +52,10 @@ const PartDetailView: React.FC<PartDetailViewProps> = ({
       }
     }
   };
+  
+  const isSeller = currentUser.email === part.sellerEmail;
+  const canMakeOffer = !isSeller && part.status === 'for-sale';
+  const canContact = !isSeller && part.status !== 'sold' && (part.status !== 'reserved' || part.reservedBy === currentUser.email);
 
   return (
     <div className="bg-background-light dark:bg-background-dark min-h-screen">
@@ -76,6 +84,11 @@ const PartDetailView: React.FC<PartDetailViewProps> = ({
                 className="w-full h-full bg-center bg-no-repeat bg-contain"
                 style={{ backgroundImage: `url("${part.imageUrls[currentImageIndex]}")` }}
             ></div>
+            {part.status === 'reserved' && (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center pointer-events-none">
+                    <div className="bg-blue-600 text-white text-base font-bold px-4 py-2 rounded shadow-lg transform -rotate-6">RESERVADO</div>
+                </div>
+            )}
         </div>
         
         <div className="p-4 pb-28">
@@ -143,11 +156,20 @@ const PartDetailView: React.FC<PartDetailViewProps> = ({
         </div>
       </div>
        <div className="fixed bottom-0 left-0 right-0 p-4 z-20 bg-gradient-to-t from-background-light dark:from-background-dark">
-            <button 
-            onClick={() => onStartChat(part)}
-            className="w-full bg-primary text-white font-bold py-4 px-8 rounded-xl hover:opacity-90 transition-all duration-300 shadow-lg active:scale-95">
-            Contactar al Vendedor
-            </button>
+            <div className="flex items-center gap-3">
+                <button 
+                    onClick={() => onStartChat(part)}
+                    disabled={!canContact}
+                    className="flex-1 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark text-foreground-light dark:text-foreground-dark font-bold py-4 px-8 rounded-xl hover:bg-black/[.05] dark:hover:bg-border-dark transition-all duration-300 shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Contactar
+                </button>
+                <button 
+                    onClick={() => onOpenOfferModal(part)}
+                    disabled={!canMakeOffer || !!pendingOffer}
+                    className="flex-1 bg-primary text-white font-bold py-4 px-8 rounded-xl hover:opacity-90 transition-all duration-300 shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    {pendingOffer ? 'Oferta Pendiente' : 'Hacer Oferta'}
+                </button>
+            </div>
         </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Motorcycle, User } from '../types';
+import { Motorcycle, User, Offer } from '../types';
 import { ArrowLeftIcon, RoadIcon, EngineIcon, TagIcon, ProfileIcon, HeartIcon, ChevronLeftIcon, ChevronRightIcon, ShareIcon, MapPinIcon, StarIcon } from './Icons';
 import StarRating from './StarRating';
 
@@ -13,6 +13,9 @@ interface MotorcycleDetailViewProps {
   onToggleFavorite: (motoId: number) => void;
   onViewPublicProfile: (sellerEmail: string) => void;
   onSelectMotorcycle: (moto: Motorcycle) => void;
+  onOpenOfferModal: (item: Motorcycle) => void;
+  pendingOffer?: Offer;
+  currentUser: User;
 }
 
 const SpecItem: React.FC<{ icon: React.ReactNode; label: string; value: string | number }> = ({ icon, label, value }) => (
@@ -26,7 +29,8 @@ const SpecItem: React.FC<{ icon: React.ReactNode; label: string; value: string |
 
 const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({ 
   motorcycle, seller, onBack, onStartChat, isFavorite, onToggleFavorite, 
-  onViewPublicProfile, allMotorcycles, onSelectMotorcycle 
+  onViewPublicProfile, allMotorcycles, onSelectMotorcycle,
+  onOpenOfferModal, pendingOffer, currentUser
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(motorcycle.price);
@@ -84,6 +88,10 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({
   };
 
   const hasMultipleImages = motorcycle.imageUrls.length > 1;
+  const isSeller = currentUser.email === motorcycle.sellerEmail;
+  const canMakeOffer = !isSeller && motorcycle.status === 'for-sale';
+  const canContact = !isSeller && motorcycle.status !== 'sold' && (motorcycle.status !== 'reserved' || motorcycle.reservedBy === currentUser.email);
+
 
   return (
     <div className="bg-background-light dark:bg-background-dark min-h-screen">
@@ -112,6 +120,12 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({
                 className="w-full h-full bg-center bg-no-repeat bg-contain"
                 style={{ backgroundImage: `url("${motorcycle.imageUrls[currentImageIndex]}")` }}
             ></div>
+            
+            {motorcycle.status === 'reserved' && (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center pointer-events-none">
+                    <div className="bg-blue-600 text-white text-base font-bold px-4 py-2 rounded shadow-lg transform -rotate-6">RESERVADO</div>
+                </div>
+            )}
 
             {hasMultipleImages && (
                 <>
@@ -236,11 +250,20 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({
         </div>
       </div>
        <div className="fixed bottom-0 left-0 right-0 p-4 z-20 bg-gradient-to-t from-background-light dark:from-background-dark">
-            <button 
-            onClick={() => onStartChat(motorcycle)}
-            className="w-full bg-primary text-white font-bold py-4 px-8 rounded-xl hover:opacity-90 transition-all duration-300 shadow-lg active:scale-95">
-            Contactar al Vendedor
-            </button>
+            <div className="flex items-center gap-3">
+                <button 
+                onClick={() => onStartChat(motorcycle)}
+                disabled={!canContact}
+                className="flex-1 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark text-foreground-light dark:text-foreground-dark font-bold py-4 px-8 rounded-xl hover:bg-black/[.05] dark:hover:bg-border-dark transition-all duration-300 shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Contactar
+                </button>
+                <button 
+                onClick={() => onOpenOfferModal(motorcycle)}
+                disabled={!canMakeOffer || !!pendingOffer}
+                className="flex-1 bg-primary text-white font-bold py-4 px-8 rounded-xl hover:opacity-90 transition-all duration-300 shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    {pendingOffer ? 'Oferta Pendiente' : 'Hacer Oferta'}
+                </button>
+            </div>
         </div>
     </div>
   );

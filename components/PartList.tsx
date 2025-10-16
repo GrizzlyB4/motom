@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Part, PartCategory } from '../types';
 import PartCard from './PartCard';
@@ -23,6 +22,8 @@ const PartList: React.FC<PartListProps> = ({
     onAddHeatmapPoint, onSaveSearch, areFiltersActive, favorites, onToggleFavorite
 }) => {
   
+  const visibleParts = parts.filter(p => p.status !== 'sold');
+
   return (
     <div onClick={onAddHeatmapPoint}>
       <div className="px-4 py-3">
@@ -48,9 +49,9 @@ const PartList: React.FC<PartListProps> = ({
         </div>
       )}
 
-      {parts.length > 0 ? (
+      {visibleParts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4">
-          {parts.map((part, index) => (
+          {visibleParts.map((part, index) => (
             <PartCard 
                 key={part.id} 
                 part={part} 

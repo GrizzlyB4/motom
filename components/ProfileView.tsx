@@ -1,8 +1,6 @@
-
-
 import React from 'react';
 import { User, Motorcycle, SavedSearch, Part } from '../types';
-import { ProfileIcon, LogoutIcon, EditIcon, TrashIcon, StarIcon } from './Icons';
+import { ProfileIcon, LogoutIcon, EditIcon, TrashIcon, StarIcon, HeartIcon } from './Icons';
 import StarRating from './StarRating';
 
 interface ProfileViewProps {
@@ -21,6 +19,8 @@ interface ProfileViewProps {
   onPromoteItem: (itemId: number, type: 'motorcycle' | 'part') => void;
   savedSearches: SavedSearch[];
   onDeleteSearch: (searchId: string) => void;
+  onNavigateToFavorites: () => void;
+  onCancelSale: (itemId: number, type: 'motorcycle' | 'part') => void;
 }
 
 const formatSearchCriteria = (search: SavedSearch): string => {
@@ -48,7 +48,8 @@ const formatSearchCriteria = (search: SavedSearch): string => {
 const ProfileView: React.FC<ProfileViewProps> = ({ 
     currentUser, userMotorcycles, userParts, onGoToSell, onSelectMotorcycle, onSelectPart, onLogout, 
     notificationPermission, onRequestPermission, onUpdateProfileImage, 
-    onEditItem, onMarkAsSold, onPromoteItem, savedSearches, onDeleteSearch 
+    onEditItem, onMarkAsSold, onPromoteItem, savedSearches, onDeleteSearch, onNavigateToFavorites,
+    onCancelSale
 }) => {
 
   const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -68,9 +69,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({
       }
   };
   
-  const activeMotorcycleListings = userMotorcycles.filter(m => m.status === 'for-sale');
+  const activeAndReservedMotorcycleListings = userMotorcycles.filter(m => m.status === 'for-sale' || m.status === 'reserved');
   const soldMotorcycleListings = userMotorcycles.filter(m => m.status === 'sold');
-  const activePartListings = userParts.filter(p => p.status === 'for-sale');
+  const activeAndReservedPartListings = userParts.filter(p => p.status === 'for-sale' || p.status === 'reserved');
   const soldPartListings = userParts.filter(p => p.status === 'sold');
   const userRating = (currentUser.totalRatingPoints && currentUser.numberOfRatings)
     ? currentUser.totalRatingPoints / currentUser.numberOfRatings
@@ -124,33 +125,26 @@ const ProfileView: React.FC<ProfileViewProps> = ({
         </button>
       </div>
 
-      <div className="bg-card-light dark:bg-card-dark rounded-xl shadow-sm p-6 mb-8">
-        <h3 className="text-lg font-bold mb-3">Notificaciones</h3>
-        {notificationPermission === 'granted' ? (
-          <p className="text-sm text-green-500">✓ Las notificaciones están activadas.</p>
-        ) : notificationPermission === 'denied' ? (
-          <p className="text-sm text-red-500">
-            Las notificaciones están bloqueadas. Debes habilitarlas en la configuración de tu navegador para recibir alertas.
-          </p>
-        ) : (
-          <>
-            <p className="text-foreground-muted-light dark:text-foreground-muted-dark mb-4 text-sm">
-              Recibe alertas sobre nuevos mensajes, caídas de precio y nuevos anuncios.
-            </p>
-            <button
-              onClick={onRequestPermission}
-              className="bg-primary text-white font-bold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity"
-            >
-              Activar Notificaciones
-            </button>
-          </>
-        )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        <button onClick={onNavigateToFavorites} className="flex items-center gap-3 bg-card-light dark:bg-card-dark rounded-xl shadow-sm p-4 hover:bg-black/[.03] dark:hover:bg-white/[.05] transition-colors">
+            <HeartIcon className="w-6 h-6 text-primary"/>
+            <span className="font-bold text-foreground-light dark:text-foreground-dark">Mis Favoritos</span>
+        </button>
+         <div className="bg-card-light dark:bg-card-dark rounded-xl shadow-sm p-4">
+            <h3 className="text-sm font-bold mb-1">Notificaciones</h3>
+            {notificationPermission === 'granted' ? (
+              <p className="text-xs text-green-500">Activadas</p>
+            ) : (
+              <button onClick={onRequestPermission} className="text-xs text-primary font-semibold hover:underline">Activar</button>
+            )}
+        </div>
       </div>
+
 
       <div className="space-y-8">
         <div>
             <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold">Mis Anuncios de Motos ({activeMotorcycleListings.length})</h3>
+                <h3 className="text-lg font-bold">Mis Anuncios de Motos ({activeAndReservedMotorcycleListings.length})</h3>
                 <button
                     onClick={onGoToSell}
                     className="bg-primary/20 text-primary font-bold py-2 px-4 rounded-lg hover:bg-primary/30 transition-colors duration-300 text-sm"
@@ -159,10 +153,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                 </button>
             </div>
 
-            {activeMotorcycleListings.length > 0 ? (
+            {activeAndReservedMotorcycleListings.length > 0 ? (
             <div className="space-y-4">
-                {activeMotorcycleListings.map(moto => {
+                {activeAndReservedMotorcycleListings.map(moto => {
                 const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(moto.price);
+                const isReserved = moto.status === 'reserved';
                 return (
                     <div key={moto.id} className="bg-card-light dark:bg-card-dark p-3 rounded-xl flex items-center gap-3">
                         <div onClick={() => onSelectMotorcycle(moto)} className="flex-grow flex items-center gap-3 cursor-pointer">
@@ -170,19 +165,26 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                             <div className="flex-grow">
                                 <p className="font-bold">{moto.make} {moto.model}</p>
                                 <p className="text-sm text-primary">{formattedPrice}</p>
+                                {isReserved && <span className="text-xs font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full">RESERVADO</span>}
                             </div>
                         </div>
                         <div className="flex flex-wrap items-center justify-end gap-2">
-                            {moto.featured ? (
-                                <div className="flex items-center gap-1 text-xs font-semibold text-yellow-500 bg-yellow-500/10 px-3 py-2 rounded-md">
-                                    <StarIcon className="w-4 h-4" />
-                                    <span>Promocionado</span>
-                                </div>
+                            {isReserved ? (
+                                <button onClick={(e) => { e.stopPropagation(); onCancelSale(moto.id, 'motorcycle'); }} className="text-xs font-semibold text-orange-600 bg-orange-500/10 hover:bg-orange-500/20 px-3 py-2 rounded-md transition-colors"> Volver a Publicar </button>
                             ) : (
-                                <button onClick={(e) => { e.stopPropagation(); onPromoteItem(moto.id, 'motorcycle'); }} className="text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-md transition-colors"> Promocionar </button>
+                                <>
+                                {moto.featured ? (
+                                    <div className="flex items-center gap-1 text-xs font-semibold text-yellow-500 bg-yellow-500/10 px-3 py-2 rounded-md">
+                                        <StarIcon className="w-4 h-4" />
+                                        <span>Promocionado</span>
+                                    </div>
+                                ) : (
+                                    <button onClick={(e) => { e.stopPropagation(); onPromoteItem(moto.id, 'motorcycle'); }} className="text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-md transition-colors"> Promocionar </button>
+                                )}
+                                <button onClick={(e) => { e.stopPropagation(); onEditItem(moto); }} className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-blue-500 rounded-full hover:bg-blue-500/10 transition-colors" aria-label="Editar anuncio"> <EditIcon className="w-5 h-5" /> </button>
+                                <button onClick={(e) => { e.stopPropagation(); onMarkAsSold(moto.id, 'motorcycle'); }} className="text-xs font-semibold text-green-600 bg-green-500/10 hover:bg-green-500/20 px-3 py-2 rounded-md transition-colors"> Vendido </button>
+                                </>
                             )}
-                            <button onClick={(e) => { e.stopPropagation(); onEditItem(moto); }} className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-blue-500 rounded-full hover:bg-blue-500/10 transition-colors" aria-label="Editar anuncio"> <EditIcon className="w-5 h-5" /> </button>
-                            <button onClick={(e) => { e.stopPropagation(); onMarkAsSold(moto.id, 'motorcycle'); }} className="text-xs font-semibold text-green-600 bg-green-500/10 hover:bg-green-500/20 px-3 py-2 rounded-md transition-colors"> Vendido </button>
                         </div>
                     </div>
                 );
@@ -198,11 +200,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
         
         <div>
-            <h3 className="text-lg font-bold mb-4">Mis Piezas en Venta ({activePartListings.length})</h3>
-             {activePartListings.length > 0 ? (
+            <h3 className="text-lg font-bold mb-4">Mis Piezas en Venta ({activeAndReservedPartListings.length})</h3>
+             {activeAndReservedPartListings.length > 0 ? (
             <div className="space-y-4">
-                {activePartListings.map(part => {
+                {activeAndReservedPartListings.map(part => {
                 const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(part.price);
+                const isReserved = part.status === 'reserved';
                 return (
                     <div key={part.id} className="bg-card-light dark:bg-card-dark p-3 rounded-xl flex items-center gap-3">
                         <div onClick={() => onSelectPart(part)} className="flex-grow flex items-center gap-3 cursor-pointer">
@@ -210,19 +213,26 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                             <div className="flex-grow">
                                 <p className="font-bold">{part.name}</p>
                                 <p className="text-sm text-primary">{formattedPrice}</p>
+                                {isReserved && <span className="text-xs font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full">RESERVADO</span>}
                             </div>
                         </div>
                         <div className="flex flex-wrap items-center justify-end gap-2">
-                           {part.featured ? (
-                                <div className="flex items-center gap-1 text-xs font-semibold text-yellow-500 bg-yellow-500/10 px-3 py-2 rounded-md">
-                                    <StarIcon className="w-4 h-4" />
-                                    <span>Promocionado</span>
-                                </div>
+                            {isReserved ? (
+                                <button onClick={(e) => { e.stopPropagation(); onCancelSale(part.id, 'part'); }} className="text-xs font-semibold text-orange-600 bg-orange-500/10 hover:bg-orange-500/20 px-3 py-2 rounded-md transition-colors"> Volver a Publicar </button>
                             ) : (
-                                <button onClick={(e) => { e.stopPropagation(); onPromoteItem(part.id, 'part'); }} className="text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-md transition-colors"> Promocionar </button>
+                                <>
+                                {part.featured ? (
+                                    <div className="flex items-center gap-1 text-xs font-semibold text-yellow-500 bg-yellow-500/10 px-3 py-2 rounded-md">
+                                        <StarIcon className="w-4 h-4" />
+                                        <span>Promocionado</span>
+                                    </div>
+                                ) : (
+                                    <button onClick={(e) => { e.stopPropagation(); onPromoteItem(part.id, 'part'); }} className="text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-md transition-colors"> Promocionar </button>
+                                )}
+                                <button onClick={(e) => { e.stopPropagation(); onEditItem(part); }} className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-blue-500 rounded-full hover:bg-blue-500/10 transition-colors" aria-label="Editar anuncio"> <EditIcon className="w-5 h-5" /> </button>
+                                <button onClick={(e) => { e.stopPropagation(); onMarkAsSold(part.id, 'part'); }} className="text-xs font-semibold text-green-600 bg-green-500/10 hover:bg-green-500/20 px-3 py-2 rounded-md transition-colors"> Vendido </button>
+                                </>
                             )}
-                           <button onClick={(e) => { e.stopPropagation(); onEditItem(part); }} className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-blue-500 rounded-full hover:bg-blue-500/10 transition-colors" aria-label="Editar anuncio"> <EditIcon className="w-5 h-5" /> </button>
-                           <button onClick={(e) => { e.stopPropagation(); onMarkAsSold(part.id, 'part'); }} className="text-xs font-semibold text-green-600 bg-green-500/10 hover:bg-green-500/20 px-3 py-2 rounded-md transition-colors"> Vendido </button>
                         </div>
                     </div>
                 );

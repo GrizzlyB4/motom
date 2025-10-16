@@ -1,22 +1,24 @@
 
 
+
 import React from 'react';
 import { View } from '../App';
-import { MotorcycleIcon, HeartIcon, PlusIcon, ChatIcon, ProfileIcon } from './Icons';
+import { MotorcycleIcon, BellIcon, PlusIcon, ChatIcon, ProfileIcon } from './Icons';
 
 interface BottomNavProps {
   currentView: View;
   onNavigate: (view: View) => void;
   unreadMessagesCount: number;
+  pendingOffersCount: number;
 }
 
-const BottomNav: React.FC<BottomNavProps> = ({ currentView, onNavigate, unreadMessagesCount }) => {
+const BottomNav: React.FC<BottomNavProps> = ({ currentView, onNavigate, unreadMessagesCount, pendingOffersCount }) => {
   const navItems = [
     { view: 'home', icon: MotorcycleIcon, label: 'Home' },
-    { view: 'favorites', icon: HeartIcon, label: 'Favorites' },
-    { view: 'sell', icon: PlusIcon, label: 'Sell' },
+    { view: 'offers', icon: BellIcon, label: 'Ofertas' },
+    { view: 'sell', icon: PlusIcon, label: 'Vender' },
     { view: 'chat', icon: ChatIcon, label: 'Chat' },
-    { view: 'profile', icon: ProfileIcon, label: 'Profile' },
+    { view: 'profile', icon: ProfileIcon, label: 'Perfil' },
   ] as const;
 
   return (
@@ -33,6 +35,8 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentView, onNavigate, unreadMe
               </button>
             );
           }
+          const notificationCount = item.view === 'chat' ? unreadMessagesCount : item.view === 'offers' ? pendingOffersCount : 0;
+
           return (
             <button
               key={item.view}
@@ -44,9 +48,9 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentView, onNavigate, unreadMe
             >
               <div className="relative">
                 <item.icon />
-                {item.view === 'chat' && unreadMessagesCount > 0 && (
+                {notificationCount > 0 && (
                     <span className="absolute top-[-4px] right-[-8px] flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white text-xs font-bold ring-2 ring-background-light dark:ring-background-dark">
-                        {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
+                        {notificationCount > 9 ? '9+' : notificationCount}
                     </span>
                 )}
               </div>

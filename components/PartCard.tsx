@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Part } from '../types';
 import { MapPinIcon, HeartIcon, StarIcon } from './Icons';
@@ -15,14 +14,15 @@ interface PartCardProps {
 const PartCard: React.FC<PartCardProps> = ({ part, onSelect, isFavorite, onToggleFavorite, className, style }) => {
   const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(part.price);
   const isSold = part.status === 'sold';
+  const isReserved = part.status === 'reserved';
 
   return (
     <div 
-      className={`relative ${isSold ? 'cursor-default' : 'cursor-pointer'} ${className || ''}`}
-      onClick={() => !isSold && onSelect(part)}
+      className={`relative ${isSold || isReserved ? 'cursor-default' : 'cursor-pointer'} ${className || ''}`}
+      onClick={() => !isSold && !isReserved && onSelect(part)}
       style={style}
     >
-      <div className={`h-full bg-card-light dark:bg-card-dark rounded-xl overflow-hidden shadow-sm border border-border-light dark:border-border-dark transition-transform duration-200 ${!isSold ? 'hover:scale-[1.02] active:scale-95' : ''}`}>
+      <div className={`h-full bg-card-light dark:bg-card-dark rounded-xl overflow-hidden shadow-sm border border-border-light dark:border-border-dark transition-transform duration-200 ${!isSold && !isReserved ? 'hover:scale-[1.02] active:scale-95' : ''}`}>
         <div className="relative">
             <div 
               className="w-full h-48 bg-center bg-no-repeat bg-cover" 
@@ -54,9 +54,11 @@ const PartCard: React.FC<PartCardProps> = ({ part, onSelect, isFavorite, onToggl
           <p className="text-xl font-bold text-primary mt-2">{formattedPrice}</p>
         </div>
       </div>
-      {isSold && (
+       {(isSold || isReserved) && (
         <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center pointer-events-none">
-            <div className="bg-green-600 text-white text-base font-bold px-4 py-2 rounded shadow-lg transform -rotate-6">VENDIDO</div>
+            <div className={`${isSold ? 'bg-green-600' : 'bg-blue-600'} text-white text-base font-bold px-4 py-2 rounded shadow-lg transform -rotate-6`}>
+                {isSold ? 'VENDIDO' : 'RESERVADO'}
+            </div>
         </div>
       )}
     </div>

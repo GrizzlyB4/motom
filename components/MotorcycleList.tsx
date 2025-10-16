@@ -27,6 +27,8 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
   
   const showFeatured = featuredMotorcycles.length > 0 && selectedCategory === 'All' && searchTerm === '';
 
+  const visibleMotorcycles = motorcycles.filter(m => m.status !== 'sold');
+
   return (
     <div onClick={onAddHeatmapPoint}>
       {showFeatured && (
@@ -107,9 +109,9 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
         </div>
       )}
 
-      {motorcycles.length > 0 ? (
+      {visibleMotorcycles.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4">
-          {motorcycles.map((moto, index) => (
+          {visibleMotorcycles.map((moto, index) => (
             <MotorcycleCard 
                 key={moto.id} 
                 motorcycle={moto} 

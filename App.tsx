@@ -1,7 +1,6 @@
 
-
 import React, { useState, useMemo, useEffect } from 'react';
-import { Motorcycle, User, MotorcycleCategory, ChatConversation, ChatMessage, HeatmapPoint, SavedSearch, Part, PartCategory, PartCondition } from './types';
+import { Motorcycle, User, MotorcycleCategory, ChatConversation, ChatMessage, HeatmapPoint, SavedSearch, Part, PartCategory, PartCondition, Offer } from './types';
 import Header from './components/Header';
 import MotorcycleList from './components/MotorcycleList';
 import PartList from './components/PartList';
@@ -20,15 +19,19 @@ import PublicProfileView from './components/PublicProfileView';
 import EditForm from './components/EditForm';
 import HeatmapOverlay from './components/HeatmapOverlay';
 import ConfirmationModal from './components/ConfirmationModal';
+import OfferModal from './components/OfferModal';
+import OffersView from './components/OffersView';
 
 
 const mockMotorcycles: Motorcycle[] = [
     { id: 1, make: 'Honda', model: 'CB650R', year: 2021, price: 7500, mileage: 8500, engineSize: 649, description: 'Como nueva...', imageUrls: ['https://images.unsplash.com/photo-1621115132957-81df81347053?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller1@example.com', category: 'Sport', status: 'for-sale', location: 'Madrid, España', featured: true },
     { id: 2, make: 'Kawasaki', model: 'Z900', year: 2020, price: 8200, mileage: 12000, engineSize: 948, description: 'Vendo Kawasaki Z900...', imageUrls: ['https://images.unsplash.com/photo-1623563720235-3a0639f60324?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Sport', status: 'for-sale', location: 'Barcelona, España', featured: false },
     { id: 3, make: 'Yamaha', model: 'MT-07', year: 2022, price: 6800, mileage: 4500, engineSize: 689, description: 'Yamaha MT-07 del 2022...', imageUrls: ['https://images.unsplash.com/photo-1640890656113-3a137250abfa?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller2@example.com', category: 'Sport', status: 'for-sale', location: 'Valencia, España', featured: false },
-    { id: 4, make: 'BMW', model: 'R1250GS', year: 2021, price: 21500, mileage: 15000, engineSize: 1254, description: 'Impresionante R1250GS...', imageUrls: ['https://images.unsplash.com/photo-1623563720275-2c86b2253245?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Touring', status: 'for-sale', location: 'Sevilla, España', featured: true },
+    // FIX: Corrected category to 'Touring' and added status 'reserved' to match the type definition.
+    { id: 4, make: 'BMW', model: 'R1250GS', year: 2021, price: 21500, mileage: 15000, engineSize: 1254, description: 'Impresionante R1250GS...', imageUrls: ['https://images.unsplash.com/photo-1623563720275-2c86b2253245?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Touring', status: 'reserved', reservedBy: 'seller2@example.com', location: 'Sevilla, España', featured: true },
     { id: 5, make: 'Ducati', model: 'Panigale V2', year: 2020, price: 16000, mileage: 9800, engineSize: 955, description: 'Ducati Panigale V2...', imageUrls: ['https://images.unsplash.com/photo-1600761343111-a0a623e1d6d8?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller3@example.com', category: 'Sport', status: 'for-sale', location: 'Madrid, España', featured: true },
     { id: 8, make: 'Harley-Davidson', model: 'Iron 883', year: 2018, price: 9200, mileage: 18000, engineSize: 883, description: 'Icónica Iron 883...', imageUrls: ['https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller6@example.com', category: 'Cruiser', status: 'for-sale', location: 'Málaga, España', featured: false },
+    // FIX: Corrected category to 'Off-Road' and added status 'sold' to match the type definition.
     { id: 9, make: 'KTM', model: '390 Adventure', year: 2022, price: 6500, mileage: 5000, engineSize: 373, description: 'Perfecta trail ligera...', imageUrls: ['https://images.unsplash.com/photo-1627916699311-3a088371295b?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Off-Road', status: 'sold', location: 'Zaragoza, España', featured: false }
 ];
 
@@ -58,8 +61,15 @@ const mockUsers: User[] = [
     { name: 'Marco Antonio', email: 'seller6@example.com', profileImageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop', totalRatingPoints: 5, numberOfRatings: 1 }, // 5 stars
 ];
 
+const mockOffers: Offer[] = [
+    { id: 'offer1', itemId: 1, itemType: 'motorcycle', buyerEmail: 'user@motomarket.com', sellerEmail: 'seller1@example.com', offerAmount: 7200, status: 'pending', timestamp: Date.now() - 1000 * 60 * 60 * 2 },
+    { id: 'offer2', itemId: 2, itemType: 'motorcycle', buyerEmail: 'seller3@example.com', sellerEmail: 'user@motomarket.com', offerAmount: 8000, status: 'pending', timestamp: Date.now() - 1000 * 60 * 60 * 5 },
+    { id: 'offer3', itemId: 101, itemType: 'part', buyerEmail: 'seller1@example.com', sellerEmail: 'seller2@example.com', offerAmount: 800, status: 'rejected', timestamp: Date.now() - 1000 * 60 * 60 * 24 },
+    { id: 'offer4', itemId: 4, itemType: 'motorcycle', buyerEmail: 'seller2@example.com', sellerEmail: 'user@motomarket.com', offerAmount: 21000, status: 'accepted', timestamp: Date.now() - 1000 * 60 * 60 * 48 },
+];
 
-export type View = 'home' | 'detail' | 'partDetail' | 'sell' | 'profile' | 'favorites' | 'chat' | 'chatList' | 'chatDetail' | 'login' | 'publicProfile' | 'edit' | 'signup';
+
+export type View = 'home' | 'detail' | 'partDetail' | 'sell' | 'profile' | 'favorites' | 'chat' | 'chatList' | 'chatDetail' | 'login' | 'publicProfile' | 'edit' | 'signup' | 'offers';
 
 // --- Notification Service Functions ---
 const requestNotificationPermission = async (): Promise<NotificationPermission> => {
@@ -125,6 +135,10 @@ const App: React.FC = () => {
   const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false);
   const [itemToPromote, setItemToPromote] = useState<{id: number, type: 'motorcycle' | 'part'} | null>(null);
   const [marketView, setMarketView] = useState<'motorcycles' | 'parts'>('motorcycles');
+  
+  const [offers, setOffers] = useState<Offer[]>(mockOffers);
+  const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
+  const [itemToMakeOfferOn, setItemToMakeOfferOn] = useState<Motorcycle | Part | null>(null);
 
 
   useEffect(() => {
@@ -639,8 +653,122 @@ const App: React.FC = () => {
       setSavedSearches(prev => prev.filter(s => s.id !== searchId));
   };
 
+  const handleOpenOfferModal = (item: Motorcycle | Part) => {
+    setItemToMakeOfferOn(item);
+    setIsOfferModalOpen(true);
+  };
+
+  const handleMakeOffer = (amount: number) => {
+    if (!currentUser || !itemToMakeOfferOn) return;
+    const newOffer: Offer = {
+        id: `offer-${Date.now()}`,
+        itemId: itemToMakeOfferOn.id,
+        itemType: 'make' in itemToMakeOfferOn ? 'motorcycle' : 'part',
+        buyerEmail: currentUser.email,
+        sellerEmail: itemToMakeOfferOn.sellerEmail,
+        offerAmount: amount,
+        status: 'pending',
+        timestamp: Date.now(),
+    };
+    setOffers(prev => [newOffer, ...prev]);
+    setIsOfferModalOpen(false);
+    setItemToMakeOfferOn(null);
+    alert('¡Oferta enviada con éxito!');
+    setView('offers');
+  };
+
+  const handleAcceptOffer = (offerId: string) => {
+    const offer = offers.find(o => o.id === offerId);
+    if (!offer || !currentUser) return;
+
+    const item = offer.itemType === 'motorcycle' 
+        ? motorcycles.find(m => m.id === offer.itemId) 
+        : parts.find(p => p.id === offer.itemId);
+        
+    if (!item) return;
+
+    // 1. Update item status to 'reserved'
+    if (offer.itemType === 'motorcycle') {
+        setMotorcycles(prev => prev.map(m => m.id === offer.itemId ? { ...m, status: 'reserved', reservedBy: offer.buyerEmail } : m));
+    } else {
+        setParts(prev => prev.map(p => p.id === offer.itemId ? { ...p, status: 'reserved', reservedBy: offer.buyerEmail } : p));
+    }
+
+    // 2. Update all related offers
+    const finalOffers = offers.map(o => {
+        if (o.id === offerId) return { ...o, status: 'accepted' as const };
+        if (o.itemId === offer.itemId && o.status === 'pending') return { ...o, status: 'rejected' as const };
+        return o;
+    });
+    setOffers(finalOffers);
+
+    // 3. Find or create a conversation and send an automatic message
+    let conversation = conversations.find(c => 
+        (c.motorcycleId === offer.itemId || c.partId === offer.itemId) && 
+        c.participants.includes(offer.buyerEmail) && 
+        c.participants.includes(offer.sellerEmail)
+    );
+
+    let conversationId: string;
+
+    if (conversation) {
+        conversationId = conversation.id;
+    } else {
+        const newConversation: ChatConversation = {
+            id: `convo${Date.now()}`,
+            participants: [offer.buyerEmail, offer.sellerEmail],
+            ...(offer.itemType === 'motorcycle' ? { motorcycleId: offer.itemId } : { partId: offer.itemId })
+        };
+        setConversations(prev => [...prev, newConversation]);
+        conversationId = newConversation.id;
+    }
+    
+    const itemName = 'make' in item ? `${item.make} ${item.model}` : item.name;
+    const messageText = `¡Buenas noticias! He aceptado tu oferta por ${itemName}. Por favor, ponte en contacto conmigo para coordinar la entrega y el pago.`;
+    
+    const newMessage: ChatMessage = {
+        id: `msg${Date.now()}`,
+        conversationId: conversationId,
+        senderEmail: currentUser.email, // The seller is the sender
+        text: messageText,
+        timestamp: Date.now(),
+        isRead: false, // Important for the buyer to get a notification
+    };
+
+    setMessages(prev => [...prev, newMessage]);
+    
+    // 4. Show confirmation to the seller
+    alert('¡Oferta aceptada! Se ha reservado el artículo y se ha enviado un mensaje al comprador.');
+  };
+
+  const handleRejectOffer = (offerId: string) => {
+    setOffers(prev => prev.map(o => o.id === offerId ? { ...o, status: 'rejected' } : o));
+    alert('Oferta rechazada.');
+  };
+
+  const handleCancelSale = (itemId: number, itemType: 'motorcycle' | 'part') => {
+    if (!window.confirm("¿Estás seguro? Esto cancelará el acuerdo con el comprador actual y volverá a poner tu artículo en venta.")) {
+        return;
+    }
+    
+    if (itemType === 'motorcycle') {
+        setMotorcycles(prev => prev.map(m => m.id === itemId ? { ...m, status: 'for-sale', reservedBy: undefined } : m));
+    } else {
+        setParts(prev => prev.map(p => p.id === itemId ? { ...p, status: 'for-sale', reservedBy: undefined } : p));
+    }
+
+    setOffers(prev => prev.map(o => {
+        if (o.itemId === itemId && o.itemType === itemType && o.status === 'accepted') {
+            return { ...o, status: 'cancelled' };
+        }
+        return o;
+    }));
+
+    alert("El artículo ha sido publicado de nuevo.");
+  };
+
   const filteredMotorcycles = useMemo(() => {
-    let filtered = motorcycles.filter(m => m.status === 'for-sale');
+    let filtered = motorcycles.filter(m => m.status === 'for-sale' || m.status === 'reserved');
     const lowercasedFilter = searchTerm.toLowerCase();
     if (lowercasedFilter) filtered = filtered.filter(m => `${m.make} ${m.model} ${m.year}`.toLowerCase().includes(lowercasedFilter));
     if (locationFilter) filtered = filtered.filter(m => m.location.toLowerCase().includes(locationFilter.toLowerCase()));
@@ -668,7 +796,7 @@ const App: React.FC = () => {
   }, [motorcycles, searchTerm, locationFilter, priceRange, yearRange, engineSizeCategory, selectedCategory]);
 
   const filteredParts = useMemo(() => {
-    let filtered = parts.filter(p => p.status === 'for-sale');
+    let filtered = parts.filter(p => p.status === 'for-sale' || p.status === 'reserved');
     const lowercasedFilter = searchTerm.toLowerCase();
      if (lowercasedFilter) filtered = filtered.filter(p => `${p.name} ${p.description}`.toLowerCase().includes(lowercasedFilter));
     if (locationFilter) filtered = filtered.filter(p => p.location.toLowerCase().includes(locationFilter.toLowerCase()));
@@ -681,7 +809,7 @@ const App: React.FC = () => {
     return filtered;
   }, [parts, searchTerm, locationFilter, priceRange, selectedPartCategory]);
   
-  const featuredMotorcycles = useMemo(() => motorcycles.filter(moto => moto.featured && moto.status === 'for-sale'), [motorcycles]);
+  const featuredMotorcycles = useMemo(() => motorcycles.filter(moto => moto.featured && (moto.status === 'for-sale' || moto.status === 'reserved')), [motorcycles]);
 
   const userMotorcycles = useMemo(() => currentUser ? motorcycles.filter(moto => moto.sellerEmail === currentUser.email) : [], [motorcycles, currentUser]);
   const userParts = useMemo(() => currentUser ? parts.filter(part => part.sellerEmail === currentUser.email) : [], [parts, currentUser]);
@@ -696,6 +824,11 @@ const App: React.FC = () => {
         return !msg.isRead && msg.senderEmail !== currentUser.email && conversation?.participants.includes(currentUser.email);
     }).length;
   }, [messages, currentUser, conversations]);
+  
+  const pendingReceivedOffersCount = useMemo(() => {
+    if (!currentUser) return 0;
+    return offers.filter(o => o.sellerEmail === currentUser.email && o.status === 'pending').length;
+  }, [offers, currentUser]);
 
   const PlaceholderView = ({ title }: { title: string }) => (
     <div className="p-8 text-center h-full flex flex-col justify-center items-center">
@@ -713,20 +846,22 @@ const App: React.FC = () => {
     switch (view) {
       case 'detail': {
         const seller = users.find(u => u.email === selectedMotorcycle?.sellerEmail);
+        const pendingOffer = offers.find(o => o.itemId === selectedMotorcycle?.id && o.itemType === 'motorcycle' && o.buyerEmail === currentUser.email && o.status === 'pending');
         if (!selectedMotorcycle || !seller) return <PlaceholderView title="Anuncio no encontrado" />;
-        return <MotorcycleDetailView motorcycle={selectedMotorcycle} seller={seller} allMotorcycles={motorcycles} onBack={handleBackToPrevView} onStartChat={handleStartOrGoToChat} isFavorite={favorites.includes(selectedMotorcycle.id)} onToggleFavorite={handleToggleFavorite} onViewPublicProfile={handleViewPublicProfile} onSelectMotorcycle={handleSelectMotorcycle} />;
+        return <MotorcycleDetailView motorcycle={selectedMotorcycle} seller={seller} allMotorcycles={motorcycles} onBack={handleBackToPrevView} onStartChat={handleStartOrGoToChat} isFavorite={favorites.includes(selectedMotorcycle.id)} onToggleFavorite={handleToggleFavorite} onViewPublicProfile={handleViewPublicProfile} onSelectMotorcycle={handleSelectMotorcycle} onOpenOfferModal={handleOpenOfferModal} pendingOffer={pendingOffer} currentUser={currentUser} />;
       }
       case 'partDetail': {
         const seller = users.find(u => u.email === selectedPart?.sellerEmail);
+        const pendingOffer = offers.find(o => o.itemId === selectedPart?.id && o.itemType === 'part' && o.buyerEmail === currentUser.email && o.status === 'pending');
         if (!selectedPart || !seller) return <PlaceholderView title="Anuncio no encontrado" />;
-        return <PartDetailView part={selectedPart} seller={seller} onBack={handleBackToPrevView} onViewPublicProfile={handleViewPublicProfile} onStartChat={handleStartOrGoToChat} isFavorite={favoriteParts.includes(selectedPart.id)} onToggleFavorite={handleTogglePartFavorite} />;
+        return <PartDetailView part={selectedPart} seller={seller} onBack={handleBackToPrevView} onViewPublicProfile={handleViewPublicProfile} onStartChat={handleStartOrGoToChat} isFavorite={favoriteParts.includes(selectedPart.id)} onToggleFavorite={handleTogglePartFavorite} onOpenOfferModal={handleOpenOfferModal} pendingOffer={pendingOffer} currentUser={currentUser} />;
       }
       case 'sell':
         return <SellForm onBack={() => setView('home')} onPublish={handlePublish} />;
       case 'edit':
         return <EditForm motorcycle={motorcycleToEdit} part={partToEdit} onBack={handleBackToPrevView} onUpdate={handleUpdateItem} />;
       case 'profile':
-        return <ProfileView currentUser={currentUser} userMotorcycles={userMotorcycles} userParts={userParts} onGoToSell={() => setView('sell')} onSelectMotorcycle={handleSelectMotorcycle} onSelectPart={handleSelectPart} onLogout={handleLogout} notificationPermission={notificationPermission} onRequestPermission={handleRequestNotificationPermission} onUpdateProfileImage={handleUpdateProfileImage} onEditItem={handleNavigateToEdit} onMarkAsSold={handleMarkAsSold} onPromoteItem={handlePromoteItem} savedSearches={savedSearches} onDeleteSearch={handleDeleteSearch} />;
+        return <ProfileView currentUser={currentUser} userMotorcycles={userMotorcycles} userParts={userParts} onGoToSell={() => setView('sell')} onSelectMotorcycle={handleSelectMotorcycle} onSelectPart={handleSelectPart} onLogout={handleLogout} notificationPermission={notificationPermission} onRequestPermission={handleRequestNotificationPermission} onUpdateProfileImage={handleUpdateProfileImage} onEditItem={handleNavigateToEdit} onMarkAsSold={handleMarkAsSold} onPromoteItem={handlePromoteItem} savedSearches={savedSearches} onDeleteSearch={handleDeleteSearch} onNavigateToFavorites={() => setView('favorites')} onCancelSale={handleCancelSale} />;
       case 'publicProfile': {
         const seller = users.find(u => u.email === selectedSellerEmail);
         const sellerMotorcycles = motorcycles.filter(m => m.sellerEmail === selectedSellerEmail);
@@ -736,6 +871,8 @@ const App: React.FC = () => {
       }
       case 'favorites':
         return <FavoritesView motorcycles={favoriteMotorcycles} parts={favoritePartsList} onSelectMotorcycle={handleSelectMotorcycle} onSelectPart={handleSelectPart} onToggleFavorite={handleToggleFavorite} onTogglePartFavorite={handleTogglePartFavorite} />;
+      case 'offers':
+        return <OffersView offers={offers} currentUser={currentUser} users={users} motorcycles={motorcycles} parts={parts} onAcceptOffer={handleAcceptOffer} onRejectOffer={handleRejectOffer} onSelectItem={(item) => 'make' in item ? handleSelectMotorcycle(item) : handleSelectPart(item)} onCancelSale={handleCancelSale} />;
       case 'chatList':
         return <ChatListView conversations={conversations.filter(c => c.participants.includes(currentUser.email))} messages={messages} motorcycles={motorcycles} parts={parts} currentUser={currentUser} users={users} onSelectConversation={(convoId) => { setMessages(prev => prev.map(msg => (msg.conversationId === convoId && msg.senderEmail !== currentUser.email) ? { ...msg, isRead: true } : msg )); setSelectedConversationId(convoId); setView('chatDetail'); }} />;
       case 'chatDetail': {
@@ -784,11 +921,12 @@ const App: React.FC = () => {
         </div>
       </main>
       {isBottomNavVisible && (
-        <BottomNav currentView={view.startsWith('chat') ? 'chat' : view} onNavigate={handleNavigate} unreadMessagesCount={unreadMessagesCount} />
+        <BottomNav currentView={view.startsWith('chat') ? 'chat' : view} onNavigate={handleNavigate} unreadMessagesCount={unreadMessagesCount} pendingOffersCount={pendingReceivedOffersCount} />
       )}
       <FilterModal isOpen={isFilterModalOpen} onClose={() => setIsFilterModalOpen(false)} priceRange={priceRange} setPriceRange={setPriceRange} yearRange={yearRange} setYearRange={setYearRange} engineSizeCategory={engineSizeCategory} setEngineSizeCategory={setEngineSizeCategory} locationFilter={locationFilter} setLocationFilter={setLocationFilter} onResetFilters={handleResetFilters} />
       <ConfirmationModal isOpen={isConfirmationModalOpen} onClose={() => { setIsConfirmationModalOpen(false); setMotoToPublish(null); setPartToPublish(null); }} onConfirm={handleConfirmPublish} title="Confirmar Publicación" message="¿Estás seguro de que quieres publicar este anuncio? Por favor, revisa que todos los detalles sean correctos." confirmText="Sí, Publicar" cancelText="Revisar" />
       <ConfirmationModal isOpen={isPromoteModalOpen} onClose={() => { setIsPromoteModalOpen(false); setItemToPromote(null); }} onConfirm={handleConfirmPromote} title="Promocionar Anuncio" message="Promocionar este anuncio tiene un coste de $5.00. Esto lo mostrará en la sección 'Destacadas' en la página principal. ¿Deseas continuar?" confirmText="Sí, Promocionar ($5.00)" cancelText="Cancelar" />
+      {itemToMakeOfferOn && <OfferModal isOpen={isOfferModalOpen} onClose={() => setIsOfferModalOpen(false)} item={itemToMakeOfferOn} onMakeOffer={handleMakeOffer} />}
     </div>
   );
 };
