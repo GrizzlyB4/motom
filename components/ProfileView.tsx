@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { User, Motorcycle, SavedSearch, Part } from '../types';
 import { ProfileIcon, LogoutIcon, EditIcon, TrashIcon, StarIcon } from './Icons';
@@ -163,7 +164,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                                 <p className="text-sm text-primary">{formattedPrice}</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-1 sm:gap-2">
+                        <div className="flex flex-wrap items-center justify-end gap-2">
                             {moto.featured ? (
                                 <div className="flex items-center gap-1 text-xs font-semibold text-yellow-500 bg-yellow-500/10 px-3 py-2 rounded-md">
                                     <StarIcon className="w-4 h-4" />
@@ -203,7 +204,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                                 <p className="text-sm text-primary">{formattedPrice}</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-1 sm:gap-2">
+                        <div className="flex flex-wrap items-center justify-end gap-2">
                            {part.featured ? (
                                 <div className="flex items-center gap-1 text-xs font-semibold text-yellow-500 bg-yellow-500/10 px-3 py-2 rounded-md">
                                     <StarIcon className="w-4 h-4" />

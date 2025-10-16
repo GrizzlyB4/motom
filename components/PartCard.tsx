@@ -38,7 +38,7 @@ const PartCard: React.FC<PartCardProps> = ({ part, onSelect, isFavorite, onToggl
                 </button>
             )}
             {part.featured && !isSold && (
-                <div className="absolute top-12 right-3 z-10 flex items-center gap-1 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-full">
+                <div className="absolute top-3 left-3 z-10 flex items-center gap-1 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-full">
                     <StarIcon className="w-3 h-3"/>
                     <span>DESTACADO</span>
                 </div>
