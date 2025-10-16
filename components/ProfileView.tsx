@@ -1,6 +1,6 @@
 import React from 'react';
 import { User, Motorcycle, SavedSearch, Part } from '../types';
-import { ProfileIcon, LogoutIcon, EditIcon, TrashIcon, StarIcon, HeartIcon } from './Icons';
+import { ProfileIcon, LogoutIcon, EditIcon, TrashIcon, StarIcon, HeartIcon, EyeIcon, ChatIcon } from './Icons';
 import StarRating from './StarRating';
 
 interface ProfileViewProps {
@@ -44,6 +44,13 @@ const formatSearchCriteria = (search: SavedSearch): string => {
     if (parts.length === 0) return search.searchType === 'motorcycle' ? 'Cualquier moto' : 'Cualquier pieza';
     return `${search.searchType === 'motorcycle' ? 'Motos' : 'Piezas'}: ${parts.join(', ')}`;
 };
+
+const StatItem: React.FC<{ icon: React.ReactNode; value: number }> = ({ icon, value }) => (
+    <div className="flex items-center gap-1.5">
+        {icon}
+        <span className="font-semibold">{value.toLocaleString('en-US')}</span>
+    </div>
+);
 
 const ProfileView: React.FC<ProfileViewProps> = ({ 
     currentUser, userMotorcycles, userParts, onGoToSell, onSelectMotorcycle, onSelectPart, onLogout, 
@@ -159,33 +166,42 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                 const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(moto.price);
                 const isReserved = moto.status === 'reserved';
                 return (
-                    <div key={moto.id} className="bg-card-light dark:bg-card-dark p-3 rounded-xl flex items-center gap-3">
-                        <div onClick={() => onSelectMotorcycle(moto)} className="flex-grow flex items-center gap-3 cursor-pointer">
-                            <img src={moto.imageUrls[0]} alt={`${moto.make} ${moto.model}`} className="w-24 h-16 object-cover rounded-lg flex-shrink-0" />
-                            <div className="flex-grow">
-                                <p className="font-bold">{moto.make} {moto.model}</p>
-                                <p className="text-sm text-primary">{formattedPrice}</p>
-                                {isReserved && <span className="text-xs font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full">RESERVADO</span>}
+                    <div key={moto.id} className="bg-card-light dark:bg-card-dark p-3 rounded-xl flex flex-col gap-3">
+                        <div className="flex items-center gap-3">
+                            <div onClick={() => onSelectMotorcycle(moto)} className="flex-grow flex items-center gap-3 cursor-pointer">
+                                <img src={moto.imageUrls[0]} alt={`${moto.make} ${moto.model}`} className="w-24 h-16 object-cover rounded-lg flex-shrink-0" />
+                                <div className="flex-grow">
+                                    <p className="font-bold">{moto.make} {moto.model}</p>
+                                    <p className="text-sm text-primary">{formattedPrice}</p>
+                                    {isReserved && <span className="text-xs font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full">RESERVADO</span>}
+                                </div>
+                            </div>
+                            <div className="flex flex-wrap items-center justify-end gap-2">
+                                {isReserved ? (
+                                    <button onClick={(e) => { e.stopPropagation(); onCancelSale(moto.id, 'motorcycle'); }} className="text-xs font-semibold text-orange-600 bg-orange-500/10 hover:bg-orange-500/20 px-3 py-2 rounded-md transition-colors"> Volver a Publicar </button>
+                                ) : (
+                                    <>
+                                    {moto.featured ? (
+                                        <div className="flex items-center gap-1 text-xs font-semibold text-yellow-500 bg-yellow-500/10 px-3 py-2 rounded-md">
+                                            <StarIcon className="w-4 h-4" />
+                                            <span>Promocionado</span>
+                                        </div>
+                                    ) : (
+                                        <button onClick={(e) => { e.stopPropagation(); onPromoteItem(moto.id, 'motorcycle'); }} className="text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-md transition-colors"> Promocionar </button>
+                                    )}
+                                    <button onClick={(e) => { e.stopPropagation(); onEditItem(moto); }} className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-blue-500 rounded-full hover:bg-blue-500/10 transition-colors" aria-label="Editar anuncio"> <EditIcon className="w-5 h-5" /> </button>
+                                    <button onClick={(e) => { e.stopPropagation(); onMarkAsSold(moto.id, 'motorcycle'); }} className="text-xs font-semibold text-green-600 bg-green-500/10 hover:bg-green-500/20 px-3 py-2 rounded-md transition-colors"> Vendido </button>
+                                    </>
+                                )}
                             </div>
                         </div>
-                        <div className="flex flex-wrap items-center justify-end gap-2">
-                            {isReserved ? (
-                                <button onClick={(e) => { e.stopPropagation(); onCancelSale(moto.id, 'motorcycle'); }} className="text-xs font-semibold text-orange-600 bg-orange-500/10 hover:bg-orange-500/20 px-3 py-2 rounded-md transition-colors"> Volver a Publicar </button>
-                            ) : (
-                                <>
-                                {moto.featured ? (
-                                    <div className="flex items-center gap-1 text-xs font-semibold text-yellow-500 bg-yellow-500/10 px-3 py-2 rounded-md">
-                                        <StarIcon className="w-4 h-4" />
-                                        <span>Promocionado</span>
-                                    </div>
-                                ) : (
-                                    <button onClick={(e) => { e.stopPropagation(); onPromoteItem(moto.id, 'motorcycle'); }} className="text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-md transition-colors"> Promocionar </button>
-                                )}
-                                <button onClick={(e) => { e.stopPropagation(); onEditItem(moto); }} className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-blue-500 rounded-full hover:bg-blue-500/10 transition-colors" aria-label="Editar anuncio"> <EditIcon className="w-5 h-5" /> </button>
-                                <button onClick={(e) => { e.stopPropagation(); onMarkAsSold(moto.id, 'motorcycle'); }} className="text-xs font-semibold text-green-600 bg-green-500/10 hover:bg-green-500/20 px-3 py-2 rounded-md transition-colors"> Vendido </button>
-                                </>
-                            )}
-                        </div>
+                        {moto.featured && moto.stats && (
+                            <div className="border-t border-border-light dark:border-border-dark pt-3 flex justify-around items-center text-xs text-foreground-muted-light dark:text-foreground-muted-dark">
+                                <StatItem icon={<EyeIcon className="w-4 h-4" />} value={moto.stats.views} />
+                                <StatItem icon={<HeartIcon className="w-4 h-4" />} value={moto.stats.favorites} />
+                                <StatItem icon={<ChatIcon className="w-4 h-4" />} value={moto.stats.chats} />
+                            </div>
+                        )}
                     </div>
                 );
                 })}
@@ -207,33 +223,42 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                 const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(part.price);
                 const isReserved = part.status === 'reserved';
                 return (
-                    <div key={part.id} className="bg-card-light dark:bg-card-dark p-3 rounded-xl flex items-center gap-3">
-                        <div onClick={() => onSelectPart(part)} className="flex-grow flex items-center gap-3 cursor-pointer">
-                            <img src={part.imageUrls[0]} alt={part.name} className="w-24 h-16 object-cover rounded-lg flex-shrink-0" />
-                            <div className="flex-grow">
-                                <p className="font-bold">{part.name}</p>
-                                <p className="text-sm text-primary">{formattedPrice}</p>
-                                {isReserved && <span className="text-xs font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full">RESERVADO</span>}
+                    <div key={part.id} className="bg-card-light dark:bg-card-dark p-3 rounded-xl flex flex-col gap-3">
+                        <div className="flex items-center gap-3">
+                            <div onClick={() => onSelectPart(part)} className="flex-grow flex items-center gap-3 cursor-pointer">
+                                <img src={part.imageUrls[0]} alt={part.name} className="w-24 h-16 object-cover rounded-lg flex-shrink-0" />
+                                <div className="flex-grow">
+                                    <p className="font-bold">{part.name}</p>
+                                    <p className="text-sm text-primary">{formattedPrice}</p>
+                                    {isReserved && <span className="text-xs font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full">RESERVADO</span>}
+                                </div>
+                            </div>
+                            <div className="flex flex-wrap items-center justify-end gap-2">
+                                {isReserved ? (
+                                    <button onClick={(e) => { e.stopPropagation(); onCancelSale(part.id, 'part'); }} className="text-xs font-semibold text-orange-600 bg-orange-500/10 hover:bg-orange-500/20 px-3 py-2 rounded-md transition-colors"> Volver a Publicar </button>
+                                ) : (
+                                    <>
+                                    {part.featured ? (
+                                        <div className="flex items-center gap-1 text-xs font-semibold text-yellow-500 bg-yellow-500/10 px-3 py-2 rounded-md">
+                                            <StarIcon className="w-4 h-4" />
+                                            <span>Promocionado</span>
+                                        </div>
+                                    ) : (
+                                        <button onClick={(e) => { e.stopPropagation(); onPromoteItem(part.id, 'part'); }} className="text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-md transition-colors"> Promocionar </button>
+                                    )}
+                                    <button onClick={(e) => { e.stopPropagation(); onEditItem(part); }} className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-blue-500 rounded-full hover:bg-blue-500/10 transition-colors" aria-label="Editar anuncio"> <EditIcon className="w-5 h-5" /> </button>
+                                    <button onClick={(e) => { e.stopPropagation(); onMarkAsSold(part.id, 'part'); }} className="text-xs font-semibold text-green-600 bg-green-500/10 hover:bg-green-500/20 px-3 py-2 rounded-md transition-colors"> Vendido </button>
+                                    </>
+                                )}
                             </div>
                         </div>
-                        <div className="flex flex-wrap items-center justify-end gap-2">
-                            {isReserved ? (
-                                <button onClick={(e) => { e.stopPropagation(); onCancelSale(part.id, 'part'); }} className="text-xs font-semibold text-orange-600 bg-orange-500/10 hover:bg-orange-500/20 px-3 py-2 rounded-md transition-colors"> Volver a Publicar </button>
-                            ) : (
-                                <>
-                                {part.featured ? (
-                                    <div className="flex items-center gap-1 text-xs font-semibold text-yellow-500 bg-yellow-500/10 px-3 py-2 rounded-md">
-                                        <StarIcon className="w-4 h-4" />
-                                        <span>Promocionado</span>
-                                    </div>
-                                ) : (
-                                    <button onClick={(e) => { e.stopPropagation(); onPromoteItem(part.id, 'part'); }} className="text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-md transition-colors"> Promocionar </button>
-                                )}
-                                <button onClick={(e) => { e.stopPropagation(); onEditItem(part); }} className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-blue-500 rounded-full hover:bg-blue-500/10 transition-colors" aria-label="Editar anuncio"> <EditIcon className="w-5 h-5" /> </button>
-                                <button onClick={(e) => { e.stopPropagation(); onMarkAsSold(part.id, 'part'); }} className="text-xs font-semibold text-green-600 bg-green-500/10 hover:bg-green-500/20 px-3 py-2 rounded-md transition-colors"> Vendido </button>
-                                </>
-                            )}
-                        </div>
+                        {part.featured && part.stats && (
+                             <div className="border-t border-border-light dark:border-border-dark pt-3 flex justify-around items-center text-xs text-foreground-muted-light dark:text-foreground-muted-dark">
+                                <StatItem icon={<EyeIcon className="w-4 h-4" />} value={part.stats.views} />
+                                <StatItem icon={<HeartIcon className="w-4 h-4" />} value={part.stats.favorites} />
+                                <StatItem icon={<ChatIcon className="w-4 h-4" />} value={part.stats.chats} />
+                            </div>
+                        )}
                     </div>
                 );
                 })}

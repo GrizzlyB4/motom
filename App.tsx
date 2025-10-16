@@ -24,19 +24,17 @@ import OffersView from './components/OffersView';
 
 
 const mockMotorcycles: Motorcycle[] = [
-    { id: 1, make: 'Honda', model: 'CB650R', year: 2021, price: 7500, mileage: 8500, engineSize: 649, description: 'Como nueva...', imageUrls: ['https://images.unsplash.com/photo-1621115132957-81df81347053?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller1@example.com', category: 'Sport', status: 'for-sale', location: 'Madrid, España', featured: true, videoUrl: 'https://videos.pexels.com/video-files/5985396/5985396-sd_640_360_30fps.mp4' },
+    { id: 1, make: 'Honda', model: 'CB650R', year: 2021, price: 7500, mileage: 8500, engineSize: 649, description: 'Como nueva...', imageUrls: ['https://images.unsplash.com/photo-1621115132957-81df81347053?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller1@example.com', category: 'Sport', status: 'for-sale', location: 'Madrid, España', featured: true, videoUrl: 'https://videos.pexels.com/video-files/5985396/5985396-sd_640_360_30fps.mp4', stats: { views: 1250, favorites: 45, chats: 8 } },
     { id: 2, make: 'Kawasaki', model: 'Z900', year: 2020, price: 8200, mileage: 12000, engineSize: 948, description: 'Vendo Kawasaki Z900...', imageUrls: ['https://images.unsplash.com/photo-1623563720235-3a0639f60324?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Sport', status: 'for-sale', location: 'Barcelona, España', featured: false },
     { id: 3, make: 'Yamaha', model: 'MT-07', year: 2022, price: 6800, mileage: 4500, engineSize: 689, description: 'Yamaha MT-07 del 2022...', imageUrls: ['https://images.unsplash.com/photo-1640890656113-3a137250abfa?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller2@example.com', category: 'Sport', status: 'for-sale', location: 'Valencia, España', featured: false },
-    // FIX: Corrected category to 'Touring' and added status 'reserved' to match the type definition.
-    { id: 4, make: 'BMW', model: 'R1250GS', year: 2021, price: 21500, mileage: 15000, engineSize: 1254, description: 'Impresionante R1250GS...', imageUrls: ['https://images.unsplash.com/photo-1623563720275-2c86b2253245?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Touring', status: 'reserved', reservedBy: 'seller2@example.com', location: 'Sevilla, España', featured: true },
-    { id: 5, make: 'Ducati', model: 'Panigale V2', year: 2020, price: 16000, mileage: 9800, engineSize: 955, description: 'Ducati Panigale V2...', imageUrls: ['https://images.unsplash.com/photo-1600761343111-a0a623e1d6d8?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller3@example.com', category: 'Sport', status: 'for-sale', location: 'Madrid, España', featured: true },
-    { id: 8, make: 'Harley-Davidson', model: 'Iron 883', year: 2018, price: 9200, mileage: 18000, engineSize: 883, description: 'Icónica Iron 883...', imageUrls: ['https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller6@example.com', category: 'Cruiser', status: 'for-sale', location: 'Málaga, España', featured: false },
-    // FIX: Corrected category to 'Off-Road' and added status 'sold' to match the type definition.
-    { id: 9, make: 'KTM', model: '390 Adventure', year: 2022, price: 6500, mileage: 5000, engineSize: 373, description: 'Perfecta trail ligera...', imageUrls: ['https://images.unsplash.com/photo-1627916699311-3a088371295b?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Off-Road', status: 'sold', location: 'Zaragoza, España', featured: false }
+    { id: 4, make: 'BMW', model: 'R1250GS', year: 2021, price: 21500, mileage: 15000, engineSize: 1254, description: 'Impresionante R1250GS Adventure, full equip con maletas originales. Perfecta para viajar sin límites. Todas las revisiones en casa oficial.', imageUrls: ['https://images.unsplash.com/photo-1623563720275-2c86b2253245?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Touring', status: 'reserved', reservedBy: 'seller2@example.com', location: 'Sevilla, España', featured: true, stats: { views: 3102, favorites: 112, chats: 15 } },
+    { id: 5, make: 'Ducati', model: 'Panigale V2', year: 2020, price: 16000, mileage: 9800, engineSize: 955, description: 'Ducati Panigale V2 en perfecto estado. Electrónica de primer nivel y un diseño que enamora. Solo para amantes de las emociones fuertes.', imageUrls: ['https://images.unsplash.com/photo-1600761343111-a0a623e1d6d8?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller3@example.com', category: 'Sport', status: 'for-sale', location: 'Madrid, España', featured: true, stats: { views: 2488, favorites: 98, chats: 11 } },
+    { id: 8, make: 'Harley-Davidson', model: 'Iron 883', year: 2018, price: 9200, mileage: 18000, engineSize: 883, description: 'Icónica Iron 883, estilo bobber inconfundible. Sonido espectacular con escapes Vance & Hines. Muchos extras.', imageUrls: ['https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller6@example.com', category: 'Cruiser', status: 'for-sale', location: 'Málaga, España', featured: false },
+    { id: 9, make: 'KTM', model: '390 Adventure', year: 2022, price: 6500, mileage: 5000, engineSize: 373, description: 'Perfecta trail ligera para A2. Muy cuidada, con defensas y soporte para maleta. Ideal para iniciarse en el mundo trail.', imageUrls: ['https://images.unsplash.com/photo-1627916699311-3a088371295b?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Off-Road', status: 'sold', location: 'Zaragoza, España', featured: false }
 ];
 
 const mockParts: Part[] = [
-    { id: 101, name: 'Escape Akrapovič Racing Line', price: 850, description: 'Sistema de escape completo de titanio para Yamaha MT-07. Aumenta la potencia y reduce el peso. Sonido espectacular. Usado pero en perfecto estado.', imageUrls: ['https://images.unsplash.com/photo-1617056036422-4458698946a3?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller2@example.com', category: 'Exhausts', condition: 'used', compatibility: ['Yamaha MT-07 2021-2023'], status: 'for-sale', location: 'Valencia, España', featured: true },
+    { id: 101, name: 'Escape Akrapovič Racing Line', price: 850, description: 'Sistema de escape completo de titanio para Yamaha MT-07. Aumenta la potencia y reduce el peso. Sonido espectacular. Usado pero en perfecto estado.', imageUrls: ['https://images.unsplash.com/photo-1617056036422-4458698946a3?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller2@example.com', category: 'Exhausts', condition: 'used', compatibility: ['Yamaha MT-07 2021-2023'], status: 'for-sale', location: 'Valencia, España', featured: true, stats: { views: 980, favorites: 22, chats: 5 } },
     { id: 102, name: 'Juego de Neumáticos Pirelli Diablo Rosso IV', price: 280, description: 'Neumáticos deportivos para carretera. Medidas 120/70-17 y 180/55-17. Completamente nuevos, sin estrenar. Vendo por cambio de moto.', imageUrls: ['https://images.unsplash.com/photo-1589256956321-9950397851a7?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'user@motomarket.com', category: 'Tires', condition: 'new', compatibility: ['Universal - Verificar medidas'], status: 'for-sale', location: 'Barcelona, España' },
     { id: 103, name: 'Frenos Brembo Stylema', price: 600, description: 'Pinzas de freno delanteras Brembo Stylema. Alto rendimiento de frenada. Proceden de una Ducati Panigale V2. Incluye pastillas al 80%.', imageUrls: ['https://images.unsplash.com/photo-1598111034225-16782d33463b?q=80&w=800&auto=format&fit=crop'], sellerEmail: 'seller3@example.com', category: 'Brakes', condition: 'used', compatibility: ['Ducati Panigale V2', 'Aprilia RSV4'], status: 'for-sale', location: 'Madrid, España' },
 ];
@@ -306,8 +304,28 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSelectMotorcycle = (moto: Motorcycle) => { setSelectedMotorcycle(moto); setView('detail'); };
-  const handleSelectPart = (part: Part) => { setSelectedPart(part); setView('partDetail'); };
+  const handleSelectMotorcycle = (moto: Motorcycle) => { 
+    setMotorcycles(prev => prev.map(m => {
+        if (m.id === moto.id && m.featured && m.stats) {
+            return { ...m, stats: { ...m.stats, views: m.stats.views + 1 } };
+        }
+        return m;
+    }));
+    setSelectedMotorcycle(moto); 
+    setView('detail'); 
+  };
+
+  const handleSelectPart = (part: Part) => { 
+    setParts(prev => prev.map(p => {
+        if (p.id === part.id && p.featured && p.stats) {
+            return { ...p, stats: { ...p.stats, views: p.stats.views + 1 } };
+        }
+        return p;
+    }));
+    setSelectedPart(part); 
+    setView('partDetail'); 
+  };
+
   const handleBackToPrevView = () => {
     if (view === 'chatDetail') {
         setSelectedConversationId(null);
@@ -443,6 +461,15 @@ const App: React.FC = () => {
         setSelectedConversationId(existingConversation.id);
         setView('chatDetail');
     } else {
+        // This is a new chat, so update stats if the item is featured.
+        if (item.featured && item.stats) {
+            if (isMotorcycle) {
+                setMotorcycles(prev => prev.map(m => m.id === item.id ? { ...m, stats: { ...m.stats!, chats: m.stats!.chats + 1 } } : m));
+            } else {
+                setParts(prev => prev.map(p => p.id === item.id ? { ...p, stats: { ...p.stats!, chats: p.stats!.chats + 1 } } : p));
+            }
+        }
+
         const newConversation: ChatConversation = {
             id: `convo${conversations.length + 1}`,
             participants: [currentUser.email, item.sellerEmail],
@@ -508,11 +535,27 @@ const App: React.FC = () => {
   };
   
   const handleToggleFavorite = (motoId: number) => {
-    setFavorites(prev => prev.includes(motoId) ? prev.filter(id => id !== motoId) : [...prev, motoId]);
+    const isAdding = !favorites.includes(motoId);
+    setFavorites(prev => isAdding ? [...prev, motoId] : prev.filter(id => id !== motoId));
+
+    setMotorcycles(prev => prev.map(m => {
+        if (m.id === motoId && m.featured && m.stats) {
+            return { ...m, stats: { ...m.stats, favorites: m.stats.favorites + (isAdding ? 1 : -1) } };
+        }
+        return m;
+    }));
   };
   
   const handleTogglePartFavorite = (partId: number) => {
-    setFavoriteParts(prev => prev.includes(partId) ? prev.filter(id => id !== partId) : [...prev, partId]);
+    const isAdding = !favoriteParts.includes(partId);
+    setFavoriteParts(prev => isAdding ? [...prev, partId] : prev.filter(id => id !== partId));
+    
+    setParts(prev => prev.map(p => {
+        if (p.id === partId && p.featured && p.stats) {
+            return { ...p, stats: { ...p.stats, favorites: p.stats.favorites + (isAdding ? 1 : -1) } };
+        }
+        return p;
+    }));
   };
 
   const handleRequestNotificationPermission = async () => {
@@ -581,11 +624,11 @@ const App: React.FC = () => {
 
     if (itemToPromote.type === 'motorcycle') {
         setMotorcycles(prev => prev.map(moto =>
-          moto.id === itemToPromote.id ? { ...moto, featured: true } : moto
+          moto.id === itemToPromote.id ? { ...moto, featured: true, stats: moto.stats || { views: 0, favorites: 0, chats: 0 } } : moto
         ));
     } else {
         setParts(prev => prev.map(part =>
-          part.id === itemToPromote.id ? { ...part, featured: true } : part
+          part.id === itemToPromote.id ? { ...part, featured: true, stats: part.stats || { views: 0, favorites: 0, chats: 0 } } : part
         ));
     }
     alert('¡Anuncio promocionado con éxito!');
@@ -925,7 +968,7 @@ const App: React.FC = () => {
       )}
       <FilterModal isOpen={isFilterModalOpen} onClose={() => setIsFilterModalOpen(false)} priceRange={priceRange} setPriceRange={setPriceRange} yearRange={yearRange} setYearRange={setYearRange} engineSizeCategory={engineSizeCategory} setEngineSizeCategory={setEngineSizeCategory} locationFilter={locationFilter} setLocationFilter={setLocationFilter} onResetFilters={handleResetFilters} />
       <ConfirmationModal isOpen={isConfirmationModalOpen} onClose={() => { setIsConfirmationModalOpen(false); setMotoToPublish(null); setPartToPublish(null); }} onConfirm={handleConfirmPublish} title="Confirmar Publicación" message="¿Estás seguro de que quieres publicar este anuncio? Por favor, revisa que todos los detalles sean correctos." confirmText="Sí, Publicar" cancelText="Revisar" />
-      <ConfirmationModal isOpen={isPromoteModalOpen} onClose={() => { setIsPromoteModalOpen(false); setItemToPromote(null); }} onConfirm={handleConfirmPromote} title="Promocionar Anuncio" message="Promocionar este anuncio tiene un coste de $5.00. Esto lo mostrará en la sección 'Destacadas' en la página principal. ¿Deseas continuar?" confirmText="Sí, Promocionar ($5.00)" cancelText="Cancelar" />
+      <ConfirmationModal isOpen={isPromoteModalOpen} onClose={() => { setIsPromoteModalOpen(false); setItemToPromote(null); }} onConfirm={handleConfirmPromote} title="Promocionar Anuncio" message="Promocionar este anuncio tiene un coste de $5.00. Esto lo mostrará en la sección 'Destacadas' en la página principal y activará las estadísticas de rendimiento. ¿Deseas continuar?" confirmText="Sí, Promocionar ($5.00)" cancelText="Cancelar" />
       {itemToMakeOfferOn && <OfferModal isOpen={isOfferModalOpen} onClose={() => setIsOfferModalOpen(false)} item={itemToMakeOfferOn} onMakeOffer={handleMakeOffer} />}
     </div>
   );

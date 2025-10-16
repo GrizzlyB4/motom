@@ -31,6 +31,11 @@ export interface Motorcycle {
   location: string;
   featured?: boolean;
   reservedBy?: string;
+  stats?: {
+    views: number;
+    favorites: number;
+    chats: number;
+  };
 }
 
 export interface Part {
@@ -48,6 +53,11 @@ export interface Part {
   location: string;
   featured?: boolean;
   reservedBy?: string;
+  stats?: {
+    views: number;
+    favorites: number;
+    chats: number;
+  };
 }
 
 export interface User {
