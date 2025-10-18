@@ -1,0 +1,111 @@
+import React from 'react';
+import { User } from '../types';
+import { ProfileIcon, CloseIcon, MotorcycleIcon } from './Icons';
+
+interface SidebarMenuProps {
+  isOpen: boolean;
+  onClose: () => void;
+  currentUser: User | null;
+  onNavigate: (view: 'home' | 'sell' | 'profile' | 'login') => void;
+  onLogout: () => void;
+}
+
+const SidebarMenu: React.FC<SidebarMenuProps> = ({ isOpen, onClose, currentUser, onNavigate, onLogout }) => {
+  const handleNavigation = (view: 'home' | 'sell' | 'profile' | 'login') => {
+    onNavigate(view);
+    onClose();
+  };
+  
+  const handleLogoutClick = () => {
+    onLogout();
+    onClose();
+  };
+
+  return (
+    <div
+      className={`fixed inset-0 z-50 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      aria-modal="true"
+      role="dialog"
+    >
+      {/* Overlay */}
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden="true"
+      ></div>
+
+      {/* Sidebar Content */}
+      <div
+        className={`relative flex flex-col w-80 max-w-[90vw] h-full bg-background-dark shadow-2xl transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      >
+        <div className="flex items-center justify-between p-4 border-b border-border-dark">
+          <div className="flex items-center gap-2">
+             <MotorcycleIcon className="h-8 w-auto text-primary" />
+              <span className="text-xl font-bold font-heading text-foreground-dark">
+                MM
+              </span>
+          </div>
+          <button onClick={onClose} className="p-2 text-foreground-muted-dark hover:text-foreground-dark transition-colors rounded-full hover:bg-card-dark" aria-label="Cerrar menú">
+            <CloseIcon className="w-6 h-6" />
+          </button>
+        </div>
+
+        {currentUser ? (
+          <>
+            <div className="p-4 border-b border-border-dark">
+                <div className="flex items-center gap-3">
+                    {currentUser.profileImageUrl ? (
+                        <img src={currentUser.profileImageUrl} alt="Foto de perfil" className="w-10 h-10 rounded-full object-cover" />
+                    ) : (
+                        <div className="w-10 h-10 rounded-full bg-card-dark flex items-center justify-center">
+                           <ProfileIcon className="w-6 h-6 text-primary" />
+                        </div>
+                    )}
+                    <div>
+                        <p className="font-semibold text-foreground-dark">Bienvenido</p>
+                        <p className="text-sm text-foreground-muted-dark truncate">{currentUser.email}</p>
+                    </div>
+                </div>
+            </div>
+
+            <nav className="flex-grow p-4 space-y-2">
+              <NavItem onClick={() => handleNavigation('home')} label="Comprar" />
+              <NavItem onClick={() => handleNavigation('sell')} label="Vender mi Moto" />
+              <NavItem onClick={() => handleNavigation('profile')} label="Mi Perfil" />
+            </nav>
+
+            <div className="p-4 border-t border-border-dark">
+              <button
+                onClick={handleLogoutClick}
+                className="w-full text-left font-semibold text-foreground-dark hover:text-primary hover:bg-primary/10 p-3 rounded-lg transition-colors duration-200"
+              >
+                Cerrar Sesión
+              </button>
+            </div>
+          </>
+        ) : (
+             <div className="flex-grow p-4 flex flex-col justify-center items-center">
+                <p className="text-foreground-muted-dark mb-4 text-center">Inicia sesión para acceder a todas las funciones.</p>
+                <button 
+                    onClick={() => handleNavigation('login')}
+                    className="bg-primary text-white font-bold py-2 px-6 rounded-md hover:opacity-90 transition-colors duration-300"
+                >
+                    Iniciar Sesión
+                </button>
+             </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const NavItem: React.FC<{ onClick: () => void; label: string }> = ({ onClick, label }) => (
+  <button
+    onClick={onClick}
+    className="w-full text-left text-lg font-semibold text-foreground-dark hover:text-primary hover:bg-primary/10 p-3 rounded-lg transition-colors duration-200"
+  >
+    {label}
+  </button>
+);
+
+export default SidebarMenu;
