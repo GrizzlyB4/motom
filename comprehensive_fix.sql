@@ -124,6 +124,11 @@ BEGIN
         ALTER TABLE public.parts ADD COLUMN compatibility text[] NOT NULL DEFAULT '{}';
     END IF;
     
+    -- Ensure status column exists in parts table
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'parts' AND column_name = 'status') THEN
+        ALTER TABLE public.parts ADD COLUMN status public.listing_status_enum NOT NULL DEFAULT 'for-sale';
+    END IF;
+    
     -- Other columns are already checked in the motorcycles section
 END $$;
 

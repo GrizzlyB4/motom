@@ -21,7 +21,7 @@ import HeatmapOverlay from './components/HeatmapOverlay';
 import ConfirmationModal from './components/ConfirmationModal';
 import OfferModal from './components/OfferModal';
 import OffersView from './components/OffersView';
-import { supabase, addHeatmapPoint as addHeatmapPointToDb, getHeatmapData } from './services/supabase';
+import { supabase, refreshSchema, getHeatmapData, insertPartWithRetry, insertMotorcycleWithRetry, addHeatmapPoint } from './services/supabase';
 import Spinner from './components/Spinner';
 
 
@@ -129,6 +129,12 @@ const App: React.FC = () => {
     if ('Notification' in window) {
       setNotificationPermission(Notification.permission);
     }
+
+    // Refresh schema on app load to ensure we have the latest schema
+    const initializeApp = async () => {
+      await refreshSchema();
+    };
+    initializeApp();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
@@ -361,12 +367,13 @@ const App: React.FC = () => {
           video_url: motoToPublish.videoUrl,
           seller_email: currentUser.email,
           category: motoToPublish.category,
-          location: motoToPublish.location, // Add the missing location field
+          location: motoToPublish.location,
           status: 'for-sale',
           featured: false,
         };
         
-        const { data, error } = await supabase.from('motorcycles').insert(newMotoForDb).select().single();
+        // Use enhanced insert function with retry logic
+        const { data, error } = await insertMotorcycleWithRetry(newMotoForDb);
         
         if (error) {
           throw error;
@@ -408,12 +415,13 @@ const App: React.FC = () => {
           category: partToPublish.category,
           condition: partToPublish.condition,
           compatibility: partToPublish.compatibility,
-          location: partToPublish.location, // Add the missing location field
+          location: partToPublish.location,
           status: 'for-sale',
           featured: false,
         };
         
-        const { data, error } = await supabase.from('parts').insert(newPartForDb).select().single();
+        // Use enhanced insert function with retry logic
+        const { data, error } = await insertPartWithRetry(newPartForDb);
         
         if (error) {
           throw error;
@@ -749,7 +757,7 @@ const App: React.FC = () => {
   const handleAddHeatmapPoint = (e: React.MouseEvent) => {
     const newPoint: HeatmapPoint = { x: e.pageX, y: e.pageY, value: 1 };
     setHeatmapData(prev => [...prev, newPoint]);
-    addHeatmapPointToDb(newPoint);
+    addHeatmapPoint(newPoint);
   };
   
   const handleToggleHeatmap = () => setIsHeatmapVisible(prev => !prev);

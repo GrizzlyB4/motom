@@ -21,6 +21,11 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  const handleConfirm = () => {
+    onConfirm();
+    onClose();
+  };
+
   return (
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
@@ -44,7 +49,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             {cancelText}
           </button>
           <button 
-            onClick={onConfirm} 
+            onClick={handleConfirm} 
             className="w-full bg-primary text-white font-bold py-3 px-4 rounded-xl hover:opacity-90 transition-opacity"
             aria-label={confirmText}
           >
