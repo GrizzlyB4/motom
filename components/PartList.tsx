@@ -25,13 +25,20 @@ const PartList: React.FC<PartListProps> = ({
   const visibleParts = parts.filter(p => p.status !== 'sold');
 
   return (
-    <div onClick={onAddHeatmapPoint}>
+    <div onClick={(e) => onAddHeatmapPoint(e)}>
       <div className="px-4 py-3">
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar">
           {categories.map((category) => (
             <button
               key={category}
-              onClick={(e) => { e.stopPropagation(); onSelectCategory(category); }}
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                // Track heatmap specifically for category clicks
+                if (typeof onAddHeatmapPoint === 'function') {
+                  onAddHeatmapPoint(e);
+                }
+                onSelectCategory(category); 
+              }}
               className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 active:scale-95 ${ selectedCategory === category ? 'bg-primary text-white' : 'text-foreground-light dark:text-foreground-dark bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark' }`}
             >
               {category === 'All' ? 'Todo' : category}
@@ -42,7 +49,17 @@ const PartList: React.FC<PartListProps> = ({
       
       {areFiltersActive && (
         <div className="px-4 pb-2 animate-fade-in-up" style={{animationDelay: '100ms'}}>
-            <button onClick={(e) => { e.stopPropagation(); onSaveSearch(); }} className="w-full flex items-center justify-center gap-2 bg-primary/10 text-primary font-bold py-3 px-4 rounded-xl hover:bg-primary/20 transition-colors duration-300 active:scale-95">
+            <button 
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                // Track heatmap specifically for save search clicks
+                if (typeof onAddHeatmapPoint === 'function') {
+                  onAddHeatmapPoint(e);
+                }
+                onSaveSearch(); 
+              }} 
+              className="w-full flex items-center justify-center gap-2 bg-primary/10 text-primary font-bold py-3 px-4 rounded-xl hover:bg-primary/20 transition-colors duration-300 active:scale-95"
+            >
                 <BellIcon className="w-5 h-5" />
                 Crear alerta para esta búsqueda
             </button>
@@ -51,15 +68,26 @@ const PartList: React.FC<PartListProps> = ({
 
       {visibleParts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4">
-          {visibleParts.map((part, index) => (
+          {visibleParts.map((part) => (
             <PartCard 
                 key={part.id} 
                 part={part} 
-                onSelect={onSelectPart} 
+                onSelect={(e) => {
+                  // Track heatmap specifically for part card clicks
+                  if (typeof onAddHeatmapPoint === 'function') {
+                    onAddHeatmapPoint(e);
+                  }
+                  onSelectPart(part)
+                }} 
+                onToggleFavorite={(e) => {
+                  e.stopPropagation();
+                  // Track heatmap specifically for favorite clicks
+                  if (typeof onAddHeatmapPoint === 'function') {
+                    onAddHeatmapPoint(e);
+                  }
+                  onToggleFavorite(part.id)
+                }}
                 isFavorite={favorites.includes(part.id)}
-                onToggleFavorite={onToggleFavorite}
-                className="animate-fade-in-up"
-                style={{ animationDelay: `${index * 50}ms` }}
             />
           ))}
         </div>

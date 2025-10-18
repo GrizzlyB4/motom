@@ -32,7 +32,7 @@ const HeatmapOverlay: React.FC<HeatmapOverlayProps> = ({ data }) => {
 
       // Preparar los datos para la librería
       const heatmapData = {
-        max: 5, // Un valor máximo bajo hace que los clics iniciales sean más visibles
+        max: Math.max(5, ...data.map(point => point.value)), // Use the maximum value or 5 as minimum
         data: data,
       };
 

@@ -21,7 +21,7 @@ import HeatmapOverlay from './components/HeatmapOverlay';
 import ConfirmationModal from './components/ConfirmationModal';
 import OfferModal from './components/OfferModal';
 import OffersView from './components/OffersView';
-import { supabase, refreshSchema, getHeatmapData, insertPartWithRetry, insertMotorcycleWithRetry, addHeatmapPoint } from './services/supabase';
+import { supabase, addHeatmapPoint as addHeatmapPointToDb, getHeatmapData } from './services/supabase';
 import Spinner from './components/Spinner';
 
 
@@ -129,12 +129,6 @@ const App: React.FC = () => {
     if ('Notification' in window) {
       setNotificationPermission(Notification.permission);
     }
-
-    // Refresh schema on app load to ensure we have the latest schema
-    const initializeApp = async () => {
-      await refreshSchema();
-    };
-    initializeApp();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
@@ -367,13 +361,12 @@ const App: React.FC = () => {
           video_url: motoToPublish.videoUrl,
           seller_email: currentUser.email,
           category: motoToPublish.category,
-          location: motoToPublish.location,
+          location: motoToPublish.location, // Add the missing location field
           status: 'for-sale',
           featured: false,
         };
         
-        // Use enhanced insert function with retry logic
-        const { data, error } = await insertMotorcycleWithRetry(newMotoForDb);
+        const { data, error } = await supabase.from('motorcycles').insert(newMotoForDb).select().single();
         
         if (error) {
           throw error;
@@ -415,13 +408,12 @@ const App: React.FC = () => {
           category: partToPublish.category,
           condition: partToPublish.condition,
           compatibility: partToPublish.compatibility,
-          location: partToPublish.location,
+          location: partToPublish.location, // Add the missing location field
           status: 'for-sale',
           featured: false,
         };
         
-        // Use enhanced insert function with retry logic
-        const { data, error } = await insertPartWithRetry(newPartForDb);
+        const { data, error } = await supabase.from('parts').insert(newPartForDb).select().single();
         
         if (error) {
           throw error;
@@ -755,9 +747,33 @@ const App: React.FC = () => {
   };
 
   const handleAddHeatmapPoint = (e: React.MouseEvent) => {
-    const newPoint: HeatmapPoint = { x: e.pageX, y: e.pageY, value: 1 };
+    // Only collect heatmap data if the user has interacted with the page
+    // (not just scrolled or moved the mouse)
+    if (e.type === 'click') {
+      const newPoint: HeatmapPoint = { 
+        x: e.clientX, 
+        y: e.clientY, 
+        value: 1 
+      };
+      setHeatmapData(prev => [...prev, newPoint]);
+      addHeatmapPointToDb(newPoint);
+    }
+  };
+  
+  // Add a more comprehensive heatmap tracking function
+  const trackHeatmapEvent = (e: React.MouseEvent, eventType: string = 'click') => {
+    // Add the heatmap point with different weights based on event type
+    const value = eventType === 'click' ? 1 : 0.5;
+    const newPoint: HeatmapPoint = { 
+      x: e.clientX, 
+      y: e.clientY, 
+      value: value
+    };
     setHeatmapData(prev => [...prev, newPoint]);
-    addHeatmapPoint(newPoint);
+    addHeatmapPointToDb(newPoint);
+    
+    // Log the event type for debugging
+    console.log(`Heatmap event tracked: ${eventType} at (${e.clientX}, ${e.clientY}) with value ${value}`);
   };
   
   const handleToggleHeatmap = () => setIsHeatmapVisible(prev => !prev);
@@ -805,7 +821,94 @@ const App: React.FC = () => {
 
   const handleAcceptOffer = (offerId: string) => { /* Will implement with DB logic */ };
   const handleRejectOffer = (offerId: string) => { /* Will implement with DB logic */ };
-  const handleCancelSale = (itemId: string, itemType: 'motorcycle' | 'part') => { /* Will implement with DB logic */ };
+  const handleCancelSale = async (itemId: string, itemType: 'motorcycle' | 'part') => {
+    try {
+      // Update the item status back to 'for-sale' and clear reservedBy
+      const table = itemType === 'motorcycle' ? 'motorcycles' : 'parts';
+      const { data } = await supabase
+        .from(table)
+        .update({ status: 'for-sale', reserved_by: null })
+        .eq('id', itemId)
+        .select()
+        .single();
+
+      if (data) {
+        // Update the item in state with proper camelCase mapping
+        if (itemType === 'motorcycle') {
+          const motoWithCamelCase: Motorcycle = {
+            id: data.id,
+            make: data.make,
+            model: data.model,
+            year: data.year,
+            price: data.price,
+            mileage: data.mileage,
+            engineSize: data.engine_size,
+            description: data.description,
+            imageUrls: data.image_urls,
+            videoUrl: data.video_url,
+            sellerEmail: data.seller_email,
+            category: data.category,
+            status: data.status,
+            location: data.location,
+            featured: data.featured,
+            reservedBy: data.reserved_by,
+            stats: data.stats,
+          };
+          setMotorcycles(prev => prev.map(m => m.id === itemId ? motoWithCamelCase : m));
+        } else {
+          const partWithCamelCase: Part = {
+            id: data.id,
+            name: data.name,
+            price: data.price,
+            description: data.description,
+            imageUrls: data.image_urls,
+            videoUrl: data.video_url,
+            sellerEmail: data.seller_email,
+            category: data.category,
+            condition: data.condition,
+            compatibility: data.compatibility,
+            status: data.status,
+            location: data.location,
+            featured: data.featured,
+            reservedBy: data.reserved_by,
+            stats: data.stats,
+          };
+          setParts(prev => prev.map(p => p.id === itemId ? partWithCamelCase : p));
+        }
+
+        // Also update any accepted offers for this item to 'cancelled'
+        const { data: cancelledOffers } = await supabase
+          .from('offers')
+          .update({ status: 'cancelled' })
+          .eq('item_id', itemId)
+          .eq('item_type', itemType)
+          .eq('status', 'accepted')
+          .select();
+
+        if (cancelledOffers) {
+          // Update the offers in state
+          setOffers(prev => prev.map(offer => {
+            const wasCancelled = cancelledOffers.some(co => co.id === offer.id);
+            return wasCancelled ? { 
+              ...offer, 
+              status: 'cancelled',
+              itemId: offer.itemId,
+              itemType: offer.itemType,
+              buyerEmail: offer.buyerEmail,
+              sellerEmail: offer.sellerEmail,
+              offerAmount: offer.offerAmount,
+              timestamp: offer.timestamp
+            } : offer;
+          }));
+        }
+
+        alert('¡Venta cancelada y anuncio vuelto a publicar!');
+      }
+    } catch (error) {
+      console.error('Error cancelling sale:', error);
+      alert('No se pudo cancelar la venta. Por favor, inténtalo de nuevo.');
+    }
+  };
 
   const filteredMotorcycles = useMemo(() => {
     let filtered = motorcycles.filter(m => m.status === 'for-sale' || m.status === 'reserved');

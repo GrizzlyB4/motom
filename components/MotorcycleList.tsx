@@ -30,7 +30,7 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
   const visibleMotorcycles = motorcycles.filter(m => m.status !== 'sold');
 
   return (
-    <div onClick={onAddHeatmapPoint}>
+    <div onClick={(e) => onAddHeatmapPoint(e)}>
       {showFeatured && (
         <div className="pt-4">
           <h2 className="text-2xl font-bold text-foreground-light dark:text-foreground-dark px-4 mb-3">Destacadas</h2>
@@ -40,6 +40,10 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
                 key={moto.id}
                 onClick={(e) => {
                     e.stopPropagation();
+                    // Track heatmap specifically for featured motorcycle clicks
+                    if (typeof onAddHeatmapPoint === 'function') {
+                      onAddHeatmapPoint(e);
+                    }
                     onSelectMotorcycle(moto)
                 }}
                 className="flex-shrink-0 w-64 cursor-pointer group animate-fade-in-up"
@@ -54,6 +58,10 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        // Track heatmap specifically for favorite clicks
+                        if (typeof onAddHeatmapPoint === 'function') {
+                          onAddHeatmapPoint(e);
+                        }
                         onToggleFavorite(moto.id);
                       }}
                       className={`absolute top-2 right-2 p-1.5 bg-black/40 rounded-full transition-colors ${favorites.includes(moto.id) ? 'text-primary' : 'text-white'}`}
@@ -81,17 +89,17 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
           {categories.map((category) => (
             <button
               key={category}
-              onClick={(e) => {
-                e.stopPropagation(); // Prevent click from bubbling to the main container
-                onSelectCategory(category);
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                // Track heatmap specifically for category clicks
+                if (typeof onAddHeatmapPoint === 'function') {
+                  onAddHeatmapPoint(e);
+                }
+                onSelectCategory(category); 
               }}
-              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 active:scale-95 ${
-                selectedCategory === category
-                  ? 'bg-primary text-white'
-                  : 'text-foreground-light dark:text-foreground-dark bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark'
-              }`}
+              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 active:scale-95 ${ selectedCategory === category ? 'bg-primary text-white' : 'text-foreground-light dark:text-foreground-dark bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark' }`}
             >
-              {category}
+              {category === 'All' ? 'Todo' : category}
             </button>
           ))}
         </div>
@@ -99,9 +107,16 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
       
       {areFiltersActive && (
         <div className="px-4 pb-2 animate-fade-in-up" style={{animationDelay: '100ms'}}>
-            <button
-                onClick={(e) => { e.stopPropagation(); onSaveSearch(); }}
-                className="w-full flex items-center justify-center gap-2 bg-primary/10 text-primary font-bold py-3 px-4 rounded-xl hover:bg-primary/20 transition-colors duration-300 active:scale-95"
+            <button 
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                // Track heatmap specifically for save search clicks
+                if (typeof onAddHeatmapPoint === 'function') {
+                  onAddHeatmapPoint(e);
+                }
+                onSaveSearch(); 
+              }} 
+              className="w-full flex items-center justify-center gap-2 bg-primary/10 text-primary font-bold py-3 px-4 rounded-xl hover:bg-primary/20 transition-colors duration-300 active:scale-95"
             >
                 <BellIcon className="w-5 h-5" />
                 Crear alerta para esta búsqueda
@@ -111,22 +126,33 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
 
       {visibleMotorcycles.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4">
-          {visibleMotorcycles.map((moto, index) => (
+          {visibleMotorcycles.map((moto) => (
             <MotorcycleCard 
                 key={moto.id} 
                 motorcycle={moto} 
-                onSelect={onSelectMotorcycle} 
+                onSelect={(e) => {
+                  // Track heatmap specifically for motorcycle card clicks
+                  if (typeof onAddHeatmapPoint === 'function') {
+                    onAddHeatmapPoint(e);
+                  }
+                  onSelectMotorcycle(moto)
+                }} 
+                onToggleFavorite={(e) => {
+                  e.stopPropagation();
+                  // Track heatmap specifically for favorite clicks
+                  if (typeof onAddHeatmapPoint === 'function') {
+                    onAddHeatmapPoint(e);
+                  }
+                  onToggleFavorite(moto.id)
+                }}
                 isFavorite={favorites.includes(moto.id)}
-                onToggleFavorite={onToggleFavorite}
-                className="animate-fade-in-up"
-                style={{ animationDelay: `${index * 50}ms` }}
             />
           ))}
         </div>
       ) : (
-         <div className="text-center py-16 px-4">
-            <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark">No se encontraron resultados</h3>
-            <p className="text-foreground-muted-light dark:text-foreground-muted-dark mt-2">Intenta ajustar tus términos de búsqueda o filtros.</p>
+        <div className="text-center py-20 px-4">
+          <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark">No se encontraron motos</h3>
+          <p className="text-foreground-muted-light dark:text-foreground-muted-dark mt-2">Intenta con otros filtros.</p>
         </div>
       )}
     </div>

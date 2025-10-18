@@ -3,7 +3,7 @@ import { MotorcycleIcon } from './Icons';
 import Spinner from './Spinner';
 
 interface SignUpViewProps {
-  onSignUp: (name: string, email: string, password?: string) => Promise<void>;
+  onSignUp: (name: string, email: string, password: string) => Promise<void>;
   onNavigateToLogin: () => void;
 }
 
@@ -19,17 +19,47 @@ const SignUpView: React.FC<SignUpViewProps> = ({ onSignUp, onNavigateToLogin }) 
     e.preventDefault();
     setError('');
 
-    if (!name || !email || !password || !confirmPassword) {
-      setError('Por favor, completa todos los campos.');
+    // Validate name
+    if (!name.trim()) {
+      setError('Por favor, introduce tu nombre.');
       return;
     }
-    if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden.');
+    
+    if (name.length < 2) {
+      setError('El nombre debe tener al menos 2 caracteres.');
       return;
     }
+
+    // Validate email
+    if (!email.trim()) {
+      setError('Por favor, introduce tu email.');
+      return;
+    }
+    
     if (!/\S+@\S+\.\S+/.test(email)) {
         setError('Por favor, introduce un email válido.');
         return;
+    }
+
+    // Validate passwords
+    if (!password) {
+      setError('Por favor, introduce una contraseña.');
+      return;
+    }
+    
+    if (password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+    
+    if (!confirmPassword) {
+      setError('Por favor, confirma tu contraseña.');
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      setError('Las contraseñas no coinciden.');
+      return;
     }
     
     setIsLoading(true);

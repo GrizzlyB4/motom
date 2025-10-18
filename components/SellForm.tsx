@@ -97,6 +97,12 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
       const remainingSlots = 5 - imageUrls.length;
+      
+      if (remainingSlots <= 0) {
+        alert('Has alcanzado el máximo de 5 imágenes.');
+        return;
+      }
+      
       if (files.length > remainingSlots) {
         alert(`Puedes subir un máximo de 5 imágenes. Ya tienes ${imageUrls.length}, puedes añadir ${remainingSlots} más.`);
       }
@@ -104,10 +110,24 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
       const filesToProcess = files.slice(0, remainingSlots);
 
       filesToProcess.forEach((file: File) => {
-        if (!file.type.startsWith('image/')) return;
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          alert(`El archivo ${file.name} no es una imagen válida.`);
+          return;
+        }
+        
+        // Validate file size (5MB max)
+        if (file.size > 5 * 1024 * 1024) {
+          alert(`La imagen ${file.name} es demasiado grande. El tamaño máximo es 5MB.`);
+          return;
+        }
+        
         const reader = new FileReader();
         reader.onloadend = () => {
           setImageUrls(prev => [...prev, reader.result as string]);
+        };
+        reader.onerror = () => {
+          alert(`Error al cargar la imagen ${file.name}.`);
         };
         reader.readAsDataURL(file);
       });
@@ -121,14 +141,22 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validate file type
       if (!file.type.startsWith('video/')) {
-        alert('Por favor, selecciona un archivo de video.');
+        alert('Por favor, selecciona un archivo de video válido.');
+        return;
+      }
+      
+      // Validate file size (20MB max)
+      if (file.size > 20 * 1024 * 1024) {
+        alert('El video es demasiado grande. El tamaño máximo es 20MB.');
         return;
       }
 
       // Check video duration
       const videoElement = document.createElement('video');
       videoElement.preload = 'metadata';
+      
       videoElement.onloadedmetadata = () => {
         window.URL.revokeObjectURL(videoElement.src);
         if (videoElement.duration > 30) {
@@ -138,9 +166,17 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
           reader.onloadend = () => {
             setVideoUrl(reader.result as string);
           };
+          reader.onerror = () => {
+            alert('Error al cargar el video.');
+          };
           reader.readAsDataURL(file);
         }
       };
+      
+      videoElement.onerror = () => {
+        alert('Error al procesar el video.');
+      };
+      
       videoElement.src = URL.createObjectURL(file);
     }
   };
@@ -161,6 +197,8 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
     if (imageUrls.length === 0) {
         alert('Por favor, sube al menos una foto.');
         return;
@@ -169,28 +207,93 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
     if (listingType === 'motorcycle') {
         const { make, model, year, mileage, engineSize, category } = motoData;
         const { price, description, location } = commonData;
+        
+        // Validate motorcycle fields
         if (!make || !model || !year || !price || !mileage || !engineSize || !description || !location || !category) {
             alert('Por favor, completa todos los campos para la moto.');
             return;
         }
+        
+        // Validate numeric fields
+        const yearNum = parseInt(year, 10);
+        const priceNum = parseFloat(price);
+        const mileageNum = parseInt(mileage, 10);
+        const engineSizeNum = parseInt(engineSize, 10);
+        
+        if (isNaN(yearNum) || yearNum < 1900 || yearNum > new Date().getFullYear() + 1) {
+            alert('Por favor, introduce un año válido.');
+            return;
+        }
+        
+        if (isNaN(priceNum) || priceNum <= 0) {
+            alert('Por favor, introduce un precio válido.');
+            return;
+        }
+        
+        if (isNaN(mileageNum) || mileageNum < 0) {
+            alert('Por favor, introduce un kilometraje válido.');
+            return;
+        }
+        
+        if (isNaN(engineSizeNum) || engineSizeNum <= 0) {
+            alert('Por favor, introduce una cilindrada válida.');
+            return;
+        }
+        
+        if (description.length < 10) {
+            alert('La descripción debe tener al menos 10 caracteres.');
+            return;
+        }
+        
+        if (location.length < 3) {
+            alert('Por favor, introduce una ubicación válida.');
+            return;
+        }
+        
         onPublish({
             make, model, location, videoUrl: videoUrl || undefined,
-            year: parseInt(year, 10),
-            price: parseFloat(price),
-            mileage: parseInt(mileage, 10),
-            engineSize: parseInt(engineSize, 10),
+            year: yearNum,
+            price: priceNum,
+            mileage: mileageNum,
+            engineSize: engineSizeNum,
             description, imageUrls,
             category
         }, 'motorcycle');
     } else {
         const { name, condition, compatibility, category } = partData;
         const { price, description, location } = commonData;
+        
+        // Validate part fields
         if (!name || !price || !description || !location || !compatibility || !category) {
             alert('Por favor, completa todos los campos para la pieza.');
             return;
         }
+        
+        // Validate numeric fields
+        const priceNum = parseFloat(price);
+        
+        if (isNaN(priceNum) || priceNum <= 0) {
+            alert('Por favor, introduce un precio válido.');
+            return;
+        }
+        
+        if (description.length < 10) {
+            alert('La descripción debe tener al menos 10 caracteres.');
+            return;
+        }
+        
+        if (location.length < 3) {
+            alert('Por favor, introduce una ubicación válida.');
+            return;
+        }
+        
+        if (compatibility.length < 3) {
+            alert('Por favor, introduce información de compatibilidad válida.');
+            return;
+        }
+        
         onPublish({
-            name, location, price: parseFloat(price), description, videoUrl: videoUrl || undefined,
+            name, location, price: priceNum, description, videoUrl: videoUrl || undefined,
             condition,
             compatibility: compatibility.split(',').map(item => item.trim()),
             imageUrls,
