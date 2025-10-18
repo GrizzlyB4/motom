@@ -1,14 +1,77 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-.no-scrollbar::-webkit-scrollbar {
-    display: none;
+@theme {
+  --color-primary: #E63946;
+  --color-background-light: #F8F9FA;
+  --color-background-dark: #1E1E1E;
+  --color-card-light: #FFFFFF;
+  --color-card-dark: #2C2C2C;
+  --color-border-light: #D9D9D9;
+  --color-border-dark: #3D3D3D;
+  --color-foreground-light: #1E1E1E;
+  --color-foreground-dark: #F8F9FA;
+  --color-foreground-muted-light: #6c757d;
+  --color-foreground-muted-dark: #A0A0A0;
 }
 
-.no-scrollbar {
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
+  }
+
+  .animate-view-transition {
+    animation: view-transition-keyframes 0.25s ease-in-out forwards;
+  }
+
+  .animate-fade-in-up {
+    /* Define opacity 0 for the initial state before animation starts */
+    opacity: 0;
+    animation: fadeInUp 0.4s ease-out forwards;
+  }
+
+  #splash-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #1E1E1E; /* background-dark */
+    color: #F8F9FA; /* foreground-dark */
+    transition: opacity 0.8s ease-in;
+    opacity: 1;
+    overflow-x: hidden; /* Hide moto before it enters */
+  }
+
+  #splash-screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+    /* Ensure the element is completely removed from the layout */
+    display: none;
+  }
+
+  .splash-moto {
+    animation: drive-in-center 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+
+  .splash-moto.exit {
+    animation: drive-out-right 0.8s cubic-bezier(0.5, 0, 0.75, 0) forwards;
+  }
+
+  .splash-title {
+    opacity: 0;
+    animation: fade-in-title 0.7s ease-out 0.4s forwards;
+  }
+
+  .splash-title.exit {
+    animation: fade-out-title 0.5s ease-out forwards;
+  }
 }
 
 @keyframes view-transition-keyframes {
@@ -16,19 +79,9 @@
   to { opacity: 1; transform: scale(1); }
 }
 
-.animate-view-transition {
-  animation: view-transition-keyframes 0.25s ease-in-out forwards;
-}
-
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(15px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-in-up {
-  /* Define opacity 0 for the initial state before animation starts */
-  opacity: 0;
-  animation: fadeInUp 0.4s ease-out forwards;
 }
 
 /* Splash Screen Styles */
@@ -74,43 +127,4 @@
     opacity: 0;
     transform: translateY(20px);
   }
-}
-
-#splash-screen {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background-color: #1E1E1E; /* background-dark */
-  color: #F8F9FA; /* foreground-dark */
-  transition: opacity 0.8s ease-in;
-  opacity: 1;
-  overflow-x: hidden; /* Hide moto before it enters */
-}
-
-#splash-screen.hidden {
-  opacity: 0;
-  pointer-events: none;
-  /* Ensure the element is completely removed from the layout */
-  display: none;
-}
-
-.splash-moto {
-  animation: drive-in-center 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-}
-
-.splash-moto.exit {
-  animation: drive-out-right 0.8s cubic-bezier(0.5, 0, 0.75, 0) forwards;
-}
-
-.splash-title {
-  opacity: 0;
-  animation: fade-in-title 0.7s ease-out 0.4s forwards;
-}
-
-.splash-title.exit {
-  animation: fade-out-title 0.5s ease-out forwards;
 }
