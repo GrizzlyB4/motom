@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { Motorcycle, Part } from '../types';
+import { Motorcycle, Part, MotorcycleCategory } from '../types';
 import { generateAdDescription } from '../services/geminiService';
 import Spinner from './Spinner';
 import { UploadIcon, TrashIcon, PlayIcon } from './Icons';
@@ -7,7 +7,7 @@ import { UploadIcon, TrashIcon, PlayIcon } from './Icons';
 interface SellFormProps {
   onBack: () => void;
   onPublish: (
-    data: Omit<Motorcycle, 'id' | 'sellerEmail' | 'category' | 'status'> | Omit<Part, 'id' | 'sellerEmail' | 'category' | 'status'>,
+    data: Omit<Motorcycle, 'id' | 'sellerEmail' | 'status'> | Omit<Part, 'id' | 'sellerEmail' | 'status'>,
     type: 'motorcycle' | 'part'
   ) => void;
 }
@@ -28,12 +28,13 @@ const motorcycleData: { [make: string]: string[] } = {
     'Yamaha': ['YZF-R1', 'YZF-R7', 'MT-09', 'MT-07', 'Tenere 700', 'Tracer 9 GT', 'XSR900'],
 };
 
+const categories: MotorcycleCategory[] = ['Sport', 'Cruiser', 'Off-Road', 'Touring'];
 
 const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
   const [listingType, setListingType] = useState<'motorcycle' | 'part'>('motorcycle');
 
   // Moto state
-  const [motoData, setMotoData] = useState({ make: '', model: '', year: '', mileage: '', engineSize: '' });
+  const [motoData, setMotoData] = useState({ make: '', model: '', year: '', mileage: '', engineSize: '', category: 'Sport' as MotorcycleCategory });
   
   // Part state
   const [partData, setPartData] = useState({ name: '', condition: 'new', compatibility: '' });
@@ -96,7 +97,7 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
       const files = Array.from(e.target.files);
       const remainingSlots = 5 - imageUrls.length;
       if (files.length > remainingSlots) {
-        alert(`Puedes subir un máximo de 5 imágenes. Ya tienes ${imageUrls.length}, puedes añadir ${remainingSlots} más.`);
+        alert('Puedes subir un máximo de 5 imágenes. Ya tienes ${imageUrls.length}, puedes añadir ${remainingSlots} más.');
       }
 
       const filesToProcess = files.slice(0, remainingSlots);
@@ -165,7 +166,7 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
     }
 
     if (listingType === 'motorcycle') {
-        const { make, model, year, mileage, engineSize } = motoData;
+        const { make, model, year, mileage, engineSize, category } = motoData;
         const { price, description, location } = commonData;
         if (!make || !model || !year || !price || !mileage || !engineSize || !description || !location) {
             alert('Por favor, completa todos los campos para la moto.');
@@ -178,6 +179,7 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
             mileage: parseInt(mileage, 10),
             engineSize: parseInt(engineSize, 10),
             description, imageUrls,
+            category
         }, 'motorcycle');
     } else {
         const { name, condition, compatibility } = partData;
@@ -276,14 +278,19 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
               <input type="number" name="year" placeholder="Año" onChange={(e) => setMotoData(p => ({...p, year: e.target.value}))} value={motoData.year} className="form-input" required />
               <input type="number" name="mileage" placeholder="Kilometraje (km)" onChange={(e) => setMotoData(p => ({...p, mileage: e.target.value}))} value={motoData.mileage} className="form-input" required />
               <input type="number" name="engineSize" placeholder="Cilindrada (cc)" onChange={(e) => setMotoData(p => ({...p, engineSize: e.target.value}))} value={motoData.engineSize} className="form-input" required />
+              <select name="category" onChange={(e) => setMotoData(p => ({...p, category: e.target.value as MotorcycleCategory}))} value={motoData.category} className="form-input dark:bg-card-dark dark:text-foreground-dark" required>
+                {categories.map(category => (
+                  <option key={category} value={category} className="dark:bg-card-dark dark:text-foreground-dark">{category}</option>
+                ))}
+              </select>
             </div>
         ) : (
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input type="text" name="name" placeholder="Nombre de la pieza" onChange={(e) => setPartData(p => ({...p, name: e.target.value}))} value={partData.name} className="form-input md:col-span-2" required />
-                 <select name="condition" onChange={(e) => setPartData(p => ({...p, condition: e.target.value}))} value={partData.condition} className="form-input" required>
-                    <option value="new">Nueva</option>
-                    <option value="used">Usada</option>
-                    <option value="refurbished">Restaurada</option>
+                 <select name="condition" onChange={(e) => setPartData(p => ({...p, condition: e.target.value}))} value={partData.condition} className="form-input dark:bg-card-dark dark:text-foreground-dark" required>
+                    <option value="new" className="dark:bg-card-dark dark:text-foreground-dark">Nueva</option>
+                    <option value="used" className="dark:bg-card-dark dark:text-foreground-dark">Usada</option>
+                    <option value="refurbished" className="dark:bg-card-dark dark:text-foreground-dark">Restaurada</option>
                  </select>
                 <input type="text" name="compatibility" placeholder="Compatibilidad (ej: Yamaha MT-07)" onChange={(e) => setPartData(p => ({...p, compatibility: e.target.value}))} value={partData.compatibility} className="form-input" required />
             </div>
@@ -308,7 +315,7 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
           Publicar Anuncio
         </button>
       </form>
-      <style>{`.form-input { width: 100%; background-color: transparent; border: 1px solid #2a3c46; border-radius: 0.75rem; padding: 0.75rem 1rem; color: inherit; transition: all 0.2s; } .form-input:focus { outline: none; border-color: #1193d4; box-shadow: 0 0 0 2px rgba(17, 147, 212, 0.5); }`}</style>
+      <style>{`.form-input { width: 100%; background-color: transparent; border: 1px solid #2a3c46; border-radius: 0.75rem; padding: 0.75rem 1rem; color: inherit; transition: all 0.2s; } .form-input:focus { outline: none; border-color: #1193d4; box-shadow: 0 0 0 2px rgba(17, 147, 212, 0.5); } select.form-input { color: #0a0a0a; /* Dark text for better contrast */ background-color: #ffffff; /* Ensure light background */ } select.form-input.dark { color: #f0f0f0; /* Light text for dark mode */ background-color: #1a1a1a; /* Dark background for dark mode */ } @media (prefers-color-scheme: dark) { select.form-input:not(.dark) { color: #f0f0f0; background-color: #1a1a1a; } }`}</style>
     </div>
   );
 };

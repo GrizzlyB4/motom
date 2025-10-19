@@ -3,12 +3,12 @@ import { User } from '../types';
 import { MotorcycleIcon } from './Icons';
 
 interface LoginViewProps {
-  onLoginSuccess: (user: { email: string }) => void;
+  onLogin: (email: string, password: string) => void;
   onNavigateToSignUp: () => void;
 }
 
-const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onNavigateToSignUp }) => {
-  const [email, setEmail] = useState('user@motomarket.com');
+const LoginView: React.FC<LoginViewProps> = ({ onLogin, onNavigateToSignUp }) => {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -18,8 +18,11 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onNavigateToSignU
         setError("Por favor, introduce tu email.");
         return;
     }
-    // For demonstration, we bypass password check.
-    onLoginSuccess({ email });
+    if (!password.trim()) {
+        setError("Por favor, introduce tu contraseña.");
+        return;
+    }
+    onLogin(email, password);
   };
 
   return (

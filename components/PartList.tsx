@@ -11,8 +11,8 @@ interface PartListProps {
   onAddHeatmapPoint: (event: React.MouseEvent) => void;
   onSaveSearch: () => void;
   areFiltersActive: boolean;
-  favorites: number[];
-  onToggleFavorite: (partId: number) => void;
+  favorites: string[];
+  onToggleFavorite: (partId: string) => void;
 }
 
 const categories: PartCategory[] = ['All', 'Exhausts', 'Brakes', 'Tires', 'Suspension', 'Electronics'];

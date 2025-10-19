@@ -6,7 +6,7 @@ interface MotorcycleCardProps {
   motorcycle: Motorcycle;
   onSelect: (moto: Motorcycle) => void;
   isFavorite: boolean;
-  onToggleFavorite: (id: number) => void;
+  onToggleFavorite: (id: string) => void;
   className?: string;
   style?: React.CSSProperties;
 }

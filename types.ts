@@ -5,7 +5,7 @@ export type OfferStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled';
 
 export interface Offer {
   id: string;
-  itemId: number;
+  itemId: string;
   itemType: 'motorcycle' | 'part';
   buyerEmail: string;
   sellerEmail: string;
@@ -15,7 +15,7 @@ export interface Offer {
 }
 
 export interface Motorcycle {
-  id: number;
+  id: string;
   make: string;
   model: string;
   year: number;
@@ -39,7 +39,7 @@ export interface Motorcycle {
 }
 
 export interface Part {
-  id: number;
+  id: string;
   name: string;
   price: number;
   description: string;
@@ -81,8 +81,8 @@ export interface ChatMessage {
 export interface ChatConversation {
   id: string;
   participants: string[];
-  motorcycleId?: number;
-  partId?: number;
+  motorcycleId?: string;
+  partId?: string;
 }
 
 export interface SavedSearch {

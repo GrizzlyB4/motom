@@ -9,8 +9,8 @@ interface MotorcycleListProps {
   onSelectMotorcycle: (moto: Motorcycle) => void;
   selectedCategory: MotorcycleCategory;
   onSelectCategory: (category: MotorcycleCategory) => void;
-  favorites: number[];
-  onToggleFavorite: (motoId: number) => void;
+  favorites: string[];
+  onToggleFavorite: (motoId: string) => void;
   onAddHeatmapPoint: (event: React.MouseEvent) => void;
   searchTerm: string;
   onSaveSearch: () => void;

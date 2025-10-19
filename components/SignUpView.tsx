@@ -3,11 +3,11 @@ import { User } from '../types';
 import { MotorcycleIcon } from './Icons';
 
 interface SignUpViewProps {
-  onSignUpSuccess: (user: Omit<User, 'profileImageUrl' | 'totalRatingPoints' | 'numberOfRatings'>) => void;
+  onSignUp: (name: string, email: string, password: string) => void;
   onNavigateToLogin: () => void;
 }
 
-const SignUpView: React.FC<SignUpViewProps> = ({ onSignUpSuccess, onNavigateToLogin }) => {
+const SignUpView: React.FC<SignUpViewProps> = ({ onSignUp, onNavigateToLogin }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,8 +30,12 @@ const SignUpView: React.FC<SignUpViewProps> = ({ onSignUpSuccess, onNavigateToLo
         setError('Por favor, introduce un email válido.');
         return;
     }
+    if (password.length < 6) {
+        setError('La contraseña debe tener al menos 6 caracteres.');
+        return;
+    }
     
-    onSignUpSuccess({ name, email });
+    onSignUp(name, email, password);
   };
 
   return (

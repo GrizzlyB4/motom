@@ -9,8 +9,8 @@ interface FavoritesViewProps {
   parts: Part[];
   onSelectMotorcycle: (moto: Motorcycle) => void;
   onSelectPart: (part: Part) => void;
-  onToggleFavorite: (motoId: number) => void;
-  onTogglePartFavorite: (partId: number) => void;
+  onToggleFavorite: (motoId: string) => void;
+  onTogglePartFavorite: (partId: string) => void;
 }
 
 const FavoritesView: React.FC<FavoritesViewProps> = ({ 

@@ -15,12 +15,13 @@ interface ProfileViewProps {
   onRequestPermission: () => void;
   onUpdateProfileImage: (imageUrl: string) => void;
   onEditItem: (item: Motorcycle | Part) => void;
-  onMarkAsSold: (itemId: number, type: 'motorcycle' | 'part') => void;
-  onPromoteItem: (itemId: number, type: 'motorcycle' | 'part') => void;
+  onMarkAsSold: (itemId: string, type: 'motorcycle' | 'part') => void;
+  onPromoteItem: (itemId: string, type: 'motorcycle' | 'part') => void;
   savedSearches: SavedSearch[];
   onDeleteSearch: (searchId: string) => void;
   onNavigateToFavorites: () => void;
-  onCancelSale: (itemId: number, type: 'motorcycle' | 'part') => void;
+  onCancelSale: (itemId: string, type: 'motorcycle' | 'part') => void;
+  onDeleteItem: (itemId: string, type: 'motorcycle' | 'part') => void;
 }
 
 const formatSearchCriteria = (search: SavedSearch): string => {
@@ -56,7 +57,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({
     currentUser, userMotorcycles, userParts, onGoToSell, onSelectMotorcycle, onSelectPart, onLogout, 
     notificationPermission, onRequestPermission, onUpdateProfileImage, 
     onEditItem, onMarkAsSold, onPromoteItem, savedSearches, onDeleteSearch, onNavigateToFavorites,
-    onCancelSale
+    onCancelSale,
+    onDeleteItem
 }) => {
 
   const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,6 +193,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                                     )}
                                     <button onClick={(e) => { e.stopPropagation(); onEditItem(moto); }} className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-blue-500 rounded-full hover:bg-blue-500/10 transition-colors" aria-label="Editar anuncio"> <EditIcon className="w-5 h-5" /> </button>
                                     <button onClick={(e) => { e.stopPropagation(); onMarkAsSold(moto.id, 'motorcycle'); }} className="text-xs font-semibold text-green-600 bg-green-500/10 hover:bg-green-500/20 px-3 py-2 rounded-md transition-colors"> Vendido </button>
+                                    <button onClick={(e) => { e.stopPropagation(); onDeleteItem(moto.id, 'motorcycle'); }} className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-red-500 rounded-full hover:bg-red-500/10 transition-colors" aria-label="Eliminar anuncio">
+                                        <TrashIcon className="w-5 h-5" />
+                                    </button>
                                     </>
                                 )}
                             </div>
@@ -230,7 +235,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                                 <div className="flex-grow">
                                     <p className="font-bold">{part.name}</p>
                                     <p className="text-sm text-primary">{formattedPrice}</p>
-                                    {isReserved && <span className="text-xs font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full">RESERVADO</span>}
+                                    {isReserved && <span className="text-xs font-bold text-blue-500 bg-blue-550/10 px-2 py-0.5 rounded-full">RESERVADO</span>}
                                 </div>
                             </div>
                             <div className="flex flex-wrap items-center justify-end gap-2">
@@ -248,6 +253,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                                     )}
                                     <button onClick={(e) => { e.stopPropagation(); onEditItem(part); }} className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-blue-500 rounded-full hover:bg-blue-500/10 transition-colors" aria-label="Editar anuncio"> <EditIcon className="w-5 h-5" /> </button>
                                     <button onClick={(e) => { e.stopPropagation(); onMarkAsSold(part.id, 'part'); }} className="text-xs font-semibold text-green-600 bg-green-500/10 hover:bg-green-500/20 px-3 py-2 rounded-md transition-colors"> Vendido </button>
+                                    <button onClick={(e) => { e.stopPropagation(); onDeleteItem(part.id, 'part'); }} className="p-2 text-foreground-muted-light dark:text-foreground-muted-dark hover:text-red-500 rounded-full hover:bg-red-500/10 transition-colors" aria-label="Eliminar anuncio">
+                                        <TrashIcon className="w-5 h-5" />
+                                    </button>
                                     </>
                                 )}
                             </div>

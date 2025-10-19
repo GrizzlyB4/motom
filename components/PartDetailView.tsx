@@ -10,7 +10,7 @@ interface PartDetailViewProps {
   onViewPublicProfile: (sellerEmail: string) => void;
   onStartChat: (part: Part) => void;
   isFavorite: boolean;
-  onToggleFavorite: (partId: number) => void;
+  onToggleFavorite: (partId: string) => void;
   onOpenOfferModal: (item: Part) => void;
   pendingOffer?: Offer;
   currentUser: User;

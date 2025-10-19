@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { Motorcycle, User, Part } from '../types';
 import { ArrowLeftIcon, ProfileIcon } from './Icons';
@@ -14,10 +12,10 @@ interface PublicProfileViewProps {
   onBack: () => void;
   onSelectMotorcycle: (moto: Motorcycle) => void;
   onSelectPart: (part: Part) => void;
-  favorites: number[];
-  onToggleFavorite: (motoId: number) => void;
-  favoriteParts: number[];
-  onTogglePartFavorite: (partId: number) => void;
+  favorites: string[];
+  onToggleFavorite: (motoId: string) => void;
+  favoriteParts: string[];
+  onTogglePartFavorite: (partId: string) => void;
   currentUser: User;
   userRating?: number;
   onRateUser: (sellerEmail: string, rating: number) => void;

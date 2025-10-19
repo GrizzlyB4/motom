@@ -10,7 +10,7 @@ interface MotorcycleDetailViewProps {
   onBack: () => void;
   onStartChat: (motorcycle: Motorcycle) => void;
   isFavorite: boolean;
-  onToggleFavorite: (motoId: number) => void;
+  onToggleFavorite: (motoId: string) => void;
   onViewPublicProfile: (sellerEmail: string) => void;
   onSelectMotorcycle: (moto: Motorcycle) => void;
   onOpenOfferModal: (item: Motorcycle) => void;

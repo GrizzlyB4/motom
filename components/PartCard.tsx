@@ -6,7 +6,7 @@ interface PartCardProps {
   part: Part;
   onSelect: (part: Part) => void;
   isFavorite: boolean;
-  onToggleFavorite: (id: number) => void;
+  onToggleFavorite: (id: string) => void;
   className?: string;
   style?: React.CSSProperties;
 }
