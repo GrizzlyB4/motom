@@ -35,7 +35,9 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onNavigateToSignU
           <div>
             <input
               type="email"
-              placeholder="Email (ej: user@motomarket.com)"
+              id="login-email"
+              name="email"
+              placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="form-input"
@@ -45,6 +47,8 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onNavigateToSignU
           <div>
             <input
               type="password"
+              id="login-password"
+              name="password"
               placeholder="Contraseña"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

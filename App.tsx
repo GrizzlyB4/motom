@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Motorcycle, User, MotorcycleCategory, ChatConversation, ChatMessage, HeatmapPoint, SavedSearch, Part, PartCategory, PartCondition, Offer } from './types';
 import Header from './components/Header';
@@ -21,6 +20,7 @@ import HeatmapOverlay from './components/HeatmapOverlay';
 import ConfirmationModal from './components/ConfirmationModal';
 import OfferModal from './components/OfferModal';
 import OffersView from './components/OffersView';
+import { supabase } from './services/supabase';
 
 
 const mockMotorcycles: Motorcycle[] = [
@@ -137,6 +137,7 @@ const App: React.FC = () => {
   const [offers, setOffers] = useState<Offer[]>(mockOffers);
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
   const [itemToMakeOfferOn, setItemToMakeOfferOn] = useState<Motorcycle | Part | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
 
   useEffect(() => {
@@ -156,62 +157,180 @@ const App: React.FC = () => {
       }, 5000);
     }
 
-    // Check for saved user session first
-    try {
-      const storedUser = window.localStorage.getItem('motoMarketCurrentUser');
-      if (storedUser) {
-        const user: User = JSON.parse(storedUser);
-        setCurrentUser(user);
-        setView('home');
-      }
-    } catch (error) {
-      console.error("Failed to parse user data from localStorage", error);
-      window.localStorage.removeItem('motoMarketCurrentUser');
-    }
-    
-    // Load other app data from localStorage
-    try {
-      const storedFavorites = window.localStorage.getItem('motoMarketFavorites');
-      if (storedFavorites) setFavorites(JSON.parse(storedFavorites));
-
-      const storedPartFavorites = window.localStorage.getItem('motoMarketPartFavorites');
-      if (storedPartFavorites) setFavoriteParts(JSON.parse(storedPartFavorites));
-
-      const storedRatings = window.localStorage.getItem('motoMarketUserRatings');
-      if (storedRatings) setUserRatings(JSON.parse(storedRatings));
-      
-      const storedHeatmapData = window.localStorage.getItem('motoMarketHeatmapData');
-      if (storedHeatmapData) setHeatmapData(JSON.parse(storedHeatmapData));
-
-      const storedSearches = window.localStorage.getItem('motoMarketSavedSearches');
-      if (storedSearches) setSavedSearches(JSON.parse(storedSearches));
-
-    } catch (error) {
-      console.error("Failed to parse app data from localStorage", error);
-    }
-    
     // Check notification permission status
     if ('Notification' in window) {
       setNotificationPermission(Notification.permission);
     }
-  }, []);
+
+    // Set a timeout to ensure splash screen is hidden even if something goes wrong
+    const splashTimeout = setTimeout(() => {
+      if (isLoading) {
+        console.warn('Splash screen timeout reached, forcing hide');
+        setIsLoading(false);
+      }
+    }, 5000); // 5 seconds timeout
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (profile) {
+            const user: User = {
+                id: profile.id,
+                name: profile.name,
+                email: profile.email,
+                profileImageUrl: profile.profile_image_url,
+                totalRatingPoints: profile.total_rating_points,
+                numberOfRatings: profile.number_of_ratings
+            };
+            setCurrentUser(user);
+            setView('home');
+        } else {
+             setCurrentUser({
+                id: session.user.id,
+                email: session.user.email!,
+                name: session.user.user_metadata.name || 'Nuevo Usuario',
+             });
+             setView('home');
+        }
+        // Ensure loading is set to false when user is authenticated
+        setIsLoading(false);
+      } else {
+        // Only set to login view if we're not already trying to log in
+        // This prevents overriding the login form when a user is actively trying to log in
+        if (view !== 'login' || !isLoading) {
+          setCurrentUser(null);
+          setView('login');
+        }
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(splashTimeout);
+    };
+  }, [view, isLoading]);
 
 
   useEffect(() => {
-    window.localStorage.setItem('motoMarketFavorites', JSON.stringify(favorites));
-  }, [favorites]);
+    // Only fetch data if we have a current user and we're not in the middle of a login attempt
+    if (currentUser && view === 'home') {
+        const fetchAllData = async () => {
+            setIsLoading(true);
 
-  useEffect(() => {
-    window.localStorage.setItem('motoMarketPartFavorites', JSON.stringify(favoriteParts));
-  }, [favoriteParts]);
+            // Set a timeout to ensure we don't get stuck loading forever
+            const timeoutId = setTimeout(() => {
+                console.warn('Data fetching timeout reached, continuing with app load');
+                setIsLoading(false);
+            }, 10000); // 10 seconds timeout
 
-  useEffect(() => {
-    window.localStorage.setItem('motoMarketUserRatings', JSON.stringify(userRatings));
-  }, [userRatings]);
-
-  useEffect(() => {
-    window.localStorage.setItem('motoMarketSavedSearches', JSON.stringify(savedSearches));
-  }, [savedSearches]);
+            try {
+                // Fetch all data in parallel
+                const [
+                    motorcyclesRes,
+                    partsRes,
+                    usersRes,
+                    offersRes,
+                    conversationsRes,
+                    messagesRes,
+                    favoritesRes,
+                    partFavoritesRes,
+                    savedSearchesRes,
+                    ratingsRes,
+                    heatmapRes
+                ] = await Promise.all([
+                    supabase.from('motorcycles').select('*'),
+                    supabase.from('parts').select('*'),
+                    supabase.from('profiles').select('*'),
+                    supabase.from('offers').select('*'),
+                    supabase.from('conversations').select('*'),
+                    supabase.from('messages').select('*'),
+                    supabase.from('motorcycle_favorites').select('motorcycle_id').eq('user_id', currentUser.id),
+                    supabase.from('part_favorites').select('part_id').eq('user_id', currentUser.id),
+                    supabase.from('saved_searches').select('*').eq('user_id', currentUser.id),
+                    supabase.from('user_ratings').select('*').eq('rater_id', currentUser.id),
+                    getHeatmapData()
+                ]);
+                
+                // Clear the timeout since we've finished fetching
+                clearTimeout(timeoutId);
+                
+                // Set state after all promises are resolved
+                // Map database response to camelCase for the frontend
+                setMotorcycles(motorcyclesRes.data?.map((moto: any) => ({
+                    id: moto.id,
+                    make: moto.make,
+                    model: moto.model,
+                    year: moto.year,
+                    price: moto.price,
+                    mileage: moto.mileage,
+                    engineSize: moto.engine_size,
+                    description: moto.description,
+                    imageUrls: moto.image_urls,
+                    videoUrl: moto.video_url,
+                    sellerEmail: moto.seller_email,
+                    category: moto.category,
+                    status: moto.status,
+                    location: moto.location,
+                    featured: moto.featured,
+                    reservedBy: moto.reserved_by,
+                    stats: moto.stats,
+                })) || []);
+                
+                setParts(partsRes.data?.map((part: any) => ({
+                    id: part.id,
+                    name: part.name,
+                    price: part.price,
+                    description: part.description,
+                    imageUrls: part.image_urls,
+                    videoUrl: part.video_url,
+                    sellerEmail: part.seller_email,
+                    category: part.category,
+                    condition: part.condition,
+                    compatibility: part.compatibility,
+                    status: part.status,
+                    location: part.location,
+                    featured: part.featured,
+                    reservedBy: part.reserved_by,
+                    stats: part.stats,
+                })) || []);
+                
+                setUsers(usersRes.data?.map((p: any) => ({
+                    id: p.id,
+                    name: p.name,
+                    email: p.email,
+                    profileImageUrl: p.profile_image_url,
+                    totalRatingPoints: p.total_rating_points,
+                    numberOfRatings: p.number_of_ratings
+                })) || []);
+                
+                setOffers(offersRes.data || []);
+                setConversations(conversationsRes.data || []);
+                setMessages(messagesRes.data || []);
+                setFavorites(favoritesRes.data?.map(f => f.motorcycle_id) || []);
+                setFavoriteParts(partFavoritesRes.data?.map(f => f.part_id) || []);
+                setSavedSearches(savedSearchesRes.data || []);
+                setUserRatings(ratingsRes.data?.reduce((acc, rating) => ({ ...acc, [rating.rated_user_email]: rating.rating }), {}) || {});
+                setHeatmapData(heatmapRes || []);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                // Clear the timeout on error
+                clearTimeout(timeoutId);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchAllData();
+    } else {
+        // If there's no current user, ensure loading is set to false
+        setIsLoading(false);
+    }
+  }, [currentUser, view]);
 
 
   useEffect(() => {
@@ -387,7 +506,7 @@ const App: React.FC = () => {
     setView('login');
   };
 
-  const handlePublish = (data: Omit<Motorcycle, 'id' | 'sellerEmail' | 'category' | 'status'> | Omit<Part, 'id' | 'sellerEmail' | 'category' | 'status'>, type: 'motorcycle' | 'part') => {
+  const handlePublish = (data: Omit<Motorcycle, 'id' | 'sellerEmail' | 'category' | 'status'> | Omit<Part, 'id' | 'sellerEmail' | 'status' | 'category'>, type: 'motorcycle' | 'part') => {
     if (type === 'motorcycle') {
         setMotoToPublish(data as Omit<Motorcycle, 'id' | 'sellerEmail' | 'category' | 'status'>);
     } else {
@@ -821,157 +940,3 @@ const App: React.FC = () => {
     const maxPrice = parseFloat(priceRange.max);
     if (!isNaN(maxPrice)) filtered = filtered.filter(m => m.price <= maxPrice);
     const minYear = parseInt(yearRange.min, 10);
-    if (!isNaN(minYear)) filtered = filtered.filter(m => m.year >= minYear);
-    const maxYear = parseInt(yearRange.max, 10);
-    if (!isNaN(maxYear)) filtered = filtered.filter(m => m.year <= maxYear);
-    if (engineSizeCategory !== 'any') {
-      filtered = filtered.filter(m => {
-        switch (engineSizeCategory) {
-          case '125': return m.engineSize <= 125;
-          case '125-500': return m.engineSize > 125 && m.engineSize <= 500;
-          case '501-1000': return m.engineSize > 500 && m.engineSize <= 1000;
-          case '1000+': return m.engineSize > 1000;
-          default: return true;
-        }
-      });
-    }
-    return filtered;
-  }, [motorcycles, searchTerm, locationFilter, priceRange, yearRange, engineSizeCategory, selectedCategory]);
-
-  const filteredParts = useMemo(() => {
-    let filtered = parts.filter(p => p.status === 'for-sale' || p.status === 'reserved');
-    const lowercasedFilter = searchTerm.toLowerCase();
-     if (lowercasedFilter) filtered = filtered.filter(p => `${p.name} ${p.description}`.toLowerCase().includes(lowercasedFilter));
-    if (locationFilter) filtered = filtered.filter(p => p.location.toLowerCase().includes(locationFilter.toLowerCase()));
-    if (selectedPartCategory !== 'All') filtered = filtered.filter(p => p.category === selectedPartCategory);
-    const minPrice = parseFloat(priceRange.min);
-    if (!isNaN(minPrice)) filtered = filtered.filter(p => p.price >= minPrice);
-    const maxPrice = parseFloat(priceRange.max);
-    if (!isNaN(maxPrice)) filtered = filtered.filter(p => p.price <= maxPrice);
-    
-    return filtered;
-  }, [parts, searchTerm, locationFilter, priceRange, selectedPartCategory]);
-  
-  const featuredMotorcycles = useMemo(() => motorcycles.filter(moto => moto.featured && (moto.status === 'for-sale' || moto.status === 'reserved')), [motorcycles]);
-
-  const userMotorcycles = useMemo(() => currentUser ? motorcycles.filter(moto => moto.sellerEmail === currentUser.email) : [], [motorcycles, currentUser]);
-  const userParts = useMemo(() => currentUser ? parts.filter(part => part.sellerEmail === currentUser.email) : [], [parts, currentUser]);
-  
-  const favoriteMotorcycles = useMemo(() => motorcycles.filter(moto => favorites.includes(moto.id)), [motorcycles, favorites]);
-  const favoritePartsList = useMemo(() => parts.filter(part => favoriteParts.includes(part.id)), [parts, favoriteParts]);
-  
-  const unreadMessagesCount = useMemo(() => {
-    if (!currentUser) return 0;
-    return messages.filter(msg => {
-        const conversation = conversations.find(c => c.id === msg.conversationId);
-        return !msg.isRead && msg.senderEmail !== currentUser.email && conversation?.participants.includes(currentUser.email);
-    }).length;
-  }, [messages, currentUser, conversations]);
-  
-  const pendingReceivedOffersCount = useMemo(() => {
-    if (!currentUser) return 0;
-    return offers.filter(o => o.sellerEmail === currentUser.email && o.status === 'pending').length;
-  }, [offers, currentUser]);
-
-  const PlaceholderView = ({ title }: { title: string }) => (
-    <div className="p-8 text-center h-full flex flex-col justify-center items-center">
-        <h2 className="text-2xl font-bold text-foreground-light dark:text-foreground-dark">{title}</h2>
-        <p className="text-foreground-muted-light dark:text-foreground-muted-dark mt-2">Esta funcionalidad no está implementada todavía.</p>
-    </div>
-  );
-
-  if (!currentUser) {
-    if (view === 'signup') return <SignUpView onSignUpSuccess={handleSignUpSuccess} onNavigateToLogin={() => setView('login')} />;
-    return <LoginView onLoginSuccess={handleLoginSuccess} onNavigateToSignUp={() => setView('signup')} />;
-  }
-
-  const renderContent = () => {
-    switch (view) {
-      case 'detail': {
-        const seller = users.find(u => u.email === selectedMotorcycle?.sellerEmail);
-        const pendingOffer = offers.find(o => o.itemId === selectedMotorcycle?.id && o.itemType === 'motorcycle' && o.buyerEmail === currentUser.email && o.status === 'pending');
-        if (!selectedMotorcycle || !seller) return <PlaceholderView title="Anuncio no encontrado" />;
-        return <MotorcycleDetailView motorcycle={selectedMotorcycle} seller={seller} allMotorcycles={motorcycles} onBack={handleBackToPrevView} onStartChat={handleStartOrGoToChat} isFavorite={favorites.includes(selectedMotorcycle.id)} onToggleFavorite={handleToggleFavorite} onViewPublicProfile={handleViewPublicProfile} onSelectMotorcycle={handleSelectMotorcycle} onOpenOfferModal={handleOpenOfferModal} pendingOffer={pendingOffer} currentUser={currentUser} />;
-      }
-      case 'partDetail': {
-        const seller = users.find(u => u.email === selectedPart?.sellerEmail);
-        const pendingOffer = offers.find(o => o.itemId === selectedPart?.id && o.itemType === 'part' && o.buyerEmail === currentUser.email && o.status === 'pending');
-        if (!selectedPart || !seller) return <PlaceholderView title="Anuncio no encontrado" />;
-        return <PartDetailView part={selectedPart} seller={seller} onBack={handleBackToPrevView} onViewPublicProfile={handleViewPublicProfile} onStartChat={handleStartOrGoToChat} isFavorite={favoriteParts.includes(selectedPart.id)} onToggleFavorite={handleTogglePartFavorite} onOpenOfferModal={handleOpenOfferModal} pendingOffer={pendingOffer} currentUser={currentUser} />;
-      }
-      case 'sell':
-        return <SellForm onBack={() => setView('home')} onPublish={handlePublish} />;
-      case 'edit':
-        return <EditForm motorcycle={motorcycleToEdit} part={partToEdit} onBack={handleBackToPrevView} onUpdate={handleUpdateItem} />;
-      case 'profile':
-        return <ProfileView currentUser={currentUser} userMotorcycles={userMotorcycles} userParts={userParts} onGoToSell={() => setView('sell')} onSelectMotorcycle={handleSelectMotorcycle} onSelectPart={handleSelectPart} onLogout={handleLogout} notificationPermission={notificationPermission} onRequestPermission={handleRequestNotificationPermission} onUpdateProfileImage={handleUpdateProfileImage} onEditItem={handleNavigateToEdit} onMarkAsSold={handleMarkAsSold} onPromoteItem={handlePromoteItem} savedSearches={savedSearches} onDeleteSearch={handleDeleteSearch} onNavigateToFavorites={() => setView('favorites')} onCancelSale={handleCancelSale} />;
-      case 'publicProfile': {
-        const seller = users.find(u => u.email === selectedSellerEmail);
-        const sellerMotorcycles = motorcycles.filter(m => m.sellerEmail === selectedSellerEmail);
-        const sellerParts = parts.filter(p => p.sellerEmail === selectedSellerEmail);
-        if (!seller) return <PlaceholderView title="Vendedor no encontrado" />;
-        return <PublicProfileView seller={seller} motorcycles={sellerMotorcycles} parts={sellerParts} onBack={handleBackToPrevView} onSelectMotorcycle={handleSelectMotorcycle} onSelectPart={handleSelectPart} favorites={favorites} onToggleFavorite={handleToggleFavorite} favoriteParts={favoriteParts} onTogglePartFavorite={handleTogglePartFavorite} currentUser={currentUser} userRating={userRatings[seller.email]} onRateUser={handleRateUser} />;
-      }
-      case 'favorites':
-        return <FavoritesView motorcycles={favoriteMotorcycles} parts={favoritePartsList} onSelectMotorcycle={handleSelectMotorcycle} onSelectPart={handleSelectPart} onToggleFavorite={handleToggleFavorite} onTogglePartFavorite={handleTogglePartFavorite} />;
-      case 'offers':
-        return <OffersView offers={offers} currentUser={currentUser} users={users} motorcycles={motorcycles} parts={parts} onAcceptOffer={handleAcceptOffer} onRejectOffer={handleRejectOffer} onSelectItem={(item) => 'make' in item ? handleSelectMotorcycle(item) : handleSelectPart(item)} onCancelSale={handleCancelSale} />;
-      case 'chatList':
-        return <ChatListView conversations={conversations.filter(c => c.participants.includes(currentUser.email))} messages={messages} motorcycles={motorcycles} parts={parts} currentUser={currentUser} users={users} onSelectConversation={(convoId) => { setMessages(prev => prev.map(msg => (msg.conversationId === convoId && msg.senderEmail !== currentUser.email) ? { ...msg, isRead: true } : msg )); setSelectedConversationId(convoId); setView('chatDetail'); }} />;
-      case 'chatDetail': {
-        const conversation = conversations.find(c => c.id === selectedConversationId);
-        if (!conversation) return <PlaceholderView title="Error de Chat" />;
-        const item = conversation.motorcycleId ? motorcycles.find(m => m.id === conversation.motorcycleId) : parts.find(p => p.id === conversation.partId);
-        if (!item) return <PlaceholderView title="Artículo no encontrado" />;
-        return <ChatDetailView conversation={conversation} messages={messages.filter(m => m.conversationId === selectedConversationId).sort((a,b) => a.timestamp - b.timestamp)} item={item} currentUser={currentUser} users={users} onBack={handleBackToPrevView} onSendMessage={handleSendMessage} isTyping={isTyping[selectedConversationId] || false} />;
-      }
-      case 'home':
-      default:
-        const areMotoFiltersActive = searchTerm !== '' || locationFilter !== '' || selectedCategory !== 'All' || priceRange.min !== '' || priceRange.max !== '' || yearRange.min !== '' || yearRange.max !== '' || engineSizeCategory !== 'any';
-        const arePartFiltersActive = searchTerm !== '' || locationFilter !== '' || selectedPartCategory !== 'All' || priceRange.min !== '' || priceRange.max !== '';
-        return (
-          <div>
-            <div className="p-4 bg-background-light dark:bg-background-dark">
-                <div className="flex w-full bg-card-light dark:bg-card-dark p-1 rounded-full border border-border-light dark:border-border-dark">
-                    <button onClick={() => setMarketView('motorcycles')} className={`w-1/2 py-2 rounded-full text-sm font-bold transition-colors ${marketView === 'motorcycles' ? 'bg-primary text-white' : 'text-foreground-light dark:text-foreground-dark'}`}> Motos </button>
-                    <button onClick={() => setMarketView('parts')} className={`w-1/2 py-2 rounded-full text-sm font-bold transition-colors ${marketView === 'parts' ? 'bg-primary text-white' : 'text-foreground-light dark:text-foreground-dark'}`}> Piezas </button>
-                </div>
-            </div>
-            {marketView === 'motorcycles' ? (
-              <MotorcycleList motorcycles={filteredMotorcycles} featuredMotorcycles={featuredMotorcycles} onSelectMotorcycle={handleSelectMotorcycle} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} favorites={favorites} onToggleFavorite={handleToggleFavorite} onAddHeatmapPoint={handleAddHeatmapPoint} searchTerm={searchTerm} onSaveSearch={() => handleSaveSearch('motorcycle')} areFiltersActive={areMotoFiltersActive} />
-            ) : (
-              <PartList parts={filteredParts} onSelectPart={handleSelectPart} selectedCategory={selectedPartCategory} onSelectCategory={setSelectedPartCategory} onAddHeatmapPoint={handleAddHeatmapPoint} onSaveSearch={() => handleSaveSearch('part')} areFiltersActive={arePartFiltersActive} favorites={favoriteParts} onToggleFavorite={handleTogglePartFavorite} />
-            )}
-          </div>
-        );
-    }
-  };
-  
-  const isHeaderVisible = view !== 'detail' && view !== 'partDetail' && view !== 'chatDetail' && view !== 'publicProfile' && view !== 'edit';
-  const isBottomNavVisible = view !== 'detail' && view !== 'partDetail' && view !== 'chatDetail' && view !== 'publicProfile' && view !== 'edit';
-  const mainContentPadding = isBottomNavVisible ? 'pb-24' : '';
-
-
-  return (
-    <div className="flex flex-col min-h-screen bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark overflow-x-hidden">
-      {isHeatmapVisible && <HeatmapOverlay data={heatmapData} />}
-      {isHeaderVisible && (
-        <Header currentView={view} searchTerm={searchTerm} setSearchTerm={setSearchTerm} onOpenFilters={() => setIsFilterModalOpen(true)} isHeatmapVisible={isHeatmapVisible} onToggleHeatmap={handleToggleHeatmap} />
-      )}
-      <main className={`flex-1 ${mainContentPadding}`}>
-        <div key={`${view}-${marketView}`} className="animate-view-transition">
-          {renderContent()}
-        </div>
-      </main>
-      {isBottomNavVisible && (
-        <BottomNav currentView={view.startsWith('chat') ? 'chat' : view} onNavigate={handleNavigate} unreadMessagesCount={unreadMessagesCount} pendingOffersCount={pendingReceivedOffersCount} />
-      )}
-      <FilterModal isOpen={isFilterModalOpen} onClose={() => setIsFilterModalOpen(false)} priceRange={priceRange} setPriceRange={setPriceRange} yearRange={yearRange} setYearRange={setYearRange} engineSizeCategory={engineSizeCategory} setEngineSizeCategory={setEngineSizeCategory} locationFilter={locationFilter} setLocationFilter={setLocationFilter} onResetFilters={handleResetFilters} />
-      <ConfirmationModal isOpen={isConfirmationModalOpen} onClose={() => { setIsConfirmationModalOpen(false); setMotoToPublish(null); setPartToPublish(null); }} onConfirm={handleConfirmPublish} title="Confirmar Publicación" message="¿Estás seguro de que quieres publicar este anuncio? Por favor, revisa que todos los detalles sean correctos." confirmText="Sí, Publicar" cancelText="Revisar" />
-      <ConfirmationModal isOpen={isPromoteModalOpen} onClose={() => { setIsPromoteModalOpen(false); setItemToPromote(null); }} onConfirm={handleConfirmPromote} title="Promocionar Anuncio" message="Promocionar este anuncio tiene un coste de $5.00. Esto lo mostrará en la sección 'Destacadas' en la página principal y activará las estadísticas de rendimiento. ¿Deseas continuar?" confirmText="Sí, Promocionar ($5.00)" cancelText="Cancelar" />
-      {itemToMakeOfferOn && <OfferModal isOpen={isOfferModalOpen} onClose={() => setIsOfferModalOpen(false)} item={itemToMakeOfferOn} onMakeOffer={handleMakeOffer} />}
-    </div>
-  );
-};
-
-export default App;

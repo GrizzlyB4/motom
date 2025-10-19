@@ -47,6 +47,8 @@ const SignUpView: React.FC<SignUpViewProps> = ({ onSignUpSuccess, onNavigateToLo
           <div>
             <input
               type="text"
+              id="signup-name"
+              name="name"
               placeholder="Nombre Completo"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -58,6 +60,8 @@ const SignUpView: React.FC<SignUpViewProps> = ({ onSignUpSuccess, onNavigateToLo
           <div>
             <input
               type="email"
+              id="signup-email"
+              name="email"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -69,6 +73,8 @@ const SignUpView: React.FC<SignUpViewProps> = ({ onSignUpSuccess, onNavigateToLo
           <div>
             <input
               type="password"
+              id="signup-password"
+              name="password"
               placeholder="Contraseña"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -80,6 +86,8 @@ const SignUpView: React.FC<SignUpViewProps> = ({ onSignUpSuccess, onNavigateToLo
           <div>
             <input
               type="password"
+              id="signup-confirm-password"
+              name="confirmPassword"
               placeholder="Confirmar Contraseña"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}

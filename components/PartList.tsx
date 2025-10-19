@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Part, PartCategory } from '../types';
 import PartCard from './PartCard';
 import { HeartIcon, BellIcon } from './Icons';
@@ -23,6 +23,21 @@ const PartList: React.FC<PartListProps> = ({
 }) => {
   
   const visibleParts = parts.filter(p => p.status !== 'sold');
+  
+  // State to track when data is stable to prevent animation flashing
+  const [isDataStable, setIsDataStable] = useState(false);
+  
+  useEffect(() => {
+    // When data changes, mark as unstable temporarily
+    setIsDataStable(false);
+    
+    // After a short delay, mark as stable to allow animations
+    const timer = setTimeout(() => {
+      setIsDataStable(true);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [parts]);
 
   return (
     <div onClick={onAddHeatmapPoint}>
@@ -41,8 +56,18 @@ const PartList: React.FC<PartListProps> = ({
       </div>
       
       {areFiltersActive && (
-        <div className="px-4 pb-2 animate-fade-in-up" style={{animationDelay: '100ms'}}>
-            <button onClick={(e) => { e.stopPropagation(); onSaveSearch(); }} className="w-full flex items-center justify-center gap-2 bg-primary/10 text-primary font-bold py-3 px-4 rounded-xl hover:bg-primary/20 transition-colors duration-300 active:scale-95">
+        <div className={`px-4 pb-2 ${isDataStable ? 'animate-fade-in-up' : ''}`} style={{animationDelay: '100ms'}}>
+            <button 
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                // Track heatmap specifically for save search clicks
+                if (typeof onAddHeatmapPoint === 'function') {
+                  onAddHeatmapPoint(e);
+                }
+                onSaveSearch(); 
+              }} 
+              className="w-full flex items-center justify-center gap-2 bg-primary/10 text-primary font-bold py-3 px-4 rounded-xl hover:bg-primary/20 transition-colors duration-300 active:scale-95"
+            >
                 <BellIcon className="w-5 h-5" />
                 Crear alerta para esta búsqueda
             </button>
@@ -51,16 +76,28 @@ const PartList: React.FC<PartListProps> = ({
 
       {visibleParts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4">
-          {visibleParts.map((part, index) => (
-            <PartCard 
-                key={part.id} 
-                part={part} 
-                onSelect={onSelectPart} 
-                isFavorite={favorites.includes(part.id)}
-                onToggleFavorite={onToggleFavorite}
-                className="animate-fade-in-up"
-                style={{ animationDelay: `${index * 50}ms` }}
-            />
+          {visibleParts.map((part) => (
+            <div key={part.id} className={isDataStable ? 'animate-fade-in-up' : ''} style={{ animationDelay: '0ms' }}>
+              <PartCard 
+                  part={part} 
+                  onSelect={(e) => {
+                    // Track heatmap specifically for part card clicks
+                    if (typeof onAddHeatmapPoint === 'function') {
+                      onAddHeatmapPoint(e);
+                    }
+                    onSelectPart(part)
+                  }} 
+                  onToggleFavorite={(e) => {
+                    e.stopPropagation();
+                    // Track heatmap specifically for favorite clicks
+                    if (typeof onAddHeatmapPoint === 'function') {
+                      onAddHeatmapPoint(e);
+                    }
+                    onToggleFavorite(part.id)
+                  }}
+                  isFavorite={favorites.includes(part.id)}
+              />
+            </div>
           ))}
         </div>
       ) : (

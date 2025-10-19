@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Motorcycle, MotorcycleCategory } from '../types';
 import MotorcycleCard from './MotorcycleCard';
 import { HeartIcon, BellIcon } from './Icons';
@@ -26,13 +26,27 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
 }) => {
   
   const showFeatured = featuredMotorcycles.length > 0 && selectedCategory === 'All' && searchTerm === '';
-
   const visibleMotorcycles = motorcycles.filter(m => m.status !== 'sold');
+  
+  // State to track when data is stable to prevent animation flashing
+  const [isDataStable, setIsDataStable] = useState(false);
+  
+  useEffect(() => {
+    // When data changes, mark as unstable temporarily
+    setIsDataStable(false);
+    
+    // After a short delay, mark as stable to allow animations
+    const timer = setTimeout(() => {
+      setIsDataStable(true);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [motorcycles, featuredMotorcycles]);
 
   return (
     <div onClick={onAddHeatmapPoint}>
       {showFeatured && (
-        <div className="pt-4">
+        <div className={`pt-4 ${isDataStable ? 'animate-fade-in-up' : ''}`} style={{ animationDelay: '0ms' }}>
           <h2 className="text-2xl font-bold text-foreground-light dark:text-foreground-dark px-4 mb-3">Destacadas</h2>
           <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 no-scrollbar">
             {featuredMotorcycles.map((moto, index) => (
@@ -42,7 +56,7 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
                     e.stopPropagation();
                     onSelectMotorcycle(moto)
                 }}
-                className="flex-shrink-0 w-64 cursor-pointer group animate-fade-in-up"
+                className={`flex-shrink-0 w-64 cursor-pointer group ${isDataStable ? 'animate-fade-in-up' : ''}`}
                 style={{ animationDelay: `${index * 75}ms` }}
               >
                 <div className="h-full bg-card-light dark:bg-card-dark rounded-xl overflow-hidden shadow-md border border-border-light dark:border-border-dark transition-transform duration-200 hover:scale-[1.03] active:scale-95">
@@ -98,10 +112,17 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
       </div>
       
       {areFiltersActive && (
-        <div className="px-4 pb-2 animate-fade-in-up" style={{animationDelay: '100ms'}}>
-            <button
-                onClick={(e) => { e.stopPropagation(); onSaveSearch(); }}
-                className="w-full flex items-center justify-center gap-2 bg-primary/10 text-primary font-bold py-3 px-4 rounded-xl hover:bg-primary/20 transition-colors duration-300 active:scale-95"
+        <div className={`px-4 pb-2 ${isDataStable ? 'animate-fade-in-up' : ''}`} style={{animationDelay: '100ms'}}>
+            <button 
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                // Track heatmap specifically for save search clicks
+                if (typeof onAddHeatmapPoint === 'function') {
+                  onAddHeatmapPoint(e);
+                }
+                onSaveSearch(); 
+              }} 
+              className="w-full flex items-center justify-center gap-2 bg-primary/10 text-primary font-bold py-3 px-4 rounded-xl hover:bg-primary/20 transition-colors duration-300 active:scale-95"
             >
                 <BellIcon className="w-5 h-5" />
                 Crear alerta para esta búsqueda
@@ -111,16 +132,28 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
 
       {visibleMotorcycles.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4">
-          {visibleMotorcycles.map((moto, index) => (
-            <MotorcycleCard 
-                key={moto.id} 
-                motorcycle={moto} 
-                onSelect={onSelectMotorcycle} 
-                isFavorite={favorites.includes(moto.id)}
-                onToggleFavorite={onToggleFavorite}
-                className="animate-fade-in-up"
-                style={{ animationDelay: `${index * 50}ms` }}
-            />
+          {visibleMotorcycles.map((moto) => (
+            <div key={moto.id} className={isDataStable ? 'animate-fade-in-up' : ''} style={{ animationDelay: '0ms' }}>
+              <MotorcycleCard 
+                  motorcycle={moto} 
+                  onSelect={(e) => {
+                    // Track heatmap specifically for motorcycle card clicks
+                    if (typeof onAddHeatmapPoint === 'function') {
+                      onAddHeatmapPoint(e);
+                    }
+                    onSelectMotorcycle(moto)
+                  }} 
+                  onToggleFavorite={(e) => {
+                    e.stopPropagation();
+                    // Track heatmap specifically for favorite clicks
+                    if (typeof onAddHeatmapPoint === 'function') {
+                      onAddHeatmapPoint(e);
+                    }
+                    onToggleFavorite(moto.id)
+                  }}
+                  isFavorite={favorites.includes(moto.id)}
+              />
+            </div>
           ))}
         </div>
       ) : (
