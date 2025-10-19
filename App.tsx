@@ -20,7 +20,7 @@ import HeatmapOverlay from './components/HeatmapOverlay';
 import ConfirmationModal from './components/ConfirmationModal';
 import OfferModal from './components/OfferModal';
 import OffersView from './components/OffersView';
-import { supabase } from './services/supabase';
+import { supabase } from './services/supabase.ts';
 
 
 const mockMotorcycles: Motorcycle[] = [
@@ -92,6 +92,11 @@ const sendNotification = (title: string, options?: NotificationOptions): void =>
   }
 };
 
+// --- Heatmap Data Function ---
+const getHeatmapData = async (): Promise<HeatmapPoint[]> => {
+  // This is a placeholder function - replace with actual implementation
+  return [];
+};
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>('login');
@@ -940,3 +945,283 @@ const App: React.FC = () => {
     const maxPrice = parseFloat(priceRange.max);
     if (!isNaN(maxPrice)) filtered = filtered.filter(m => m.price <= maxPrice);
     const minYear = parseInt(yearRange.min, 10);
+    if (!isNaN(minYear)) filtered = filtered.filter(m => m.year >= minYear);
+    const maxYear = parseInt(yearRange.max, 10);
+    if (!isNaN(maxYear)) filtered = filtered.filter(m => m.year <= maxYear);
+    
+    if (engineSizeCategory !== 'any') {
+      switch (engineSizeCategory) {
+        case 'small':
+          filtered = filtered.filter(m => m.engineSize < 250);
+          break;
+        case 'medium':
+          filtered = filtered.filter(m => m.engineSize >= 250 && m.engineSize <= 650);
+          break;
+        case 'large':
+          filtered = filtered.filter(m => m.engineSize > 650);
+          break;
+      }
+    }
+    
+    return filtered;
+  }, [motorcycles, searchTerm, locationFilter, priceRange, yearRange, engineSizeCategory, selectedCategory]);
+
+  const filteredParts = useMemo(() => {
+    let filtered = parts.filter(p => p.status === 'for-sale' || p.status === 'reserved');
+    const lowercasedFilter = searchTerm.toLowerCase();
+    if (lowercasedFilter) filtered = filtered.filter(p => `${p.name} ${p.description}`.toLowerCase().includes(lowercasedFilter));
+    if (locationFilter) filtered = filtered.filter(p => p.location.toLowerCase().includes(locationFilter.toLowerCase()));
+    if (selectedPartCategory !== 'All') filtered = filtered.filter(p => p.category === selectedPartCategory);
+    const minPrice = parseFloat(priceRange.min);
+    if (!isNaN(minPrice)) filtered = filtered.filter(p => p.price >= minPrice);
+    const maxPrice = parseFloat(priceRange.max);
+    if (!isNaN(maxPrice)) filtered = filtered.filter(p => p.price <= maxPrice);
+    
+    return filtered;
+  }, [parts, searchTerm, locationFilter, priceRange, selectedPartCategory]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen bg-background" onClick={handleAddHeatmapPoint}>
+      <Header 
+        currentUser={currentUser} 
+        view={view} 
+        onNavigate={handleNavigate} 
+        onLogout={handleLogout}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        onResetFilters={handleResetFilters}
+        onRequestNotificationPermission={handleRequestNotificationPermission}
+        notificationPermission={notificationPermission}
+      />
+      
+      <main className="flex-grow pb-16 md:pb-0">
+        {view === 'login' && <LoginView onLoginSuccess={handleLoginSuccess} onNavigate={setView} />}
+        {view === 'signup' && <SignUpView onSignUpSuccess={handleSignUpSuccess} onNavigate={setView} />}
+        {view === 'home' && (
+          <>
+            <FilterModal 
+              isOpen={isFilterModalOpen}
+              onClose={() => setIsFilterModalOpen(false)}
+              locationFilter={locationFilter}
+              setLocationFilter={setLocationFilter}
+              priceRange={priceRange}
+              setPriceRange={setPriceRange}
+              yearRange={yearRange}
+              setYearRange={setYearRange}
+              engineSizeCategory={engineSizeCategory}
+              setEngineSizeCategory={setEngineSizeCategory}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              selectedPartCategory={selectedPartCategory}
+              setSelectedPartCategory={setSelectedPartCategory}
+              marketView={marketView}
+              onSaveSearch={handleSaveSearch}
+            />
+            {marketView === 'motorcycles' ? (
+              <MotorcycleList 
+                motorcycles={filteredMotorcycles}
+                currentUser={currentUser}
+                onSelectMotorcycle={handleSelectMotorcycle}
+                onToggleFavorite={handleToggleFavorite}
+                favorites={favorites}
+                onViewPublicProfile={handleViewPublicProfile}
+                onOpenOfferModal={handleOpenOfferModal}
+              />
+            ) : (
+              <PartList 
+                parts={filteredParts}
+                currentUser={currentUser}
+                onSelectPart={handleSelectPart}
+                onToggleFavorite={handleTogglePartFavorite}
+                favoriteParts={favoriteParts}
+                onViewPublicProfile={handleViewPublicProfile}
+                onOpenOfferModal={handleOpenOfferModal}
+              />
+            )}
+          </>
+        )}
+        {view === 'detail' && selectedMotorcycle && (
+          <MotorcycleDetailView 
+            motorcycle={selectedMotorcycle}
+            currentUser={currentUser}
+            onBack={handleBackToPrevView}
+            onStartOrGoToChat={handleStartOrGoToChat}
+            onToggleFavorite={handleToggleFavorite}
+            isFavorite={favorites.includes(selectedMotorcycle.id)}
+            onViewPublicProfile={handleViewPublicProfile}
+            onMarkAsSold={handleMarkAsSold}
+            onNavigateToEdit={handleNavigateToEdit}
+            onPromoteItem={handlePromoteItem}
+            onOpenOfferModal={handleOpenOfferModal}
+          />
+        )}
+        {view === 'partDetail' && selectedPart && (
+          <PartDetailView 
+            part={selectedPart}
+            currentUser={currentUser}
+            onBack={handleBackToPrevView}
+            onStartOrGoToChat={handleStartOrGoToChat}
+            onToggleFavorite={handleTogglePartFavorite}
+            isFavorite={favoriteParts.includes(selectedPart.id)}
+            onViewPublicProfile={handleViewPublicProfile}
+            onMarkAsSold={handleMarkAsSold}
+            onNavigateToEdit={handleNavigateToEdit}
+            onPromoteItem={handlePromoteItem}
+            onOpenOfferModal={handleOpenOfferModal}
+          />
+        )}
+        {view === 'sell' && currentUser && (
+          <SellForm 
+            currentUser={currentUser} 
+            onPublish={handlePublish}
+            onCancel={() => setView('profile')}
+          />
+        )}
+        {view === 'profile' && currentUser && (
+          <ProfileView 
+            currentUser={currentUser}
+            motorcycles={motorcycles.filter(m => m.sellerEmail === currentUser.email)}
+            parts={parts.filter(p => p.sellerEmail === currentUser.email)}
+            onNavigate={handleNavigate}
+            onUpdateProfileImage={handleUpdateProfileImage}
+            onMarkAsSold={handleMarkAsSold}
+            onNavigateToEdit={handleNavigateToEdit}
+            onPromoteItem={handlePromoteItem}
+          />
+        )}
+        {view === 'publicProfile' && selectedSellerEmail && (
+          <PublicProfileView 
+            sellerEmail={selectedSellerEmail}
+            users={users}
+            motorcycles={motorcycles.filter(m => m.sellerEmail === selectedSellerEmail)}
+            parts={parts.filter(p => p.sellerEmail === selectedSellerEmail)}
+            currentUser={currentUser}
+            onBack={handleBackToPrevView}
+            onStartOrGoToChat={handleStartOrGoToChat}
+            onRateUser={handleRateUser}
+            userRatings={userRatings}
+          />
+        )}
+        {view === 'edit' && currentUser && (
+          <EditForm 
+            motorcycle={motorcycleToEdit}
+            part={partToEdit}
+            currentUser={currentUser}
+            onUpdateItem={handleUpdateItem}
+            onCancel={() => {
+              setMotorcycleToEdit(null);
+              setPartToEdit(null);
+              setView('profile');
+            }}
+          />
+        )}
+        {view === 'favorites' && currentUser && (
+          <FavoritesView 
+            motorcycles={motorcycles.filter(m => favorites.includes(m.id))}
+            parts={parts.filter(p => favoriteParts.includes(p.id))}
+            currentUser={currentUser}
+            onSelectMotorcycle={handleSelectMotorcycle}
+            onSelectPart={handleSelectPart}
+            onToggleMotorcycleFavorite={handleToggleFavorite}
+            onTogglePartFavorite={handleTogglePartFavorite}
+            favorites={favorites}
+            favoriteParts={favoriteParts}
+            onViewPublicProfile={handleViewPublicProfile}
+            onOpenOfferModal={handleOpenOfferModal}
+          />
+        )}
+        {view === 'chatList' && (
+          <ChatListView 
+            conversations={conversations}
+            currentUser={currentUser}
+            users={users}
+            motorcycles={motorcycles}
+            parts={parts}
+            onSelectConversation={setSelectedConversationId}
+            onNavigate={setView}
+          />
+        )}
+        {view === 'chatDetail' && selectedConversationId && currentUser && (
+          <ChatDetailView 
+            conversationId={selectedConversationId}
+            currentUser={currentUser}
+            users={users}
+            motorcycles={motorcycles}
+            parts={parts}
+            messages={messages.filter(m => m.conversationId === selectedConversationId)}
+            isTyping={isTyping[selectedConversationId] || false}
+            onBack={handleBackToPrevView}
+            onSendMessage={handleSendMessage}
+            onViewItem={selectedMotorcycle ? () => setView('detail') : () => setView('partDetail')}
+          />
+        )}
+        {view === 'offers' && currentUser && (
+          <OffersView 
+            offers={offers}
+            currentUser={currentUser}
+            motorcycles={motorcycles}
+            parts={parts}
+            users={users}
+            onAcceptOffer={handleAcceptOffer}
+            onRejectOffer={handleRejectOffer}
+            onCancelSale={handleCancelSale}
+            onNavigate={setView}
+          />
+        )}
+      </main>
+      
+      {view !== 'chatDetail' && (
+        <BottomNav 
+          currentUser={currentUser} 
+          view={view} 
+          onNavigate={handleNavigate} 
+          unreadMessages={messages.filter(m => !m.isRead && m.senderEmail !== currentUser?.email).length}
+          pendingOffersCount={offers.filter(o => o.sellerEmail === currentUser?.email && o.status === 'pending').length}
+        />
+      )}
+      
+      <ConfirmationModal 
+        isOpen={isConfirmationModalOpen}
+        onClose={() => {
+          setIsConfirmationModalOpen(false);
+          setMotoToPublish(null);
+          setPartToPublish(null);
+        }}
+        onConfirm={handleConfirmPublish}
+      />
+      
+      <ConfirmationModal 
+        isOpen={isPromoteModalOpen}
+        onClose={() => {
+          setIsPromoteModalOpen(false);
+          setItemToPromote(null);
+        }}
+        onConfirm={handleConfirmPromote}
+        title="Promocionar Anuncio"
+        message="¿Estás seguro de que quieres promocionar este anuncio? Aparecerá destacado en las búsquedas."
+      />
+
+      <OfferModal
+        isOpen={isOfferModalOpen}
+        onClose={() => {
+          setIsOfferModalOpen(false);
+          setItemToMakeOfferOn(null);
+        }}
+        onMakeOffer={handleMakeOffer}
+        item={itemToMakeOfferOn}
+      />
+
+      {isHeatmapVisible && <HeatmapOverlay data={heatmapData} />}
+    </div>
+  );
+};
+
+export default App;
