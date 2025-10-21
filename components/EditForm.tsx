@@ -179,7 +179,7 @@ const EditForm: React.FC<EditFormProps> = ({ motorcycle, part, onBack, onUpdate 
   };
 
   return (
-    <div>
+    <div className="animate-view-transition">
         <header className="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm border-b border-border-light dark:border-border-dark">
             <div className="px-4 py-3 h-[57px] flex items-center gap-3">
             <button onClick={onBack} className="p-2 -ml-2">

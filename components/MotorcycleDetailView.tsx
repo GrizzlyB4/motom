@@ -105,7 +105,7 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({
 
 
   return (
-    <div className="bg-background-light dark:bg-background-dark min-h-screen">
+    <div className="bg-background-light dark:bg-background-dark min-h-screen animate-view-transition">
        <header className="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm border-b border-border-light dark:border-border-dark">
          <div className="px-4 py-3 h-[57px] flex items-center justify-between">
             <button onClick={onBack} className="p-2 -ml-2">
@@ -278,7 +278,7 @@ const MotorcycleDetailView: React.FC<MotorcycleDetailViewProps> = ({
                 <button 
                 onClick={() => onStartChat(motorcycle)}
                 disabled={!canContact}
-                className="flex-1 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark text-foreground-light dark:text-foreground-dark font-bold py-4 px-8 rounded-xl hover:bg-black/[.05] dark:hover:bg-border-dark transition-all duration-300 shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                className="flex-1 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark text-foreground-light dark:text-foreground-dark font-bold py-4 px-8 rounded-xl hover:bg-black/[.05] dark:hover:bg-border-dark transition-all duration-3300 shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
                     Contactar
                 </button>
                 <button 

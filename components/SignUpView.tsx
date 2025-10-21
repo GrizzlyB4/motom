@@ -39,7 +39,7 @@ const SignUpView: React.FC<SignUpViewProps> = ({ onSignUp, onNavigateToLogin }) 
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background-light dark:bg-background-dark p-4">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background-light dark:bg-background-dark p-4 animate-view-transition">
       <div className="w-full max-w-sm mx-auto">
         <div className="flex flex-col items-center mb-8">
             <MotorcycleIcon className="w-16 h-16 text-primary mb-2" />

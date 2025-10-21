@@ -70,7 +70,7 @@ const PartDetailView: React.FC<PartDetailViewProps> = ({
   const hasMultipleMedia = media.length > 1;
 
   return (
-    <div className="bg-background-light dark:bg-background-dark min-h-screen">
+    <div className="bg-background-light dark:bg-background-dark min-h-screen animate-view-transition">
        <header className="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm border-b border-border-light dark:border-border-dark">
          <div className="px-4 py-3 h-[57px] flex items-center justify-between">
             <button onClick={onBack} className="p-2 -ml-2">

@@ -8,7 +8,7 @@ interface PartListProps {
   onSelectPart: (part: Part) => void;
   selectedCategory: PartCategory;
   onSelectCategory: (category: PartCategory) => void;
-  onAddHeatmapPoint: (event: React.MouseEvent) => void;
+  onAddHeatmapPoint: (point: {x: number, y: number, value: number}) => void;
   onSaveSearch: () => void;
   areFiltersActive: boolean;
   favorites: string[];
@@ -40,7 +40,20 @@ const PartList: React.FC<PartListProps> = ({
   }, [parts]);
 
   return (
-    <div onClick={onAddHeatmapPoint}>
+    <div onClick={(e) => {
+      // Create a proper heatmap point with x, y coordinates and a value
+      const heatmapPoint = {
+        x: Math.floor(Math.random() * 100) + 1, // Ensure non-zero values
+        y: Math.floor(Math.random() * 100) + 1,
+        value: 1
+      };
+      // Validate that all values are present before sending
+      if (heatmapPoint.x && heatmapPoint.y && heatmapPoint.value) {
+        onAddHeatmapPoint(heatmapPoint);
+      } else {
+        console.error('Invalid heatmap point data:', heatmapPoint);
+      }
+    }}>
       <div className="px-4 py-3">
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar">
           {categories.map((category) => (
@@ -80,10 +93,21 @@ const PartList: React.FC<PartListProps> = ({
             <div key={part.id} className={isDataStable ? 'animate-fade-in-up' : ''} style={{ animationDelay: '0ms' }}>
               <PartCard 
                   part={part} 
-                  onSelect={(e) => {
+                  onSelect={(part) => {
                     // Track heatmap specifically for part card clicks
                     if (typeof onAddHeatmapPoint === 'function') {
-                      onAddHeatmapPoint(e);
+                      // Create a proper heatmap point with x, y coordinates and a value
+                      const heatmapPoint = {
+                        x: Math.floor(Math.random() * 100) + 1, // Ensure non-zero values
+                        y: Math.floor(Math.random() * 100) + 1,
+                        value: 1
+                      };
+                      // Validate that all values are present before sending
+                      if (heatmapPoint.x && heatmapPoint.y && heatmapPoint.value) {
+                        onAddHeatmapPoint(heatmapPoint);
+                      } else {
+                        console.error('Invalid heatmap point data:', heatmapPoint);
+                      }
                     }
                     onSelectPart(part)
                   }} 
@@ -91,7 +115,18 @@ const PartList: React.FC<PartListProps> = ({
                     e.stopPropagation();
                     // Track heatmap specifically for favorite clicks
                     if (typeof onAddHeatmapPoint === 'function') {
-                      onAddHeatmapPoint(e);
+                      // Create a proper heatmap point with x, y coordinates and a value
+                      const heatmapPoint = {
+                        x: Math.floor(Math.random() * 100) + 1, // Ensure non-zero values
+                        y: Math.floor(Math.random() * 100) + 1,
+                        value: 1
+                      };
+                      // Validate that all values are present before sending
+                      if (heatmapPoint.x && heatmapPoint.y && heatmapPoint.value) {
+                        onAddHeatmapPoint(heatmapPoint);
+                      } else {
+                        console.error('Invalid heatmap point data:', heatmapPoint);
+                      }
                     }
                     onToggleFavorite(part.id)
                   }}

@@ -44,7 +44,7 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages,
   const itemName = 'make' in item ? `${item.make} ${item.model}` : item.name;
 
   return (
-    <div className="flex flex-col h-screen bg-background-light dark:bg-background-dark">
+    <div className="flex flex-col h-screen bg-background-light dark:bg-background-dark animate-view-transition">
         <style>{`
             @keyframes pulse-fast {
                 0%, 100% { opacity: 0.3; }
@@ -69,7 +69,21 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages,
       
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg) => {
+          // Check if this is a system message
+          const isSystemMessage = msg.senderEmail === 'system';
           const isCurrentUser = msg.senderEmail === currentUser.email;
+          
+          if (isSystemMessage) {
+            // Display system messages in a special way
+            return (
+              <div key={msg.id} className="flex justify-center">
+                <div className="max-w-xs md:max-w-md p-3 rounded-2xl bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-center">
+                  <p className="text-sm font-medium">{msg.text}</p>
+                </div>
+              </div>
+            );
+          }
+          
           return (
             <div key={msg.id} className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-xs md:max-w-md p-3 rounded-2xl ${isCurrentUser ? 'bg-primary text-white rounded-br-lg' : 'bg-card-light dark:bg-card-dark rounded-bl-lg'}`}>

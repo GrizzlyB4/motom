@@ -200,7 +200,7 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
   const formIsFilledForAI = listingType === 'motorcycle' ? motoData.make && motoData.model && motoData.year : partData.name;
 
   return (
-    <div className="p-4 max-w-2xl mx-auto">
+    <div className="p-4 max-w-2xl mx-auto animate-view-transition">
       <form onSubmit={handleSubmit} className="space-y-6">
         
         <div>

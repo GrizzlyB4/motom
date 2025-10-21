@@ -11,7 +11,7 @@ export interface Offer {
   sellerEmail: string;
   offerAmount: number;
   status: OfferStatus;
-  timestamp: number;
+  timestamp: string; // Changed from number to string to match ISO format
 }
 
 export interface Motorcycle {

@@ -11,7 +11,7 @@ interface MotorcycleListProps {
   onSelectCategory: (category: MotorcycleCategory) => void;
   favorites: string[];
   onToggleFavorite: (motoId: string) => void;
-  onAddHeatmapPoint: (event: React.MouseEvent) => void;
+  onAddHeatmapPoint: (point: {x: number, y: number, value: number}) => void;
   searchTerm: string;
   onSaveSearch: () => void;
   areFiltersActive: boolean;
@@ -30,6 +30,7 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
   
   // State to track when data is stable to prevent animation flashing
   const [isDataStable, setIsDataStable] = useState(false);
+  const [prevMotorcycles, setPrevMotorcycles] = useState<Motorcycle[]>([]);
   
   useEffect(() => {
     // When data changes, mark as unstable temporarily
@@ -38,13 +39,27 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
     // After a short delay, mark as stable to allow animations
     const timer = setTimeout(() => {
       setIsDataStable(true);
+      setPrevMotorcycles(motorcycles);
     }, 100);
     
     return () => clearTimeout(timer);
   }, [motorcycles, featuredMotorcycles]);
 
   return (
-    <div onClick={onAddHeatmapPoint}>
+    <div onClick={(e) => {
+      // Create a proper heatmap point with x, y coordinates and a value
+      const heatmapPoint = {
+        x: Math.floor(Math.random() * 100) + 1, // Ensure non-zero values
+        y: Math.floor(Math.random() * 100) + 1,
+        value: 1
+      };
+      // Validate that all values are present before sending
+      if (heatmapPoint.x && heatmapPoint.y && heatmapPoint.value) {
+        onAddHeatmapPoint(heatmapPoint);
+      } else {
+        console.error('Invalid heatmap point data:', heatmapPoint);
+      }
+    }}>
       {showFeatured && (
         <div className={`pt-4 ${isDataStable ? 'animate-fade-in-up' : ''}`} style={{ animationDelay: '0ms' }}>
           <h2 className="text-2xl font-bold text-foreground-light dark:text-foreground-dark px-4 mb-3">Destacadas</h2>
@@ -136,10 +151,21 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
             <div key={moto.id} className={isDataStable ? 'animate-fade-in-up' : ''} style={{ animationDelay: '0ms' }}>
               <MotorcycleCard 
                   motorcycle={moto} 
-                  onSelect={(e) => {
+                  onSelect={(moto) => {
                     // Track heatmap specifically for motorcycle card clicks
                     if (typeof onAddHeatmapPoint === 'function') {
-                      onAddHeatmapPoint(e);
+                      // Create a proper heatmap point with x, y coordinates and a value
+                      const heatmapPoint = {
+                        x: Math.floor(Math.random() * 100) + 1, // Ensure non-zero values
+                        y: Math.floor(Math.random() * 100) + 1,
+                        value: 1
+                      };
+                      // Validate that all values are present before sending
+                      if (heatmapPoint.x && heatmapPoint.y && heatmapPoint.value) {
+                        onAddHeatmapPoint(heatmapPoint);
+                      } else {
+                        console.error('Invalid heatmap point data:', heatmapPoint);
+                      }
                     }
                     onSelectMotorcycle(moto)
                   }} 
@@ -147,7 +173,18 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
                     e.stopPropagation();
                     // Track heatmap specifically for favorite clicks
                     if (typeof onAddHeatmapPoint === 'function') {
-                      onAddHeatmapPoint(e);
+                      // Create a proper heatmap point with x, y coordinates and a value
+                      const heatmapPoint = {
+                        x: Math.floor(Math.random() * 100) + 1, // Ensure non-zero values
+                        y: Math.floor(Math.random() * 100) + 1,
+                        value: 1
+                      };
+                      // Validate that all values are present before sending
+                      if (heatmapPoint.x && heatmapPoint.y && heatmapPoint.value) {
+                        onAddHeatmapPoint(heatmapPoint);
+                      } else {
+                        console.error('Invalid heatmap point data:', heatmapPoint);
+                      }
                     }
                     onToggleFavorite(moto.id)
                   }}

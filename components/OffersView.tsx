@@ -11,7 +11,7 @@ interface OffersViewProps {
   onAcceptOffer: (offerId: string) => void;
   onRejectOffer: (offerId: string) => void;
   onSelectItem: (item: Motorcycle | Part) => void;
-  onCancelSale: (itemId: number, itemType: 'motorcycle' | 'part') => void;
+  onCancelSale: (itemId: string, itemType: 'motorcycle' | 'part') => void;
 }
 
 const OffersView: React.FC<OffersViewProps> = ({ offers, currentUser, users, motorcycles, parts, onAcceptOffer, onRejectOffer, onSelectItem, onCancelSale }) => {
@@ -22,15 +22,54 @@ const OffersView: React.FC<OffersViewProps> = ({ offers, currentUser, users, mot
       const item = offer.itemType === 'motorcycle'
         ? motorcycles.find(m => m.id === offer.itemId)
         : parts.find(p => p.id === offer.itemId);
+      
+      // Debug logging for items
+      if (!item) {
+        console.log(`Item not found for offer ${offer.id}:`, {
+          itemId: offer.itemId,
+          itemType: offer.itemType,
+          motorcyclesCount: motorcycles.length,
+          partsCount: parts.length
+        });
+      }
+      
       const buyer = users.find(u => u.email === offer.buyerEmail);
       const seller = users.find(u => u.email === offer.sellerEmail);
+      
+      // Debug logging for users
+      if (!buyer) {
+        console.log(`Buyer not found for offer ${offer.id}:`, {
+          buyerEmail: offer.buyerEmail,
+          usersCount: users.length
+        });
+      }
+      
+      if (!seller) {
+        console.log(`Seller not found for offer ${offer.id}:`, {
+          sellerEmail: offer.sellerEmail,
+          usersCount: users.length
+        });
+      }
+      
       return { ...offer, item, buyer, seller };
-    }).sort((a,b) => b.timestamp - a.timestamp);
+    }).sort((a, b) => {
+      // Convert timestamps to Date objects for comparison
+      const dateA = new Date(a.timestamp);
+      const dateB = new Date(b.timestamp);
+      return dateB.getTime() - dateA.getTime();
+    });
   }, [offers, motorcycles, parts, users]);
 
   const receivedOffers = enrichedOffers.filter(o => o.sellerEmail === currentUser.email);
   const sentOffers = enrichedOffers.filter(o => o.buyerEmail === currentUser.email);
   
+  // Add some debugging to see what's happening
+  console.log('Offers:', offers);
+  console.log('CurrentUser:', currentUser);
+  console.log('Enriched Offers:', enrichedOffers);
+  console.log('Received Offers:', receivedOffers);
+  console.log('Sent Offers:', sentOffers);
+
   const StatusBadge: React.FC<{ status: 'pending' | 'accepted' | 'rejected' | 'cancelled' }> = ({ status }) => {
     const styles = {
       pending: 'bg-yellow-500/10 text-yellow-500',
@@ -48,7 +87,37 @@ const OffersView: React.FC<OffersViewProps> = ({ offers, currentUser, users, mot
   };
 
   const OfferCard: React.FC<{ offer: typeof enrichedOffers[0], type: 'received' | 'sent' }> = ({ offer, type }) => {
-    if (!offer.item) return null;
+    // If item is not found, display a message
+    if (!offer.item) {
+      console.log('Item not found for offer:', offer);
+      return (
+        <div className="bg-card-light dark:bg-card-dark p-3 rounded-xl shadow-sm border border-border-light dark:border-border-dark space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-20 h-16 bg-gray-200 dark:bg-gray-700 rounded-lg flex-shrink-0 flex items-center justify-center">
+              <span className="text-xs text-gray-500 dark:text-gray-400">No image</span>
+            </div>
+            <div className="flex-grow overflow-hidden">
+              <p className="font-bold truncate">Item no encontrado</p>
+              <p className="text-sm text-foreground-muted-light dark:text-foreground-muted-dark">
+                ID: {offer.itemId}
+              </p>
+            </div>
+            <StatusBadge status={offer.status} />
+          </div>
+          <div className="flex justify-between items-center bg-background-light dark:bg-background-dark p-3 rounded-lg">
+            <div>
+              <p className="text-xs text-foreground-muted-light dark:text-foreground-muted-dark">No disponible</p>
+              <p className="font-semibold">-</p>
+            </div>
+            <div>
+              <p className="text-xs text-foreground-muted-light dark:text-foreground-muted-dark text-right">Tu Oferta</p>
+              <p className="font-bold text-lg text-primary text-right">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(offer.offerAmount)}</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
     const itemName = 'make' in offer.item ? `${offer.item.make} ${offer.item.model}` : offer.item.name;
     const otherParty = type === 'received' ? offer.buyer : offer.seller;
     
@@ -107,7 +176,7 @@ const OffersView: React.FC<OffersViewProps> = ({ offers, currentUser, users, mot
   const emptyMessage = activeTab === 'received' ? "Aquí aparecerán las ofertas que recibas por tus artículos." : "Aquí aparecerán las ofertas que envíes.";
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
+    <div className="max-w-4xl mx-auto p-4 animate-view-transition">
        <div className="flex w-full bg-card-light dark:bg-card-dark p-1 rounded-full border border-border-light dark:border-border-dark mb-6">
             <button onClick={() => setActiveTab('received')} className={`w-1/2 py-2 rounded-full text-sm font-bold transition-colors ${activeTab === 'received' ? 'bg-primary text-white' : 'text-foreground-light dark:text-foreground-dark'}`}>
                 Recibidas ({receivedOffers.length})

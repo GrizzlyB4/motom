@@ -37,7 +37,7 @@ const ChatListView: React.FC<ChatListViewProps> = ({ conversations, messages, mo
   }, [conversations, messages, motorcycles, parts, currentUser, users]);
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto animate-view-transition">
       {conversationsWithDetails.length > 0 ? (
         <div className="space-y-2 p-2">
           {conversationsWithDetails.map(convo => (

@@ -92,7 +92,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({
   ].sort((a, b) => b.id - a.id); // Sort by ID, assuming newer items have higher IDs
 
   return (
-    <div className="p-4 max-w-4xl mx-auto">
+    <div className="p-4 max-w-4xl mx-auto animate-view-transition">
       <div className="bg-card-light dark:bg-card-dark rounded-xl shadow-sm p-6 mb-8 flex items-center justify-between">
         <div className="flex items-center gap-4">
             <input

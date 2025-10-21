@@ -19,7 +19,7 @@ const FavoritesView: React.FC<FavoritesViewProps> = ({
   const hasFavorites = motorcycles.length > 0 || parts.length > 0;
   
   return (
-    <div>
+    <div className="animate-view-transition">
       {hasFavorites ? (
         <div className="p-4 space-y-8">
           {motorcycles.length > 0 && (

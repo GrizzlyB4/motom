@@ -97,6 +97,7 @@ const App: React.FC = () => {
   const [itemToMakeOfferOn, setItemToMakeOfferOn] = useState<Motorcycle | Part | null>(null);
   
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingError, setLoadingError] = useState<string | null>(null);
 
 
   // --- AUTH & DATA FETCHING ---
@@ -123,6 +124,17 @@ const App: React.FC = () => {
     }
   }, [isLoading]);
 
+  // Add a timeout to prevent infinite loading
+  useEffect(() => {
+    const loadingTimeout = setTimeout(() => {
+      if (isLoading) {
+        console.warn('Loading timeout reached, forcing isLoading to false');
+        setIsLoading(false);
+      }
+    }, 10000); // 10 seconds timeout
+
+    return () => clearTimeout(loadingTimeout);
+  }, [isLoading]);
 
   useEffect(() => {
     // Check notification permission status
@@ -157,6 +169,10 @@ const App: React.FC = () => {
              });
              setView('home');
         }
+        // Add a small delay to ensure state is properly set before hiding loading
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 100);
       } else {
         setCurrentUser(null);
         setView('login');
@@ -248,8 +264,22 @@ const App: React.FC = () => {
                 numberOfRatings: p.number_of_ratings
             })) || []);
             
-            setOffers(offersRes.data || []);
-            setConversations(conversationsRes.data || []);
+            setOffers(offersRes.data?.map((offer: any) => ({
+                id: offer.id,
+                itemId: offer.item_id,
+                itemType: offer.item_type,
+                buyerEmail: offer.buyer_email,
+                sellerEmail: offer.seller_email,
+                offerAmount: offer.offer_amount,
+                status: offer.status,
+                timestamp: offer.timestamp,
+            })) || []);
+            setConversations(conversationsRes.data?.map((conversation: any) => ({
+                id: conversation.id,
+                participants: conversation.participants,
+                motorcycleId: conversation.motorcycle_id,
+                partId: conversation.part_id,
+            })) || []);
             setMessages(messagesRes.data || []);
             setFavorites(favoritesRes.data?.map(f => f.motorcycle_id) || []);
             setFavoriteParts(partFavoritesRes.data?.map(f => f.part_id) || []);
@@ -260,6 +290,111 @@ const App: React.FC = () => {
             setIsLoading(false);
         };
         fetchAllData();
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (currentUser) {
+        // Set up real-time subscriptions
+        const conversationSubscription = supabase
+          .channel('conversation-changes')
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'conversations',
+            },
+            (payload) => {
+              const newConversation = payload.new;
+              // Map the new conversation to camelCase
+              const mappedConversation = {
+                id: newConversation.id,
+                participants: newConversation.participants,
+                motorcycleId: newConversation.motorcycle_id,
+                partId: newConversation.part_id,
+              };
+              // Only add conversations that involve the current user
+              if (mappedConversation.participants.includes(currentUser.email)) {
+                setConversations(prev => [...prev, mappedConversation]);
+              }
+            }
+          )
+          .subscribe();
+          
+        const messageSubscription = supabase
+          .channel('message-changes')
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'messages',
+            },
+            (payload) => {
+              const newMessage = payload.new;
+              setMessages(prev => [...prev, newMessage]);
+            }
+          )
+          .subscribe();
+          
+        // Add subscription for offers
+        const offerSubscription = supabase
+          .channel('offer-changes')
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'offers',
+            },
+            (payload) => {
+              const newOffer = payload.new;
+              // Map the new offer to camelCase
+              const mappedOffer = {
+                id: newOffer.id,
+                itemId: newOffer.item_id,
+                itemType: newOffer.item_type,
+                buyerEmail: newOffer.buyer_email,
+                sellerEmail: newOffer.seller_email,
+                offerAmount: newOffer.offer_amount,
+                status: newOffer.status,
+                timestamp: newOffer.timestamp,
+              };
+              setOffers(prev => [mappedOffer, ...prev]);
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'offers',
+            },
+            (payload) => {
+              const updatedOffer = payload.new;
+              // Map the updated offer to camelCase
+              const mappedOffer = {
+                id: updatedOffer.id,
+                itemId: updatedOffer.item_id,
+                itemType: updatedOffer.item_type,
+                buyerEmail: updatedOffer.buyer_email,
+                sellerEmail: updatedOffer.seller_email,
+                offerAmount: updatedOffer.offer_amount,
+                status: updatedOffer.status,
+                timestamp: updatedOffer.timestamp,
+              };
+              setOffers(prev => prev.map(offer => offer.id === mappedOffer.id ? mappedOffer : offer));
+            }
+          )
+          .subscribe();
+
+        // Clean up subscriptions when the component unmounts or currentUser changes
+        return () => {
+          supabase.removeChannel(conversationSubscription);
+          supabase.removeChannel(messageSubscription);
+          supabase.removeChannel(offerSubscription);
+        };
     }
   }, [currentUser]);
 
@@ -462,14 +597,83 @@ const App: React.FC = () => {
     setEngineSizeCategory('any');
   };
   
-  const handleStartOrGoToChat = (item: Motorcycle | Part) => {
-    // Logic remains mostly the same, will be adapted to handle real conversations
+  const handleStartOrGoToChat = async (item: Motorcycle | Part) => {
     if (!currentUser) return;
-    setView('chatDetail');
+    
+    try {
+      // Check if a conversation already exists between the current user and the seller
+      const sellerEmail = item.sellerEmail;
+      const existingConversation = conversations.find(convo => 
+        convo.participants.includes(currentUser.email) && 
+        convo.participants.includes(sellerEmail) &&
+        (('make' in item && convo.motorcycleId === item.id) || 
+         (!('make' in item) && convo.partId === item.id))
+      );
+      
+      if (existingConversation) {
+        // If conversation exists, navigate to it
+        setSelectedConversationId(existingConversation.id);
+        setView('chatDetail');
+      } else {
+        // If no conversation exists, create a new one
+        const conversationData = {
+          participants: [currentUser.email, sellerEmail],
+          [`${'make' in item ? 'motorcycle' : 'part'}_id`]: item.id
+        };
+        
+        const { data: newConversation, error } = await supabase
+          .from('conversations')
+          .insert(conversationData)
+          .select()
+          .single();
+          
+        if (error) {
+          console.error('Error creating conversation:', error);
+          alert('Error al iniciar el chat. Por favor, inténtalo de nuevo.');
+          return;
+        }
+        
+        // Add the new conversation to local state
+        setConversations(prev => [...prev, newConversation]);
+        
+        // Navigate to the new conversation
+        setSelectedConversationId(newConversation.id);
+        setView('chatDetail');
+      }
+    } catch (error: any) {
+      console.error('Unexpected error starting chat:', error);
+      alert(`Error inesperado al iniciar el chat: ${error.message}`);
+    }
   };
 
-  const handleSendMessage = (conversationId: string, text: string) => {
-    // Will be implemented with Supabase real-time
+  const handleSendMessage = async (conversationId: string, text: string) => {
+    if (!currentUser) return;
+    
+    try {
+      const messageData = {
+        conversation_id: conversationId,
+        sender_email: currentUser.email,
+        text: text
+      };
+      
+      const { data: newMessage, error } = await supabase
+        .from('messages')
+        .insert(messageData)
+        .select()
+        .single();
+        
+      if (error) {
+        console.error('Error sending message:', error);
+        alert('Error al enviar el mensaje. Por favor, inténtalo de nuevo.');
+        return;
+      }
+      
+      // Add the new message to local state
+      setMessages(prev => [...prev, newMessage]);
+    } catch (error: any) {
+      console.error('Unexpected error sending message:', error);
+      alert(`Error inesperado al enviar el mensaje: ${error.message}`);
+    }
   };
   
   const handleToggleFavorite = async (motoId: string) => {
@@ -746,10 +950,10 @@ const App: React.FC = () => {
      alert(`Has valorado a ${sellerEmail} con ${rating} estrellas. ¡Gracias!`);
   };
 
-  const handleAddHeatmapPoint = async (newPoint: HeatmapPoint) => {
+  const handleAddHeatmapPoint = (e: React.MouseEvent) => {
+    const newPoint: HeatmapPoint = { x: e.pageX, y: e.pageY, value: 1 };
     setHeatmapData(prev => [...prev, newPoint]);
-    // Use the correct function name from supabase service
-    await addHeatmapPointToDb(newPoint);
+    addHeatmapPointToDb(newPoint);
   };
   
   const handleToggleHeatmap = () => setIsHeatmapVisible(prev => !prev);
@@ -769,31 +973,6 @@ const App: React.FC = () => {
       await supabase.from('saved_searches').delete().eq('id', searchId);
   };
 
-  const handleDeleteItem = async (itemId: string, type: 'motorcycle' | 'part') => {
-    if (window.confirm("¿Estás seguro de que quieres eliminar este anuncio? Esta acción no se puede deshacer.")) {
-      try {
-        const table = type === 'motorcycle' ? 'motorcycles' : 'parts';
-        const { error } = await supabase.from(table).delete().eq('id', itemId);
-        
-        if (error) {
-          throw error;
-        }
-        
-        // Update the state to remove the item
-        if (type === 'motorcycle') {
-          setMotorcycles(prev => prev.filter(moto => moto.id !== itemId));
-        } else {
-          setParts(prev => prev.filter(part => part.id !== itemId));
-        }
-        
-        alert("¡Anuncio eliminado con éxito!");
-      } catch (error: any) {
-        console.error("Error al eliminar el anuncio:", error);
-        alert(`No se pudo eliminar el anuncio. Por favor, inténtalo de nuevo.\nError: ${error.message}`);
-      }
-    }
-  };
-
   const handleOpenOfferModal = (item: Motorcycle | Part) => {
     setItemToMakeOfferOn(item);
     setIsOfferModalOpen(true);
@@ -801,28 +980,402 @@ const App: React.FC = () => {
 
   const handleMakeOffer = async (amount: number) => {
     if (!currentUser || !itemToMakeOfferOn) return;
+    
+    // Log the data we're about to send for debugging
+    console.log('Making offer with data:', {
+      item_id: itemToMakeOfferOn.id,
+      item_type: 'make' in itemToMakeOfferOn ? 'motorcycle' : 'part',
+      buyer_email: currentUser.email,
+      seller_email: itemToMakeOfferOn.sellerEmail,
+      offer_amount: amount,
+      status: 'pending'
+    });
+    
     const newOfferData = {
-        itemId: itemToMakeOfferOn.id,
-        itemType: 'make' in itemToMakeOfferOn ? 'motorcycle' : 'part',
-        buyerEmail: currentUser.email,
-        sellerEmail: itemToMakeOfferOn.sellerEmail,
-        offerAmount: amount,
-        status: 'pending',
-        timestamp: new Date().getTime(),
+        item_id: itemToMakeOfferOn.id,
+        item_type: 'make' in itemToMakeOfferOn ? 'motorcycle' : 'part',
+        buyer_email: currentUser.email,
+        seller_email: itemToMakeOfferOn.sellerEmail,
+        offer_amount: amount,
+        status: 'pending'
+        // Removed timestamp since it has a default value of now() in the database
     };
-    const { data } = await supabase.from('offers').insert(newOfferData).select().single();
-    if(data) {
-        setOffers(prev => [data, ...prev]);
-        setIsOfferModalOpen(false);
-        setItemToMakeOfferOn(null);
-        alert('¡Oferta enviada con éxito!');
-        setView('offers');
+    
+    try {
+      // Small delay to help with schema cache issues
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Try inserting with explicit column names to avoid schema cache issues
+      let { data, error } = await supabase
+        .from('offers')
+        .insert([
+          {
+            item_id: newOfferData.item_id,
+            item_type: newOfferData.item_type,
+            buyer_email: newOfferData.buyer_email,
+            seller_email: newOfferData.seller_email,
+            offer_amount: newOfferData.offer_amount,
+            status: newOfferData.status
+          }
+        ])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error making offer:', error);
+        // Try again with a different approach if there's a schema cache issue
+        if (error.message.includes('schema cache')) {
+          console.log('Retrying offer insertion with alternative method...');
+          const retryResult = await supabase
+            .from('offers')
+            .insert({
+              item_id: newOfferData.item_id,
+              item_type: newOfferData.item_type,
+              buyer_email: newOfferData.buyer_email,
+              seller_email: newOfferData.seller_email,
+              offer_amount: newOfferData.offer_amount,
+              status: newOfferData.status
+            })
+            .select()
+            .single();
+          
+          if (retryResult.error) {
+            console.error('Retry also failed:', retryResult.error);
+            alert(`Error al hacer la oferta: ${retryResult.error.message}`);
+            return;
+          }
+          
+          data = retryResult.data;
+        } else {
+          alert(`Error al hacer la oferta: ${error.message}`);
+          return;
+        }
+      }
+      
+      if(data) {
+          // Map the database response back to camelCase for the frontend
+          const offerWithCamelCase: Offer = {
+            id: data.id,
+            itemId: data.item_id,
+            itemType: data.item_type,
+            buyerEmail: data.buyer_email,
+            sellerEmail: data.seller_email,
+            offerAmount: data.offer_amount,
+            status: data.status,
+            timestamp: data.timestamp,
+          };
+          setOffers(prev => [offerWithCamelCase, ...prev]);
+          setIsOfferModalOpen(false);
+          setItemToMakeOfferOn(null);
+          alert('¡Oferta enviada con éxito!');
+          setView('offers');
+      }
+    } catch (error: any) {
+      console.error('Unexpected error making offer:', error);
+      alert(`Error inesperado al hacer la oferta: ${error.message}`);
     }
   };
 
-  const handleAcceptOffer = (offerId: string) => { /* Will implement with DB logic */ };
-  const handleRejectOffer = (offerId: string) => { /* Will implement with DB logic */ };
-  const handleCancelSale = (itemId: string, itemType: 'motorcycle' | 'part') => { /* Will implement with DB logic */ };
+  const handleAcceptOffer = async (offerId: string) => {
+    try {
+      // Get the offer details first
+      const offer = offers.find(o => o.id === offerId);
+      if (!offer) {
+        alert('Oferta no encontrada');
+        return;
+      }
+      
+      // Update the offer status to 'accepted' in the database
+      const { data, error } = await supabase
+        .from('offers')
+        .update({ status: 'accepted' })
+        .eq('id', offerId)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error accepting offer:', error);
+        alert(`Error al aceptar la oferta: ${error.message}`);
+        return;
+      }
+      
+      if (data) {
+        // Map the database response back to camelCase for the frontend
+        const offerWithCamelCase: Offer = {
+          id: data.id,
+          itemId: data.item_id,
+          itemType: data.item_type,
+          buyerEmail: data.buyer_email,
+          sellerEmail: data.seller_email,
+          offerAmount: data.offer_amount,
+          status: data.status,
+          timestamp: data.timestamp,
+        };
+        
+        // Update the local state
+        setOffers(prev => prev.map(o => 
+          o.id === offerId ? offerWithCamelCase : o
+        ));
+        
+        // Also update the item status to 'reserved' in the database
+        const table = offer.itemType === 'motorcycle' ? 'motorcycles' : 'parts';
+        const { data: itemData, error: itemError } = await supabase
+          .from(table)
+          .update({ status: 'reserved', reserved_by: offer.buyerEmail })
+          .eq('id', offer.itemId)
+          .select()
+          .single();
+          
+        if (itemError) {
+          console.error('Error reserving item:', itemError);
+          alert(`Error al reservar el artículo: ${itemError.message}`);
+          return;
+        }
+        
+        if (itemData) {
+          // Update the local state for the item
+          if (offer.itemType === 'motorcycle') {
+            // Map the database response back to camelCase for the frontend
+            const motoWithCamelCase: Motorcycle = {
+              id: itemData.id,
+              make: itemData.make,
+              model: itemData.model,
+              year: itemData.year,
+              price: itemData.price,
+              mileage: itemData.mileage,
+              engineSize: itemData.engine_size,
+              description: itemData.description,
+              imageUrls: itemData.image_urls,
+              videoUrl: itemData.video_url,
+              sellerEmail: itemData.seller_email,
+              category: itemData.category,
+              status: itemData.status,
+              location: itemData.location,
+              featured: itemData.featured,
+              reservedBy: itemData.reserved_by,
+              stats: itemData.stats,
+            };
+            setMotorcycles(prev => prev.map(moto => 
+              moto.id === offer.itemId ? motoWithCamelCase : moto
+            ));
+          } else {
+            // Map the database response back to camelCase for the frontend
+            const partWithCamelCase: Part = {
+              id: itemData.id,
+              name: itemData.name,
+              price: itemData.price,
+              description: itemData.description,
+              imageUrls: itemData.image_urls,
+              videoUrl: itemData.video_url,
+              sellerEmail: itemData.seller_email,
+              category: itemData.category,
+              condition: itemData.condition,
+              compatibility: itemData.compatibility,
+              status: itemData.status,
+              location: itemData.location,
+              featured: itemData.featured,
+              reservedBy: itemData.reserved_by,
+              stats: itemData.stats,
+            };
+            setParts(prev => prev.map(part => 
+              part.id === offer.itemId ? partWithCamelCase : part
+            ));
+          }
+        }
+        
+        // Create a chat conversation between buyer and seller
+        const conversationData = {
+          participants: [offer.buyerEmail, offer.sellerEmail],
+          [`${offer.itemType}_id`]: offer.itemId
+        };
+        
+        const { data: conversation, error: conversationError } = await supabase
+          .from('conversations')
+          .insert(conversationData)
+          .select()
+          .single();
+          
+        if (conversationError) {
+          console.error('Error creating conversation:', conversationError);
+        } else {
+          // Add the conversation to local state
+          setConversations(prev => [...prev, conversation]);
+          
+          // Create an automatic message informing the buyer
+          const buyer = users.find(u => u.email === offer.buyerEmail);
+          const seller = users.find(u => u.email === offer.sellerEmail);
+          const item = offer.itemType === 'motorcycle' 
+            ? motorcycles.find(m => m.id === offer.itemId)
+            : parts.find(p => p.id === offer.itemId);
+            
+          const itemName = item 
+            ? (offer.itemType === 'motorcycle' 
+                ? `${item.make} ${item.model}` 
+                : item.name)
+            : 'el artículo';
+            
+          const messageData = {
+            conversation_id: conversation.id,
+            sender_email: 'system', // Use 'system' as sender for automatic messages
+            text: `¡Felicidades ${buyer?.name || 'comprador'}! Tu oferta por ${itemName} ha sido aceptada por ${seller?.name || 'el vendedor'}. Por favor, comunícate con ${seller?.name || 'el vendedor'} para coordinar los detalles de la transacción.`
+          };
+          
+          const { data: message, error: messageError } = await supabase
+            .from('messages')
+            .insert(messageData)
+            .select()
+            .single();
+            
+          if (messageError) {
+            console.error('Error creating message:', messageError);
+          } else {
+            // Add the message to local state
+            setMessages(prev => [...prev, message]);
+            
+            // Navigate to the chat detail view for this conversation
+            setSelectedConversationId(conversation.id);
+            setView('chatDetail');
+          }
+        }
+        
+        alert('¡Oferta aceptada con éxito!');
+      }
+    } catch (error: any) {
+      console.error('Unexpected error accepting offer:', error);
+      alert(`Error inesperado al aceptar la oferta: ${error.message}`);
+    }
+  };
+
+  const handleRejectOffer = async (offerId: string) => {
+    try {
+      // Update the offer status to 'rejected' in the database
+      const { data, error } = await supabase
+        .from('offers')
+        .update({ status: 'rejected' })
+        .eq('id', offerId)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error rejecting offer:', error);
+        alert(`Error al rechazar la oferta: ${error.message}`);
+        return;
+      }
+      
+      if (data) {
+        // Map the database response back to camelCase for the frontend
+        const offerWithCamelCase: Offer = {
+          id: data.id,
+          itemId: data.item_id,
+          itemType: data.item_type,
+          buyerEmail: data.buyer_email,
+          sellerEmail: data.seller_email,
+          offerAmount: data.offer_amount,
+          status: data.status,
+          timestamp: data.timestamp,
+        };
+        
+        // Update the local state
+        setOffers(prev => prev.map(offer => 
+          offer.id === offerId ? offerWithCamelCase : offer
+        ));
+        
+        alert('¡Oferta rechazada con éxito!');
+      }
+    } catch (error: any) {
+      console.error('Unexpected error rejecting offer:', error);
+      alert(`Error inesperado al rechazar la oferta: ${error.message}`);
+    }
+  };
+  
+  const handleCancelSale = async (itemId: string, itemType: 'motorcycle' | 'part') => {
+    try {
+      // Update the item status to 'for-sale' in the database
+      const table = itemType === 'motorcycle' ? 'motorcycles' : 'parts';
+      const { data, error } = await supabase
+        .from(table)
+        .update({ status: 'for-sale', reserved_by: null })
+        .eq('id', itemId)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error canceling sale:', error);
+        alert(`Error al cancelar la venta: ${error.message}`);
+        return;
+      }
+      
+      if (data) {
+        // Update the local state
+        if (itemType === 'motorcycle') {
+          // Map the database response back to camelCase for the frontend
+          const motoWithCamelCase: Motorcycle = {
+            id: data.id,
+            make: data.make,
+            model: data.model,
+            year: data.year,
+            price: data.price,
+            mileage: data.mileage,
+            engineSize: data.engine_size,
+            description: data.description,
+            imageUrls: data.image_urls,
+            videoUrl: data.video_url,
+            sellerEmail: data.seller_email,
+            category: data.category,
+            status: data.status,
+            location: data.location,
+            featured: data.featured,
+            reservedBy: data.reserved_by,
+            stats: data.stats,
+          };
+          setMotorcycles(prev => prev.map(moto => 
+            moto.id === itemId ? motoWithCamelCase : moto
+          ));
+        } else {
+          // Map the database response back to camelCase for the frontend
+          const partWithCamelCase: Part = {
+            id: data.id,
+            name: data.name,
+            price: data.price,
+            description: data.description,
+            imageUrls: data.image_urls,
+            videoUrl: data.video_url,
+            sellerEmail: data.seller_email,
+            category: data.category,
+            condition: data.condition,
+            compatibility: data.compatibility,
+            status: data.status,
+            location: data.location,
+            featured: data.featured,
+            reservedBy: data.reserved_by,
+            stats: data.stats,
+          };
+          setParts(prev => prev.map(part => 
+            part.id === itemId ? partWithCamelCase : part
+          ));
+        }
+        
+        // Also update any related offers to 'cancelled' in the database
+        await supabase
+          .from('offers')
+          .update({ status: 'cancelled' })
+          .eq('item_id', itemId)
+          .eq('status', 'accepted');
+        
+        // Update the local state for offers
+        setOffers(prev => prev.map(offer => 
+          offer.itemId === itemId && offer.status === 'accepted' 
+            ? { ...offer, status: 'cancelled' } 
+            : offer
+        ));
+        
+        alert('¡Venta cancelada y artículo publicado nuevamente!');
+      }
+    } catch (error: any) {
+      console.error('Unexpected error canceling sale:', error);
+      alert(`Error inesperado al cancelar la venta: ${error.message}`);
+    }
+  };
 
   const filteredMotorcycles = useMemo(() => {
     let filtered = motorcycles.filter(m => m.status === 'for-sale' || m.status === 'reserved');
@@ -898,6 +1451,26 @@ const App: React.FC = () => {
     );
   }
 
+  // Handle loading errors
+  if (loadingError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background-dark p-4">
+        <div className="bg-card-light dark:bg-card-dark p-6 rounded-xl max-w-md w-full text-center">
+          <h2 className="text-xl font-bold text-foreground-light dark:text-foreground-dark mb-2">Error al cargar</h2>
+          <p className="text-foreground-muted-light dark:text-foreground-muted-dark mb-4">
+            {loadingError}
+          </p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-primary text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const renderContent = () => {
     switch (view) {
       case 'detail': {
@@ -917,26 +1490,7 @@ const App: React.FC = () => {
       case 'edit':
         return <EditForm motorcycle={motorcycleToEdit} part={partToEdit} onBack={handleBackToPrevView} onUpdate={handleUpdateItem} />;
       case 'profile':
-        return <ProfileView 
-          currentUser={currentUser} 
-          userMotorcycles={userMotorcycles} 
-          userParts={userParts} 
-          onGoToSell={() => setView('sell')} 
-          onSelectMotorcycle={handleSelectMotorcycle} 
-          onSelectPart={handleSelectPart} 
-          onLogout={handleLogout} 
-          notificationPermission={notificationPermission} 
-          onRequestPermission={handleRequestNotificationPermission} 
-          onUpdateProfileImage={handleUpdateProfileImage} 
-          onEditItem={handleNavigateToEdit} 
-          onMarkAsSold={handleMarkAsSold} 
-          onPromoteItem={handlePromoteItem} 
-          savedSearches={savedSearches} 
-          onDeleteSearch={handleDeleteSearch} 
-          onNavigateToFavorites={() => setView('favorites')} 
-          onCancelSale={handleCancelSale}
-          onDeleteItem={handleDeleteItem} // Add the onDeleteItem prop
-        />;
+        return <ProfileView currentUser={currentUser} userMotorcycles={userMotorcycles} userParts={userParts} onGoToSell={() => setView('sell')} onSelectMotorcycle={handleSelectMotorcycle} onSelectPart={handleSelectPart} onLogout={handleLogout} notificationPermission={notificationPermission} onRequestPermission={handleRequestNotificationPermission} onUpdateProfileImage={handleUpdateProfileImage} onEditItem={handleNavigateToEdit} onMarkAsSold={handleMarkAsSold} onPromoteItem={handlePromoteItem} savedSearches={savedSearches} onDeleteSearch={handleDeleteSearch} onNavigateToFavorites={() => setView('favorites')} onCancelSale={handleCancelSale} />;
       case 'publicProfile': {
         const seller = users.find(u => u.email === selectedSellerEmail);
         const sellerMotorcycles = motorcycles.filter(m => m.sellerEmail === selectedSellerEmail);

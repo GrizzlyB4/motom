@@ -23,12 +23,25 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Function to add a heatmap point to the database
 export const addHeatmapPoint = async (point: HeatmapPoint) => {
+  // Validate that all required fields are present and not null
+  if (!point || typeof point.x !== 'number' || typeof point.y !== 'number' || typeof point.value !== 'number') {
+    console.error('Invalid heatmap point data - missing required fields or incorrect types:', point);
+    return null;
+  }
+  
+  // Ensure all values are positive integers
+  const validPoint = {
+    x: Math.max(1, Math.floor(Math.abs(point.x))),
+    y: Math.max(1, Math.floor(Math.abs(point.y))),
+    value: Math.max(1, Math.floor(Math.abs(point.value)))
+  };
+  
   const { data, error } = await supabase
     .from('heatmap_points')
     .insert({
-      x: point.x,
-      y: point.y,
-      value: point.value,
+      x: validPoint.x,
+      y: validPoint.y,
+      value: validPoint.value,
     })
     .select()
     .single();
