@@ -81,8 +81,8 @@ export interface ChatMessage {
 export interface ChatConversation {
   id: string;
   participants: string[];
-  motorcycleId?: string;
-  partId?: string;
+  motorcycle_id?: string;
+  part_id?: string;
 }
 
 export interface SavedSearch {

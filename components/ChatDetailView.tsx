@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ChatConversation, ChatMessage, Motorcycle, User, Part } from '../types';
 import { ArrowLeftIcon, SendIcon } from './Icons';
 
@@ -12,6 +11,7 @@ interface ChatDetailViewProps {
   onBack: () => void;
   onSendMessage: (conversationId: string, text: string) => void;
   isTyping: boolean;
+  onMarkAsRead: (conversationId: string) => void; // Add this prop
 }
 
 const TypingIndicator: React.FC = () => (
@@ -22,23 +22,57 @@ const TypingIndicator: React.FC = () => (
     </div>
 );
 
-const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages, item, currentUser, users, onBack, onSendMessage, isTyping }) => {
+const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages, item, currentUser, users, onBack, onSendMessage, isTyping, onMarkAsRead }) => {
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null); // Add typing timeout
+
+  // Memoize sorted messages to prevent unnecessary re-renders
+  const sortedMessages = useMemo(() => {
+    return [...messages].sort((a, b) => a.timestamp - b.timestamp);
+  }, [messages]);
 
   const otherParticipantEmail = conversation.participants.find(p => p !== currentUser.email);
   const otherParticipant = users.find(u => u.email === otherParticipantEmail);
 
+  // Mark messages as read when entering the chat
+  useEffect(() => {
+    onMarkAsRead(conversation.id);
+  }, [conversation.id, onMarkAsRead]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
+  }, [sortedMessages, isTyping]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (inputText.trim()) {
       onSendMessage(conversation.id, inputText.trim());
       setInputText('');
+      
+      // Clear typing timeout if exists
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+        setTypingTimeout(null);
+      }
     }
+  };
+
+  // Add typing indicator handling
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputText(e.target.value);
+    
+    // Clear existing timeout
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+    }
+    
+    // Set new timeout to clear typing status after 1 second of inactivity
+    const timeout = setTimeout(() => {
+      // In a real implementation, you would send a "stop typing" event here
+    }, 1000);
+    
+    setTypingTimeout(timeout);
   };
 
   const itemName = 'make' in item ? `${item.make} ${item.model}` : item.name;
@@ -68,12 +102,16 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages,
       </header>
       
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg) => {
+        {sortedMessages.map((msg) => {
           const isCurrentUser = msg.senderEmail === currentUser.email;
           return (
             <div key={msg.id} className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-xs md:max-w-md p-3 rounded-2xl ${isCurrentUser ? 'bg-primary text-white rounded-br-lg' : 'bg-card-light dark:bg-card-dark rounded-bl-lg'}`}>
                 <p>{msg.text}</p>
+                <p className="text-xs opacity-70 mt-1 text-right">
+                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  }
+                </p>
               </div>
             </div>
           );
@@ -93,7 +131,7 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages,
           <input
             type="text"
             value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
+            onChange={handleInputChange}
             placeholder="Escribe un mensaje..."
             className="flex-1 form-input w-full px-4 py-3 rounded-full bg-card-light dark:bg-card-dark border-border-light dark:border-border-dark text-foreground-light dark:text-foreground-dark placeholder-foreground-muted-light dark:placeholder-foreground-muted-dark focus:ring-2 focus:ring-primary focus:border-primary"
             autoComplete="off"

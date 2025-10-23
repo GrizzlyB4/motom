@@ -80,12 +80,12 @@ const PartList: React.FC<PartListProps> = ({
             <div key={part.id} className={isDataStable ? 'animate-fade-in-up' : ''} style={{ animationDelay: '0ms' }}>
               <PartCard 
                   part={part} 
-                  onSelect={(e) => {
+                  onSelect={(e, selectedPart) => {
                     // Track heatmap specifically for part card clicks
                     if (typeof onAddHeatmapPoint === 'function') {
                       onAddHeatmapPoint(e);
                     }
-                    onSelectPart(part)
+                    onSelectPart(selectedPart)
                   }} 
                   onToggleFavorite={(e) => {
                     e.stopPropagation();

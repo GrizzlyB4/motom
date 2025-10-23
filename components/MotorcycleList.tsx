@@ -35,6 +35,7 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
     // When data changes, mark as unstable temporarily
     setIsDataStable(false);
     
+    
     // After a short delay, mark as stable to allow animations
     const timer = setTimeout(() => {
       setIsDataStable(true);
@@ -136,12 +137,12 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
             <div key={moto.id} className={isDataStable ? 'animate-fade-in-up' : ''} style={{ animationDelay: '0ms' }}>
               <MotorcycleCard 
                   motorcycle={moto} 
-                  onSelect={(e) => {
+                  onSelect={(e, selectedMoto) => {
                     // Track heatmap specifically for motorcycle card clicks
                     if (typeof onAddHeatmapPoint === 'function') {
                       onAddHeatmapPoint(e);
                     }
-                    onSelectMotorcycle(moto)
+                    onSelectMotorcycle(selectedMoto)
                   }} 
                   onToggleFavorite={(e) => {
                     e.stopPropagation();

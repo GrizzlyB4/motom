@@ -65,7 +65,8 @@ const App: React.FC = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [selectedSellerEmail, setSelectedSellerEmail] = useState<string | null>(null);
   const [users, setUsers] = useState<User[]>([]);
-  
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
@@ -98,6 +99,109 @@ const App: React.FC = () => {
   
   const [isLoading, setIsLoading] = useState(true);
 
+  // Add this useEffect for real-time chat subscriptions
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // Subscribe to new messages
+    const messageSubscription = supabase
+      .channel('messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+        },
+        (payload) => {
+          // Map database fields (snake_case) to ChatMessage interface (camelCase)
+          const newMessage: ChatMessage = {
+            id: payload.new.id,
+            conversationId: payload.new.conversation_id,
+            senderEmail: payload.new.sender_email,
+            text: payload.new.text,
+            timestamp: payload.new.timestamp,
+            isRead: payload.new.is_read,
+          };
+          
+          // console.log('New message received:', newMessage);
+          setMessages((prev) => [...prev, newMessage]);
+          
+          // Update unread count if message is not from current user
+          if (newMessage.senderEmail !== currentUser.email) {
+            setUnreadMessagesCount((prev) => prev + 1);
+            
+            // Send notification if user is not in the chat view
+            if (view !== 'chatDetail') {
+              sendNotification('Nuevo mensaje', {
+                body: newMessage.text,
+                icon: '/favicon.ico',
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    // Subscribe to new conversations
+    const conversationSubscription = supabase
+      .channel('conversations')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'conversations',
+        },
+        (payload) => {
+          // Map database fields (snake_case) to ChatConversation interface (camelCase)
+          const newConversation: ChatConversation = {
+            id: payload.new.id,
+            participants: payload.new.participants,
+            motorcycle_id: payload.new.motorcycle_id,
+            part_id: payload.new.part_id,
+          };
+          
+          setConversations((prev) => [...prev, newConversation]);
+        }
+      )
+      .subscribe();
+
+    // Subscribe to message updates (read status, etc.)
+    const messageUpdateSubscription = supabase
+      .channel('message_updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+        },
+        (payload) => {
+          // Map database fields (snake_case) to ChatMessage interface (camelCase)
+          const updatedMessage: ChatMessage = {
+            id: payload.new.id,
+            conversationId: payload.new.conversation_id,
+            senderEmail: payload.new.sender_email,
+            text: payload.new.text,
+            timestamp: payload.new.timestamp,
+            isRead: payload.new.is_read,
+          };
+          
+          setMessages((prev) =>
+            prev.map((msg) => (msg.id === updatedMessage.id ? updatedMessage : msg))
+          );
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      supabase.removeChannel(messageSubscription);
+      supabase.removeChannel(conversationSubscription);
+      supabase.removeChannel(messageUpdateSubscription);
+    };
+  }, [currentUser, view]);
 
   // --- AUTH & DATA FETCHING ---
   
@@ -248,9 +352,37 @@ const App: React.FC = () => {
                 numberOfRatings: p.number_of_ratings
             })) || []);
             
-            setOffers(offersRes.data || []);
-            setConversations(conversationsRes.data || []);
-            setMessages(messagesRes.data || []);
+            setOffers(offersRes.data?.map((offer: any) => ({
+                id: offer.id,
+                itemId: offer.item_id,
+                itemType: offer.item_type,
+                buyerEmail: offer.buyer_email,
+                sellerEmail: offer.seller_email,
+                offerAmount: offer.offer_amount,
+                status: offer.status,
+                timestamp: new Date(offer.timestamp).getTime(), // Convert PostgreSQL timestamp to JS timestamp
+            })) || []);
+            setConversations(conversationsRes.data?.map((convo: any) => ({
+                id: convo.id,
+                participants: convo.participants,
+                motorcycle_id: convo.motorcycle_id,
+                part_id: convo.part_id,
+            })) || []);
+            setMessages(messagesRes.data?.map((msg: any) => ({
+                id: msg.id,
+                conversationId: msg.conversation_id,
+                senderEmail: msg.sender_email,
+                text: msg.text,
+                timestamp: msg.timestamp,
+                isRead: msg.is_read,
+            })) || []);
+            
+            // Calculate unread messages count
+            const unreadCount = messagesRes.data?.filter((msg: any) => 
+              msg.senderEmail !== currentUser.email && !msg.isRead
+            ).length || 0;
+            setUnreadMessagesCount(unreadCount);
+            
             setFavorites(favoritesRes.data?.map(f => f.motorcycle_id) || []);
             setFavoriteParts(partFavoritesRes.data?.map(f => f.part_id) || []);
             setSavedSearches(savedSearchesRes.data || []);
@@ -462,14 +594,125 @@ const App: React.FC = () => {
     setEngineSizeCategory('any');
   };
   
-  const handleStartOrGoToChat = (item: Motorcycle | Part) => {
-    // Logic remains mostly the same, will be adapted to handle real conversations
+  const handleStartOrGoToChat = async (item: Motorcycle | Part) => {
     if (!currentUser) return;
+    
+    // Check if conversation already exists
+    let existingConversation = conversations.find(convo => {
+      if ('make' in item && convo.motorcycle_id === item.id) return true;
+      if (!('make' in item) && convo.part_id === item.id) return true;
+      return false;
+    });
+
+    // If no existing conversation, create a new one
+    if (!existingConversation) {
+      const otherUserEmail = item.sellerEmail;
+      const newConversationData = {
+        participants: [currentUser.email, otherUserEmail],
+        ...(item.id && 'make' in item ? { motorcycle_id: item.id } : { part_id: item.id })
+      };
+
+      try {
+        const { data, error } = await supabase
+          .from('conversations')
+          .insert(newConversationData)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        existingConversation = data as ChatConversation;
+        setConversations(prev => [...prev, existingConversation!]);
+      } catch (error) {
+        console.error('Error creating conversation:', error);
+        alert('Error al iniciar el chat. Por favor, inténtalo de nuevo.');
+        return;
+      }
+    }
+
+    // Navigate to chat detail
+    setSelectedConversationId(existingConversation!.id);
     setView('chatDetail');
   };
 
-  const handleSendMessage = (conversationId: string, text: string) => {
-    // Will be implemented with Supabase real-time
+  const handleSendMessage = async (conversationId: string, text: string) => {
+    if (!currentUser) return;
+    
+    try {
+      const newMessage = {
+        conversation_id: conversationId,
+        sender_email: currentUser.email,
+        text,
+        is_read: false
+      };
+
+      // console.log('Sending message:', newMessage);
+      // Insert message into database
+      const { data, error } = await supabase
+        .from('messages')
+        .insert(newMessage)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // console.log('Message sent, response:', data);
+      // Update local state with new message
+      // Map database fields (snake_case) to ChatMessage interface (camelCase)
+      const message: ChatMessage = {
+        id: data.id,
+        conversationId: data.conversation_id,
+        senderEmail: data.sender_email,
+        text: data.text,
+        timestamp: data.timestamp,
+        isRead: data.is_read,
+      };
+      // console.log('Mapped message:', message);
+      setMessages(prev => [...prev, message]);
+
+      // Mark conversation as having unread messages for other participants
+      const conversation = conversations.find(c => c.id === conversationId);
+      if (conversation) {
+        // In a real app, you might want to update the conversation's last message
+        // or other metadata here
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Error al enviar el mensaje. Por favor, inténtalo de nuevo.');
+    }
+  };
+  
+  // Add this function back
+  const markMessagesAsRead = async (conversationId: string) => {
+    if (!currentUser) return;
+    
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .match({ 
+          conversation_id: conversationId,
+          sender_email: currentUser.email === conversations.find(c => c.id === conversationId)?.participants[0] 
+            ? conversations.find(c => c.id === conversationId)?.participants[1] 
+            : conversations.find(c => c.id === conversationId)?.participants[0]
+        });
+
+      if (error) throw error;
+
+      // Update local state
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.conversationId === conversationId && !msg.isRead 
+            ? { ...msg, isRead: true } 
+            : msg
+        )
+      );
+      
+      // Update unread count
+      setUnreadMessagesCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
   };
   
   const handleToggleFavorite = async (motoId: string) => {
@@ -746,7 +989,34 @@ const App: React.FC = () => {
      alert(`Has valorado a ${sellerEmail} con ${rating} estrellas. ¡Gracias!`);
   };
 
-  const handleAddHeatmapPoint = async (newPoint: HeatmapPoint) => {
+  const handleAddHeatmapPoint = async (event: React.MouseEvent) => {
+    // Get click coordinates relative to the viewport
+    const x = event.clientX;
+    const y = event.clientY;
+    
+    // Validate that we have valid coordinates
+    if (x === undefined || y === undefined || x === null || y === null || isNaN(x) || isNaN(y)) {
+      console.warn('Invalid coordinates for heatmap point:', { x, y });
+      return;
+    }
+    
+    // Ensure coordinates are valid numbers
+    const validX = Math.round(Number(x));
+    const validY = Math.round(Number(y));
+    
+    // Additional validation to ensure we have valid numbers after conversion
+    if (isNaN(validX) || isNaN(validY)) {
+      console.warn('Invalid coordinates for heatmap point after conversion:', { x, y, validX, validY });
+      return;
+    }
+    
+    // Create a new heatmap point with valid coordinates
+    const newPoint: HeatmapPoint = {
+      x: validX,
+      y: validY,
+      value: 1
+    };
+    
     setHeatmapData(prev => [...prev, newPoint]);
     // Use the correct function name from supabase service
     await addHeatmapPointToDb(newPoint);
@@ -802,17 +1072,33 @@ const App: React.FC = () => {
   const handleMakeOffer = async (amount: number) => {
     if (!currentUser || !itemToMakeOfferOn) return;
     const newOfferData = {
-        itemId: itemToMakeOfferOn.id,
-        itemType: 'make' in itemToMakeOfferOn ? 'motorcycle' : 'part',
-        buyerEmail: currentUser.email,
-        sellerEmail: itemToMakeOfferOn.sellerEmail,
-        offerAmount: amount,
+        item_id: itemToMakeOfferOn.id,
+        item_type: 'make' in itemToMakeOfferOn ? 'motorcycle' : 'part',
+        buyer_email: currentUser.email,
+        seller_email: itemToMakeOfferOn.sellerEmail,
+        offer_amount: amount,
         status: 'pending',
-        timestamp: new Date().getTime(),
+        // Remove the explicit timestamp to let the database set it automatically
     };
-    const { data } = await supabase.from('offers').insert(newOfferData).select().single();
+    const { data, error } = await supabase.from('offers').insert(newOfferData).select().single();
+    if (error) {
+      console.error('Error making offer:', error);
+      alert('Error al enviar la oferta. Por favor, inténtalo de nuevo.');
+      return;
+    }
     if(data) {
-        setOffers(prev => [data, ...prev]);
+        // Map database fields (snake_case) to Offer interface (camelCase)
+        const offer: Offer = {
+            id: data.id,
+            itemId: data.item_id,
+            itemType: data.item_type,
+            buyerEmail: data.buyer_email,
+            sellerEmail: data.seller_email,
+            offerAmount: data.offer_amount,
+            status: data.status,
+            timestamp: new Date(data.timestamp).getTime(), // Convert PostgreSQL timestamp to JS timestamp
+        };
+        setOffers(prev => [offer, ...prev]);
         setIsOfferModalOpen(false);
         setItemToMakeOfferOn(null);
         alert('¡Oferta enviada con éxito!');
@@ -820,9 +1106,139 @@ const App: React.FC = () => {
     }
   };
 
-  const handleAcceptOffer = (offerId: string) => { /* Will implement with DB logic */ };
-  const handleRejectOffer = (offerId: string) => { /* Will implement with DB logic */ };
-  const handleCancelSale = (itemId: string, itemType: 'motorcycle' | 'part') => { /* Will implement with DB logic */ };
+  const handleAcceptOffer = async (offerId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('offers')
+        .update({ status: 'accepted' })
+        .eq('id', offerId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        // Map database fields (snake_case) to Offer interface (camelCase)
+        const updatedOffer: Offer = {
+          id: data.id,
+          itemId: data.item_id,
+          itemType: data.item_type,
+          buyerEmail: data.buyer_email,
+          sellerEmail: data.seller_email,
+          offerAmount: data.offer_amount,
+          status: data.status,
+          timestamp: new Date(data.timestamp).getTime(), // Convert PostgreSQL timestamp to JS timestamp
+        };
+
+        // Update local state
+        setOffers(prev => prev.map(offer => offer.id === offerId ? updatedOffer : offer));
+        alert('¡Oferta aceptada!');
+      }
+    } catch (error) {
+      console.error('Error accepting offer:', error);
+      alert('Error al aceptar la oferta. Por favor, inténtalo de nuevo.');
+    }
+  };
+
+  const handleRejectOffer = async (offerId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('offers')
+        .update({ status: 'rejected' })
+        .eq('id', offerId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        // Map database fields (snake_case) to Offer interface (camelCase)
+        const updatedOffer: Offer = {
+          id: data.id,
+          itemId: data.item_id,
+          itemType: data.item_type,
+          buyerEmail: data.buyer_email,
+          sellerEmail: data.seller_email,
+          offerAmount: data.offer_amount,
+          status: data.status,
+          timestamp: new Date(data.timestamp).getTime(), // Convert PostgreSQL timestamp to JS timestamp
+        };
+
+        // Update local state
+        setOffers(prev => prev.map(offer => offer.id === offerId ? updatedOffer : offer));
+        alert('Oferta rechazada.');
+      }
+    } catch (error) {
+      console.error('Error rejecting offer:', error);
+      alert('Error al rechazar la oferta. Por favor, inténtalo de nuevo.');
+    }
+  };
+
+  const handleCancelSale = async (itemId: string, itemType: 'motorcycle' | 'part') => {
+    if (window.confirm("¿Cancelar la venta y volver a publicar el artículo?")) {
+      try {
+        const table = itemType === 'motorcycle' ? 'motorcycles' : 'parts';
+        const { data, error } = await supabase
+          .from(table)
+          .update({ status: 'for-sale' })
+          .eq('id', itemId)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          if (itemType === 'motorcycle') {
+            // Map the database response back to camelCase for the frontend
+            const motoWithCamelCase: Motorcycle = {
+              id: data.id,
+              make: data.make,
+              model: data.model,
+              year: data.year,
+              price: data.price,
+              mileage: data.mileage,
+              engineSize: data.engine_size,
+              description: data.description,
+              imageUrls: data.image_urls,
+              videoUrl: data.video_url,
+              sellerEmail: data.seller_email,
+              category: data.category,
+              status: data.status,
+              location: data.location,
+              featured: data.featured,
+              reservedBy: data.reserved_by,
+              stats: data.stats,
+            };
+            setMotorcycles(prev => prev.map(item => item.id === itemId ? motoWithCamelCase : item));
+          } else {
+            // Map the database response back to camelCase for the frontend
+            const partWithCamelCase: Part = {
+              id: data.id,
+              name: data.name,
+              price: data.price,
+              description: data.description,
+              imageUrls: data.image_urls,
+              videoUrl: data.video_url,
+              sellerEmail: data.seller_email,
+              category: data.category,
+              condition: data.condition,
+              compatibility: data.compatibility,
+              status: data.status,
+              location: data.location,
+              featured: data.featured,
+              reservedBy: data.reserved_by,
+              stats: data.stats,
+            };
+            setParts(prev => prev.map(item => item.id === itemId ? partWithCamelCase : item));
+          }
+          alert('Venta cancelada. El artículo ha vuelto a estar disponible.');
+        }
+      } catch (error) {
+        console.error('Error canceling sale:', error);
+        alert('Error al cancelar la venta. Por favor, inténtalo de nuevo.');
+      }
+    }
+  };
 
   const filteredMotorcycles = useMemo(() => {
     let filtered = motorcycles.filter(m => m.status === 'for-sale' || m.status === 'reserved');
@@ -871,7 +1287,6 @@ const App: React.FC = () => {
   const userParts = useMemo(() => currentUser ? parts.filter(part => part.sellerEmail === currentUser.email) : [], [parts, currentUser]);
   const favoriteMotorcycles = useMemo(() => motorcycles.filter(moto => favorites.includes(moto.id)), [motorcycles, favorites]);
   const favoritePartsList = useMemo(() => parts.filter(part => favoriteParts.includes(part.id)), [parts, favoriteParts]);
-  const unreadMessagesCount = 0; // Will be implemented with real-time
   const pendingReceivedOffersCount = useMemo(() => {
     if (!currentUser) return 0;
     return offers.filter(o => o.sellerEmail === currentUser.email && o.status === 'pending').length;
@@ -953,9 +1368,20 @@ const App: React.FC = () => {
       case 'chatDetail': {
         const conversation = conversations.find(c => c.id === selectedConversationId);
         if (!conversation) return <PlaceholderView title="Error de Chat" />;
-        const item = conversation.motorcycleId ? motorcycles.find(m => m.id === conversation.motorcycleId) : parts.find(p => p.id === conversation.partId);
+        const item = conversation.motorcycle_id ? motorcycles.find(m => m.id === conversation.motorcycle_id) : parts.find(p => p.id === conversation.part_id);
         if (!item) return <PlaceholderView title="Artículo no encontrado" />;
-        return <ChatDetailView conversation={conversation} messages={messages.filter(m => m.conversationId === selectedConversationId).sort((a,b) => a.timestamp - b.timestamp)} item={item} currentUser={currentUser} users={users} onBack={handleBackToPrevView} onSendMessage={handleSendMessage} isTyping={isTyping[selectedConversationId] || false} />;
+        
+        return <ChatDetailView 
+          conversation={conversation} 
+          messages={messages.filter(m => m.conversationId === selectedConversationId)} 
+          item={item} 
+          currentUser={currentUser} 
+          users={users} 
+          onBack={handleBackToPrevView} 
+          onSendMessage={handleSendMessage} 
+          isTyping={isTyping[selectedConversationId] || false} 
+          onMarkAsRead={markMessagesAsRead} 
+        />;
       }
       case 'home':
       default:

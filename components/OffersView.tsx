@@ -11,7 +11,7 @@ interface OffersViewProps {
   onAcceptOffer: (offerId: string) => void;
   onRejectOffer: (offerId: string) => void;
   onSelectItem: (item: Motorcycle | Part) => void;
-  onCancelSale: (itemId: number, itemType: 'motorcycle' | 'part') => void;
+  onCancelSale: (itemId: string, itemType: 'motorcycle' | 'part') => void;
 }
 
 const OffersView: React.FC<OffersViewProps> = ({ offers, currentUser, users, motorcycles, parts, onAcceptOffer, onRejectOffer, onSelectItem, onCancelSale }) => {

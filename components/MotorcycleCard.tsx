@@ -4,7 +4,7 @@ import { HeartIcon, MapPinIcon, StarIcon } from './Icons';
 
 interface MotorcycleCardProps {
   motorcycle: Motorcycle;
-  onSelect: (moto: Motorcycle) => void;
+  onSelect: (event: React.MouseEvent, moto: Motorcycle) => void;
   isFavorite: boolean;
   onToggleFavorite: (id: string) => void;
   className?: string;
@@ -19,7 +19,7 @@ const MotorcycleCard: React.FC<MotorcycleCardProps> = ({ motorcycle, onSelect, i
   return (
     <div 
       className={`relative ${isSold || isReserved ? 'cursor-default' : 'cursor-pointer'} ${className || ''}`}
-      onClick={() => !isSold && !isReserved && onSelect(motorcycle)}
+      onClick={(e) => !isSold && !isReserved && onSelect(e, motorcycle)}
       style={style}
     >
       <div className={`h-full bg-card-light dark:bg-card-dark rounded-xl overflow-hidden shadow-sm border border-border-light dark:border-border-dark transition-transform duration-200 ${!isSold && !isReserved ? 'hover:scale-[1.02] active:scale-95' : ''}`}>

@@ -4,7 +4,7 @@ import { MapPinIcon, HeartIcon, StarIcon } from './Icons';
 
 interface PartCardProps {
   part: Part;
-  onSelect: (part: Part) => void;
+  onSelect: (event: React.MouseEvent, part: Part) => void;
   isFavorite: boolean;
   onToggleFavorite: (id: string) => void;
   className?: string;
@@ -19,7 +19,7 @@ const PartCard: React.FC<PartCardProps> = ({ part, onSelect, isFavorite, onToggl
   return (
     <div 
       className={`relative ${isSold || isReserved ? 'cursor-default' : 'cursor-pointer'} ${className || ''}`}
-      onClick={() => !isSold && !isReserved && onSelect(part)}
+      onClick={(e) => !isSold && !isReserved && onSelect(e, part)}
       style={style}
     >
       <div className={`h-full bg-card-light dark:bg-card-dark rounded-xl overflow-hidden shadow-sm border border-border-light dark:border-border-dark transition-transform duration-200 ${!isSold && !isReserved ? 'hover:scale-[1.02] active:scale-95' : ''}`}>
