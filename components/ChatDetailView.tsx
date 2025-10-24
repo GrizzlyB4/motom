@@ -37,7 +37,12 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages,
 
   // Mark messages as read when entering the chat
   useEffect(() => {
-    onMarkAsRead(conversation.id);
+    // Add a small delay to ensure the view has loaded
+    const timer = setTimeout(() => {
+      onMarkAsRead(conversation.id);
+    }, 500);
+    
+    return () => clearTimeout(timer);
   }, [conversation.id, onMarkAsRead]);
 
   useEffect(() => {

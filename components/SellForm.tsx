@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { Motorcycle, Part, MotorcycleCategory } from '../types';
+import { Motorcycle, Part, MotorcycleCategory, PartCategory } from '../types';
 import { generateAdDescription } from '../services/geminiService';
 import Spinner from './Spinner';
 import { UploadIcon, TrashIcon, PlayIcon } from './Icons';
@@ -29,6 +29,7 @@ const motorcycleData: { [make: string]: string[] } = {
 };
 
 const categories: MotorcycleCategory[] = ['Sport', 'Cruiser', 'Off-Road', 'Touring'];
+const partCategories: PartCategory[] = ['Exhausts', 'Brakes', 'Tires', 'Suspension', 'Electronics'];
 
 const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
   const [listingType, setListingType] = useState<'motorcycle' | 'part'>('motorcycle');
@@ -37,7 +38,7 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
   const [motoData, setMotoData] = useState({ make: '', model: '', year: '', mileage: '', engineSize: '', category: 'Sport' as MotorcycleCategory });
   
   // Part state
-  const [partData, setPartData] = useState({ name: '', condition: 'new', compatibility: '' });
+  const [partData, setPartData] = useState({ name: '', condition: 'new', compatibility: '', category: 'Exhausts' as PartCategory });
 
   // Common state
   const [commonData, setCommonData] = useState({ price: '', description: '', location: '' });
@@ -182,7 +183,7 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
             category
         }, 'motorcycle');
     } else {
-        const { name, condition, compatibility } = partData;
+        const { name, condition, compatibility, category } = partData;
         const { price, description, location } = commonData;
         if (!name || !price || !description || !location || !compatibility) {
             alert('Por favor, completa todos los campos para la pieza.');
@@ -192,7 +193,8 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
             name, location, price: parseFloat(price), description, videoUrl: videoUrl || undefined,
             condition: condition as 'new' | 'used' | 'refurbished',
             compatibility: compatibility.split(',').map(item => item.trim()),
-            imageUrls
+            imageUrls,
+            category
         }, 'part');
     }
   };
@@ -292,6 +294,11 @@ const SellForm: React.FC<SellFormProps> = ({ onBack, onPublish }) => {
                     <option value="used" className="dark:bg-card-dark dark:text-foreground-dark">Usada</option>
                     <option value="refurbished" className="dark:bg-card-dark dark:text-foreground-dark">Restaurada</option>
                  </select>
+                 <select name="partCategory" onChange={(e) => setPartData(p => ({...p, category: e.target.value as PartCategory}))} value={partData.category} className="form-input dark:bg-card-dark dark:text-foreground-dark" required>
+                    {partCategories.map(category => (
+                      <option key={category} value={category} className="dark:bg-card-dark dark:text-foreground-dark">{category}</option>
+                    ))}
+                  </select>
                 <input type="text" name="compatibility" placeholder="Compatibilidad (ej: Yamaha MT-07)" onChange={(e) => setPartData(p => ({...p, compatibility: e.target.value}))} value={partData.compatibility} className="form-input" required />
             </div>
         )}

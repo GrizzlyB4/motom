@@ -129,10 +129,9 @@ const App: React.FC = () => {
           
           // Update unread count if message is not from current user
           if (newMessage.senderEmail !== currentUser.email) {
-            setUnreadMessagesCount((prev) => prev + 1);
-            
-            // Send notification if user is not in the chat view
-            if (view !== 'chatDetail') {
+            // Only increment count if user is not in the chat view for this conversation
+            if (view !== 'chatDetail' || selectedConversationId !== newMessage.conversationId) {
+              setUnreadMessagesCount((prev) => prev + 1);
               sendNotification('Nuevo mensaje', {
                 body: newMessage.text,
                 icon: '/favicon.ico',
@@ -201,7 +200,17 @@ const App: React.FC = () => {
       supabase.removeChannel(conversationSubscription);
       supabase.removeChannel(messageUpdateSubscription);
     };
-  }, [currentUser, view]);
+  }, [currentUser, view, selectedConversationId]);
+
+  // Add this useEffect to recalculate unread messages count when messages change
+  useEffect(() => {
+    if (currentUser) {
+      const unreadCount = messages.filter(
+        msg => msg.senderEmail !== currentUser.email && !msg.isRead
+      ).length;
+      setUnreadMessagesCount(unreadCount);
+    }
+  }, [messages, currentUser]);
 
   // --- AUTH & DATA FETCHING ---
   
@@ -377,9 +386,9 @@ const App: React.FC = () => {
                 isRead: msg.is_read,
             })) || []);
             
-            // Calculate unread messages count
+            // Calculate unread messages count - only count messages not from current user and not read
             const unreadCount = messagesRes.data?.filter((msg: any) => 
-              msg.senderEmail !== currentUser.email && !msg.isRead
+              msg.sender_email !== currentUser.email && !msg.is_read
             ).length || 0;
             setUnreadMessagesCount(unreadCount);
             
@@ -407,6 +416,14 @@ const App: React.FC = () => {
     } else {
         setView(newView);
     }
+  };
+
+  // Add a function to handle navigating to a specific chat
+  const handleNavigateToChat = (conversationId: string) => {
+    setSelectedConversationId(conversationId);
+    setView('chatDetail');
+    // Mark messages as read when navigating to the chat
+    markMessagesAsRead(conversationId);
   };
 
   const handleSelectMotorcycle = (moto: Motorcycle) => { 
@@ -682,34 +699,39 @@ const App: React.FC = () => {
     }
   };
   
-  // Add this function back
+  // Improve the markMessagesAsRead function to be more robust
   const markMessagesAsRead = async (conversationId: string) => {
     if (!currentUser) return;
     
     try {
+      // Find messages in this conversation that are not from the current user and are unread
+      const messagesToMarkAsRead = messages.filter(
+        msg => msg.conversationId === conversationId && 
+               msg.senderEmail !== currentUser.email && 
+               !msg.isRead
+      );
+      
+      if (messagesToMarkAsRead.length === 0) return;
+
+      // Update database
       const { error } = await supabase
         .from('messages')
         .update({ is_read: true })
-        .match({ 
-          conversation_id: conversationId,
-          sender_email: currentUser.email === conversations.find(c => c.id === conversationId)?.participants[0] 
-            ? conversations.find(c => c.id === conversationId)?.participants[1] 
-            : conversations.find(c => c.id === conversationId)?.participants[0]
-        });
+        .in('id', messagesToMarkAsRead.map(msg => msg.id));
 
       if (error) throw error;
 
       // Update local state
       setMessages(prev => 
         prev.map(msg => 
-          msg.conversationId === conversationId && !msg.isRead 
+          messagesToMarkAsRead.some(m => m.id === msg.id) 
             ? { ...msg, isRead: true } 
             : msg
         )
       );
       
       // Update unread count
-      setUnreadMessagesCount(prev => Math.max(0, prev - 1));
+      setUnreadMessagesCount(prev => Math.max(0, prev - messagesToMarkAsRead.length));
     } catch (error) {
       console.error('Error marking messages as read:', error);
     }
@@ -1364,7 +1386,16 @@ const App: React.FC = () => {
       case 'offers':
         return <OffersView offers={offers} currentUser={currentUser} users={users} motorcycles={motorcycles} parts={parts} onAcceptOffer={handleAcceptOffer} onRejectOffer={handleRejectOffer} onSelectItem={(item) => 'make' in item ? handleSelectMotorcycle(item) : handleSelectPart(item)} onCancelSale={handleCancelSale} />;
       case 'chatList':
-        return <ChatListView conversations={conversations.filter(c => c.participants.includes(currentUser.email))} messages={messages} motorcycles={motorcycles} parts={parts} currentUser={currentUser} users={users} onSelectConversation={(convoId) => { setSelectedConversationId(convoId); setView('chatDetail'); }} />;
+        return <ChatListView 
+          conversations={conversations.filter(c => c.participants.includes(currentUser.email))} 
+          messages={messages} 
+          motorcycles={motorcycles} 
+          parts={parts} 
+          currentUser={currentUser} 
+          users={users} 
+          onSelectConversation={handleNavigateToChat} 
+        />;
+
       case 'chatDetail': {
         const conversation = conversations.find(c => c.id === selectedConversationId);
         if (!conversation) return <PlaceholderView title="Error de Chat" />;

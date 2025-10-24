@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Offer, User, Motorcycle, Part } from '../types';
-import { CheckIcon, XIcon, BellIcon } from './Icons';
+import { CheckIcon, XIcon, BellIcon, ChevronDownIcon, ChevronUpIcon } from './Icons';
 
 interface OffersViewProps {
   offers: Offer[];
@@ -16,6 +16,7 @@ interface OffersViewProps {
 
 const OffersView: React.FC<OffersViewProps> = ({ offers, currentUser, users, motorcycles, parts, onAcceptOffer, onRejectOffer, onSelectItem, onCancelSale }) => {
   const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
+  const [showHistory, setShowHistory] = useState(false);
 
   const enrichedOffers = useMemo(() => {
     return offers.map(offer => {
@@ -30,6 +31,21 @@ const OffersView: React.FC<OffersViewProps> = ({ offers, currentUser, users, mot
 
   const receivedOffers = enrichedOffers.filter(o => o.sellerEmail === currentUser.email);
   const sentOffers = enrichedOffers.filter(o => o.buyerEmail === currentUser.email);
+  
+  // Separate active and historical offers
+  const isActiveOffer = (offer: any) => {
+    // Active offers are those that are not cancelled and either:
+    // 1. The item is not sold, or
+    // 2. The item is sold but the offer is not accepted
+    return offer.status !== 'cancelled' && 
+           (offer.item?.status !== 'sold' || offer.status !== 'accepted');
+  };
+  
+  const activeReceivedOffers = receivedOffers.filter(isActiveOffer);
+  const historicalReceivedOffers = receivedOffers.filter(offer => !isActiveOffer(offer));
+  
+  const activeSentOffers = sentOffers.filter(isActiveOffer);
+  const historicalSentOffers = sentOffers.filter(offer => !isActiveOffer(offer));
   
   const StatusBadge: React.FC<{ status: 'pending' | 'accepted' | 'rejected' | 'cancelled' }> = ({ status }) => {
     const styles = {
@@ -95,6 +111,27 @@ const OffersView: React.FC<OffersViewProps> = ({ offers, currentUser, users, mot
     );
   };
   
+  const CollapsedOfferCard: React.FC<{ offer: typeof enrichedOffers[0], type: 'received' | 'sent' }> = ({ offer, type }) => {
+    if (!offer.item) return null;
+    const itemName = 'make' in offer.item ? `${offer.item.make} ${offer.item.model}` : offer.item.name;
+    const otherParty = type === 'received' ? offer.buyer : offer.seller;
+    
+    return (
+        <div className="bg-card-light dark:bg-card-dark p-3 rounded-xl shadow-sm border border-border-light dark:border-border-dark">
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => onSelectItem(offer.item!)}>
+                <img src={offer.item.imageUrls[0]} alt={itemName} className="w-16 h-12 object-cover rounded-lg flex-shrink-0" />
+                <div className="flex-grow overflow-hidden">
+                    <p className="font-bold truncate text-sm">{itemName}</p>
+                    <p className="text-xs text-foreground-muted-light dark:text-foreground-muted-dark truncate">
+                        {type === 'received' ? `De ${otherParty?.name}` : `A ${otherParty?.name}`}
+                    </p>
+                </div>
+                <StatusBadge status={offer.status} />
+            </div>
+        </div>
+    );
+  };
+  
   const EmptyState: React.FC<{ message: string }> = ({ message }) => (
     <div className="text-center py-20 px-4">
         <BellIcon className="w-16 h-16 mx-auto text-foreground-muted-light dark:text-foreground-muted-dark mb-4"/>
@@ -103,7 +140,8 @@ const OffersView: React.FC<OffersViewProps> = ({ offers, currentUser, users, mot
     </div>
   );
   
-  const offersToDisplay = activeTab === 'received' ? receivedOffers : sentOffers;
+  const offersToDisplay = activeTab === 'received' ? activeReceivedOffers : activeSentOffers;
+  const historicalOffers = activeTab === 'received' ? historicalReceivedOffers : historicalSentOffers;
   const emptyMessage = activeTab === 'received' ? "Aquí aparecerán las ofertas que recibas por tus artículos." : "Aquí aparecerán las ofertas que envíes.";
 
   return (
@@ -122,6 +160,33 @@ const OffersView: React.FC<OffersViewProps> = ({ offers, currentUser, users, mot
                 {offersToDisplay.map(offer => (
                     <OfferCard key={offer.id} offer={offer} type={activeTab} />
                 ))}
+                
+                {/* History Section */}
+                {historicalOffers.length > 0 && (
+                    <div className="mt-8">
+                        <button 
+                            onClick={() => setShowHistory(!showHistory)}
+                            className="flex items-center justify-between w-full p-3 bg-card-light dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark"
+                        >
+                            <span className="font-bold text-foreground-light dark:text-foreground-dark">
+                                Historial de Ofertas ({historicalOffers.length})
+                            </span>
+                            {showHistory ? (
+                                <ChevronUpIcon className="w-5 h-5 text-foreground-light dark:text-foreground-dark" />
+                            ) : (
+                                <ChevronDownIcon className="w-5 h-5 text-foreground-light dark:text-foreground-dark" />
+                            )}
+                        </button>
+                        
+                        {showHistory && (
+                            <div className="mt-4 space-y-4">
+                                {historicalOffers.map(offer => (
+                                    <CollapsedOfferCard key={offer.id} offer={offer} type={activeTab} />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         ) : (
             <EmptyState message={emptyMessage} />
