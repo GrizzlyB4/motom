@@ -121,12 +121,17 @@ const App: React.FC = () => {
             conversationId: payload.new.conversation_id,
             senderEmail: payload.new.sender_email,
             text: payload.new.text,
-            timestamp: payload.new.timestamp,
+            timestamp: new Date(payload.new.timestamp).getTime(), // Convert PostgreSQL timestamp to JS timestamp
             isRead: payload.new.is_read,
           };
           
           // console.log('New message received:', newMessage);
-          setMessages((prev) => [...prev, newMessage]);
+          // Add new message in the correct chronological order
+          setMessages(prev => {
+            const updatedMessages = [...prev, newMessage];
+            // Sort messages by timestamp to ensure proper order
+            return updatedMessages.sort((a, b) => a.timestamp - b.timestamp);
+          });
           
           // Update unread count if message is not from current user
           if (newMessage.senderEmail !== currentUser.email) {
@@ -184,13 +189,16 @@ const App: React.FC = () => {
             conversationId: payload.new.conversation_id,
             senderEmail: payload.new.sender_email,
             text: payload.new.text,
-            timestamp: payload.new.timestamp,
+            timestamp: new Date(payload.new.timestamp).getTime(), // Convert PostgreSQL timestamp to JS timestamp
             isRead: payload.new.is_read,
           };
           
-          setMessages((prev) =>
-            prev.map((msg) => (msg.id === updatedMessage.id ? updatedMessage : msg))
-          );
+          // Update message and maintain proper chronological order
+          setMessages((prev) => {
+            const updatedMessages = prev.map((msg) => (msg.id === updatedMessage.id ? updatedMessage : msg));
+            // Sort messages by timestamp to ensure proper order
+            return updatedMessages.sort((a, b) => a.timestamp - b.timestamp);
+          });
         }
       )
       .subscribe();
@@ -385,9 +393,9 @@ const App: React.FC = () => {
                 conversationId: msg.conversation_id,
                 senderEmail: msg.sender_email,
                 text: msg.text,
-                timestamp: msg.timestamp,
+                timestamp: new Date(msg.timestamp).getTime(), // Convert PostgreSQL timestamp to JS timestamp
                 isRead: msg.is_read,
-            })) || []);
+            })).sort((a, b) => a.timestamp - b.timestamp) || []);
             
             // Calculate unread messages count - only count messages not from current user and not read
             const unreadCount = messagesRes.data?.filter((msg: any) => 
@@ -703,7 +711,12 @@ const App: React.FC = () => {
         isRead: data.is_read,
       };
       // console.log('Mapped message:', message);
-      setMessages(prev => [...prev, message]);
+      // Add new message in the correct chronological order
+      setMessages(prev => {
+        const updatedMessages = [...prev, message];
+        // Sort messages by timestamp to ensure proper order
+        return updatedMessages.sort((a, b) => a.timestamp - b.timestamp);
+      });
 
       // Mark conversation as having unread messages for other participants
       const conversation = conversations.find(c => c.id === conversationId);
@@ -740,13 +753,15 @@ const App: React.FC = () => {
       if (error) throw error;
 
       // Update local state
-      setMessages(prev => 
-        prev.map(msg => 
+      setMessages(prev => {
+        const updatedMessages = prev.map(msg => 
           messagesToMarkAsRead.some(m => m.id === msg.id) 
             ? { ...msg, isRead: true } 
             : msg
-        )
-      );
+        );
+        // Sort messages by timestamp to ensure proper order
+        return updatedMessages.sort((a, b) => a.timestamp - b.timestamp);
+      });
       
       // Update unread count
       setUnreadMessagesCount(prev => Math.max(0, prev - messagesToMarkAsRead.length));

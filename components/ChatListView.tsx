@@ -67,6 +67,7 @@ const ChatListView: React.FC<ChatListViewProps> = ({
 
       const otherParticipantEmail = convo.participants.find(p => p !== currentUser.email);
       const otherParticipant = users.find(u => u.email === otherParticipantEmail);
+      // Ensure messages are sorted properly by timestamp (newest first)
       const convoMessages = messages
         .filter(m => m.conversationId === convo.id)
         .sort((a, b) => b.timestamp - a.timestamp);
