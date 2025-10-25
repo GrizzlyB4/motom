@@ -23,6 +23,7 @@ import OfferModal from './components/OfferModal';
 import OffersView from './components/OffersView';
 import { supabase, addHeatmapPoint as addHeatmapPointToDb, getHeatmapData, archiveConversation, deleteOldArchivedConversations } from './services/supabase';
 import Spinner from './components/Spinner';
+import { motion, AnimatePresence } from 'framer-motion';
 
 
 export type View = 'home' | 'detail' | 'partDetail' | 'sell' | 'profile' | 'favorites' | 'chat' | 'chatList' | 'chatDetail' | 'login' | 'publicProfile' | 'edit' | 'signup' | 'offers';
@@ -1400,50 +1401,122 @@ const App: React.FC = () => {
         const seller = users.find(u => u.email === selectedMotorcycle?.sellerEmail);
         const pendingOffer = offers.find(o => o.itemId === selectedMotorcycle?.id && o.itemType === 'motorcycle' && o.buyerEmail === currentUser.email && o.status === 'pending');
         if (!selectedMotorcycle || !seller) return <PlaceholderView title="Anuncio no encontrado" />;
-        return <MotorcycleDetailView motorcycle={selectedMotorcycle} seller={seller} allMotorcycles={motorcycles} onBack={handleBackToPrevView} onStartChat={handleStartOrGoToChat} isFavorite={favorites.includes(selectedMotorcycle.id)} onToggleFavorite={handleToggleFavorite} onViewPublicProfile={handleViewPublicProfile} onSelectMotorcycle={handleSelectMotorcycle} onOpenOfferModal={handleOpenOfferModal} pendingOffer={pendingOffer} currentUser={currentUser} />;
+        return (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <MotorcycleDetailView motorcycle={selectedMotorcycle} seller={seller} allMotorcycles={motorcycles} onBack={handleBackToPrevView} onStartChat={handleStartOrGoToChat} isFavorite={favorites.includes(selectedMotorcycle.id)} onToggleFavorite={handleToggleFavorite} onViewPublicProfile={handleViewPublicProfile} onSelectMotorcycle={handleSelectMotorcycle} onOpenOfferModal={handleOpenOfferModal} pendingOffer={pendingOffer} currentUser={currentUser} />
+          </motion.div>
+        );
       }
       case 'partDetail': {
         const seller = users.find(u => u.email === selectedPart?.sellerEmail);
         const pendingOffer = offers.find(o => o.itemId === selectedPart?.id && o.itemType === 'part' && o.buyerEmail === currentUser.email && o.status === 'pending');
         if (!selectedPart || !seller) return <PlaceholderView title="Anuncio no encontrado" />;
-        return <PartDetailView part={selectedPart} seller={seller} onBack={handleBackToPrevView} onViewPublicProfile={handleViewPublicProfile} onStartChat={handleStartOrGoToChat} isFavorite={favoriteParts.includes(selectedPart.id)} onToggleFavorite={handleTogglePartFavorite} onOpenOfferModal={handleOpenOfferModal} pendingOffer={pendingOffer} currentUser={currentUser} />;
+        return (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <PartDetailView part={selectedPart} seller={seller} onBack={handleBackToPrevView} onViewPublicProfile={handleViewPublicProfile} onStartChat={handleStartOrGoToChat} isFavorite={favoriteParts.includes(selectedPart.id)} onToggleFavorite={handleTogglePartFavorite} onOpenOfferModal={handleOpenOfferModal} pendingOffer={pendingOffer} currentUser={currentUser} />
+          </motion.div>
+        );
       }
       case 'sell':
-        return <SellForm onBack={() => setView('home')} onPublish={handlePublish} />;
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <SellForm onBack={() => setView('home')} onPublish={handlePublish} />
+          </motion.div>
+        );
       case 'edit':
-        return <EditForm motorcycle={motorcycleToEdit} part={partToEdit} onBack={handleBackToPrevView} onUpdate={handleUpdateItem} />;
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <EditForm motorcycle={motorcycleToEdit} part={partToEdit} onBack={handleBackToPrevView} onUpdate={handleUpdateItem} />
+          </motion.div>
+        );
       case 'profile':
-        return <ProfileView 
-          currentUser={currentUser} 
-          userMotorcycles={userMotorcycles} 
-          userParts={userParts} 
-          onGoToSell={() => setView('sell')} 
-          onSelectMotorcycle={handleSelectMotorcycle} 
-          onSelectPart={handleSelectPart} 
-          onLogout={handleLogout} 
-          notificationPermission={notificationPermission} 
-          onRequestPermission={handleRequestNotificationPermission} 
-          onUpdateProfileImage={handleUpdateProfileImage} 
-          onEditItem={handleNavigateToEdit} 
-          onMarkAsSold={handleMarkAsSold} 
-          onPromoteItem={handlePromoteItem} 
-          savedSearches={savedSearches} 
-          onDeleteSearch={handleDeleteSearch} 
-          onNavigateToFavorites={() => setView('favorites')} 
-          onCancelSale={handleCancelSale}
-          onDeleteItem={handleDeleteItem} // Add the onDeleteItem prop
-        />;
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ProfileView 
+              currentUser={currentUser} 
+              userMotorcycles={userMotorcycles} 
+              userParts={userParts} 
+              onGoToSell={() => setView('sell')} 
+              onSelectMotorcycle={handleSelectMotorcycle} 
+              onSelectPart={handleSelectPart} 
+              onLogout={handleLogout} 
+              notificationPermission={notificationPermission} 
+              onRequestPermission={handleRequestNotificationPermission} 
+              onUpdateProfileImage={handleUpdateProfileImage} 
+              onEditItem={handleNavigateToEdit} 
+              onMarkAsSold={handleMarkAsSold} 
+              onPromoteItem={handlePromoteItem} 
+              savedSearches={savedSearches} 
+              onDeleteSearch={handleDeleteSearch} 
+              onNavigateToFavorites={() => setView('favorites')} 
+              onCancelSale={handleCancelSale}
+              onDeleteItem={handleDeleteItem} // Add the onDeleteItem prop
+            />
+          </motion.div>
+        );
       case 'publicProfile': {
         const seller = users.find(u => u.email === selectedSellerEmail);
         const sellerMotorcycles = motorcycles.filter(m => m.sellerEmail === selectedSellerEmail);
         const sellerParts = parts.filter(p => p.sellerEmail === selectedSellerEmail);
         if (!seller) return <PlaceholderView title="Vendedor no encontrado" />;
-        return <PublicProfileView seller={seller} motorcycles={sellerMotorcycles} parts={sellerParts} onBack={handleBackToPrevView} onSelectMotorcycle={handleSelectMotorcycle} onSelectPart={handleSelectPart} favorites={favorites} onToggleFavorite={handleToggleFavorite} favoriteParts={favoriteParts} onTogglePartFavorite={handleTogglePartFavorite} currentUser={currentUser} userRating={userRatings[seller.email]} onRateUser={handleRateUser} />;
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <PublicProfileView seller={seller} motorcycles={sellerMotorcycles} parts={sellerParts} onBack={handleBackToPrevView} onSelectMotorcycle={handleSelectMotorcycle} onSelectPart={handleSelectPart} favorites={favorites} onToggleFavorite={handleToggleFavorite} favoriteParts={favoriteParts} onTogglePartFavorite={handleTogglePartFavorite} currentUser={currentUser} userRating={userRatings[seller.email]} onRateUser={handleRateUser} />
+          </motion.div>
+        );
       }
       case 'favorites':
-        return <FavoritesView motorcycles={favoriteMotorcycles} parts={favoritePartsList} onSelectMotorcycle={handleSelectMotorcycle} onSelectPart={handleSelectPart} onToggleFavorite={handleToggleFavorite} onTogglePartFavorite={handleTogglePartFavorite} />;
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <FavoritesView motorcycles={favoriteMotorcycles} parts={favoritePartsList} onSelectMotorcycle={handleSelectMotorcycle} onSelectPart={handleSelectPart} onToggleFavorite={handleToggleFavorite} onTogglePartFavorite={handleTogglePartFavorite} />
+          </motion.div>
+        );
       case 'offers':
-        return <OffersView offers={offers} currentUser={currentUser} users={users} motorcycles={motorcycles} parts={parts} onAcceptOffer={handleAcceptOffer} onRejectOffer={handleRejectOffer} onSelectItem={(item) => 'make' in item ? handleSelectMotorcycle(item) : handleSelectPart(item)} onCancelSale={handleCancelSale} />;
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <OffersView offers={offers} currentUser={currentUser} users={users} motorcycles={motorcycles} parts={parts} onAcceptOffer={handleAcceptOffer} onRejectOffer={handleRejectOffer} onSelectItem={(item) => 'make' in item ? handleSelectMotorcycle(item) : handleSelectPart(item)} onCancelSale={handleCancelSale} />
+          </motion.div>
+        );
       case 'chatList':
         // Filter conversations based on archived status
         const userConversations = conversations.filter(c => c.participants.includes(currentUser.email));
@@ -1451,18 +1524,27 @@ const App: React.FC = () => {
           ? userConversations 
           : userConversations.filter(c => !c.archived);
           
-        return <ChatListView 
-          conversations={displayedConversations} 
-          messages={messages} 
-          motorcycles={motorcycles} 
-          parts={parts} 
-          currentUser={currentUser} 
-          users={users} 
-          onSelectConversation={handleNavigateToChat} 
-          onArchiveConversation={handleArchiveConversation}
-          showArchivedChats={showArchivedChats}
-          onToggleShowArchived={() => setShowArchivedChats(!showArchivedChats)}
-        />;
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ChatListView 
+              conversations={displayedConversations} 
+              messages={messages} 
+              motorcycles={motorcycles} 
+              parts={parts} 
+              currentUser={currentUser} 
+              users={users} 
+              onSelectConversation={handleNavigateToChat} 
+              onArchiveConversation={handleArchiveConversation}
+              showArchivedChats={showArchivedChats}
+              onToggleShowArchived={() => setShowArchivedChats(!showArchivedChats)}
+            />
+          </motion.div>
+        );
 
       case 'chatDetail': {
         const conversation = conversations.find(c => c.id === selectedConversationId);
@@ -1470,37 +1552,53 @@ const App: React.FC = () => {
         const item = conversation.motorcycle_id ? motorcycles.find(m => m.id === conversation.motorcycle_id) : parts.find(p => p.id === conversation.part_id);
         if (!item) return <PlaceholderView title="Artículo no encontrado" />;
         
-        return <ChatDetailView 
-          conversation={conversation} 
-          messages={messages.filter(m => m.conversationId === selectedConversationId)} 
-          item={item} 
-          currentUser={currentUser} 
-          users={users} 
-          onBack={handleBackToPrevView} 
-          onSendMessage={handleSendMessage} 
-          isTyping={isTyping[selectedConversationId] || false} 
-          onMarkAsRead={markMessagesAsRead} 
-          onArchiveConversation={handleArchiveConversation}
-        />;
+        return (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ChatDetailView 
+              conversation={conversation} 
+              messages={messages.filter(m => m.conversationId === selectedConversationId)} 
+              item={item} 
+              currentUser={currentUser} 
+              users={users} 
+              onBack={handleBackToPrevView} 
+              onSendMessage={handleSendMessage} 
+              isTyping={isTyping[selectedConversationId] || false} 
+              onMarkAsRead={markMessagesAsRead} 
+              onArchiveConversation={handleArchiveConversation}
+            />
+          </motion.div>
+        );
       }
       case 'home':
       default:
         const areMotoFiltersActive = searchTerm !== '' || locationFilter !== '' || selectedCategory !== 'All' || priceRange.min !== '' || priceRange.max !== '' || yearRange.min !== '' || yearRange.max !== '' || engineSizeCategory !== 'any';
         const arePartFiltersActive = searchTerm !== '' || locationFilter !== '' || selectedPartCategory !== 'All' || priceRange.min !== '' || priceRange.max !== '';
         return (
-          <div>
-            <div className="p-4 bg-background-light dark:bg-background-dark">
-                <div className="flex w-full bg-card-light dark:bg-card-dark p-1 rounded-full border border-border-light dark:border-border-dark">
-                    <button onClick={() => setMarketView('motorcycles')} className={`w-1/2 py-2 rounded-full text-sm font-bold transition-colors ${marketView === 'motorcycles' ? 'bg-primary text-white' : 'text-foreground-light dark:text-foreground-dark'}`}> Motos </button>
-                    <button onClick={() => setMarketView('parts')} className={`w-1/2 py-2 rounded-full text-sm font-bold transition-colors ${marketView === 'parts' ? 'bg-primary text-white' : 'text-foreground-light dark:text-foreground-dark'}`}> Piezas </button>
-                </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div>
+              <div className="p-4 bg-background-light dark:bg-background-dark">
+                  <div className="flex w-full bg-card-light dark:bg-card-dark p-1 rounded-full border border-border-light dark:border-border-dark">
+                      <button onClick={() => setMarketView('motorcycles')} className={`w-1/2 py-2 rounded-full text-sm font-bold transition-colors ${marketView === 'motorcycles' ? 'bg-primary text-white' : 'text-foreground-light dark:text-foreground-dark'}`}> Motos </button>
+                      <button onClick={() => setMarketView('parts')} className={`w-1/2 py-2 rounded-full text-sm font-bold transition-colors ${marketView === 'parts' ? 'bg-primary text-white' : 'text-foreground-light dark:text-foreground-dark'}`}> Piezas </button>
+                  </div>
+              </div>
+              {marketView === 'motorcycles' ? (
+                <MotorcycleList motorcycles={filteredMotorcycles} featuredMotorcycles={featuredMotorcycles} onSelectMotorcycle={handleSelectMotorcycle} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} favorites={favorites} onToggleFavorite={handleToggleFavorite} onAddHeatmapPoint={handleAddHeatmapPoint} searchTerm={searchTerm} onSaveSearch={() => handleSaveSearch('motorcycle')} areFiltersActive={areMotoFiltersActive} />
+              ) : (
+                <PartList parts={filteredParts} onSelectPart={handleSelectPart} selectedCategory={selectedPartCategory} onSelectCategory={setSelectedPartCategory} onAddHeatmapPoint={handleAddHeatmapPoint} onSaveSearch={() => handleSaveSearch('part')} areFiltersActive={arePartFiltersActive} favorites={favoriteParts} onToggleFavorite={handleTogglePartFavorite} />
+              )}
             </div>
-            {marketView === 'motorcycles' ? (
-              <MotorcycleList motorcycles={filteredMotorcycles} featuredMotorcycles={featuredMotorcycles} onSelectMotorcycle={handleSelectMotorcycle} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} favorites={favorites} onToggleFavorite={handleToggleFavorite} onAddHeatmapPoint={handleAddHeatmapPoint} searchTerm={searchTerm} onSaveSearch={() => handleSaveSearch('motorcycle')} areFiltersActive={areMotoFiltersActive} />
-            ) : (
-              <PartList parts={filteredParts} onSelectPart={handleSelectPart} selectedCategory={selectedPartCategory} onSelectCategory={setSelectedPartCategory} onAddHeatmapPoint={handleAddHeatmapPoint} onSaveSearch={() => handleSaveSearch('part')} areFiltersActive={arePartFiltersActive} favorites={favoriteParts} onToggleFavorite={handleTogglePartFavorite} />
-            )}
-          </div>
+          </motion.div>
         );
     }
   };
@@ -1514,27 +1612,43 @@ const App: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark overflow-x-hidden">
       {isHeatmapVisible && <HeatmapOverlay data={heatmapData} />}
       {isHeaderVisible && (
-        <Header 
-            searchTerm={searchTerm} 
-            setSearchTerm={setSearchTerm} 
-            onOpenFilters={() => setIsFilterModalOpen(true)}
-            currentView={view}
-            isHeatmapVisible={isHeatmapVisible}
-            onToggleHeatmap={handleToggleHeatmap}
-        />
+        <motion.header 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="sticky top-0 z-20 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm border-b border-border-light dark:border-border-dark"
+        >
+          <Header 
+              searchTerm={searchTerm} 
+              setSearchTerm={setSearchTerm} 
+              onOpenFilters={() => setIsFilterModalOpen(true)}
+              currentView={view}
+              isHeatmapVisible={isHeatmapVisible}
+              onToggleHeatmap={handleToggleHeatmap}
+          />
+        </motion.header>
       )}
 
       <main className={`flex-grow ${mainContentPadding}`}>
-        {renderContent()}
+        <AnimatePresence mode="wait">
+          {renderContent()}
+        </AnimatePresence>
       </main>
 
       {isBottomNavVisible && (
-        <BottomNav 
-            currentView={view} 
-            onNavigate={handleNavigate} 
-            unreadMessagesCount={unreadMessagesCount}
-            pendingOffersCount={pendingReceivedOffersCount}
-        />
+        <motion.footer
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="fixed bottom-0 left-0 right-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm border-t border-border-light dark:border-border-dark"
+        >
+          <BottomNav 
+              currentView={view} 
+              onNavigate={handleNavigate} 
+              unreadMessagesCount={unreadMessagesCount}
+              pendingOffersCount={pendingReceivedOffersCount}
+          />
+        </motion.footer>
       )}
       
       <FilterModal

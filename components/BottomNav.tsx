@@ -1,9 +1,7 @@
-
-
-
 import React from 'react';
 import { View } from '../App';
 import { MotorcycleIcon, BellIcon, PlusIcon, ChatIcon, ProfileIcon } from './Icons';
+import { motion } from 'framer-motion';
 
 interface BottomNavProps {
   currentView: View;
@@ -28,34 +26,48 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentView, onNavigate, unreadMe
           const isActive = currentView === item.view;
           if (item.view === 'sell') {
             return (
-              <button key={item.view} onClick={() => onNavigate(item.view)} className="flex flex-col items-center justify-center -mt-8 transition-transform active:scale-90" aria-label={item.label}>
+              <motion.button 
+                key={item.view} 
+                onClick={() => onNavigate(item.view)} 
+                className="flex flex-col items-center justify-center -mt-8 transition-transform" 
+                aria-label={item.label}
+                whileTap={{ scale: 0.9 }}
+                whileHover={{ y: -5 }}
+              >
                 <div className="relative flex items-center justify-center w-16 h-16 rounded-full bg-primary text-white shadow-lg">
                   <item.icon />
                 </div>
-              </button>
+              </motion.button>
             );
           }
           const notificationCount = item.view === 'chat' ? unreadMessagesCount : item.view === 'offers' ? pendingOffersCount : 0;
 
           return (
-            <button
+            <motion.button
               key={item.view}
               onClick={() => onNavigate(item.view)}
-              className={`flex flex-col items-center gap-1 transition-all duration-200 active:scale-90 ${
+              className={`flex flex-col items-center gap-1 transition-all duration-200 ${
                 isActive ? 'text-primary' : 'text-foreground-muted-light dark:text-foreground-muted-dark hover:text-primary dark:hover:text-primary'
               }`}
               aria-label={item.label}
+              whileTap={{ scale: 0.9 }}
+              whileHover={{ y: -3 }}
             >
               <div className="relative">
                 <item.icon />
                 {notificationCount > 0 && (
-                    <span className="absolute top-[-4px] right-[-8px] flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white text-xs font-bold ring-2 ring-background-light dark:ring-background-dark">
+                    <motion.span 
+                      className="absolute top-[-4px] right-[-8px] flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white text-xs font-bold ring-2 ring-background-light dark:ring-background-dark"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                    >
                         {notificationCount > 9 ? '9+' : notificationCount}
-                    </span>
+                    </motion.span>
                 )}
               </div>
               <span className="text-xs font-medium">{item.label}</span>
-            </button>
+            </motion.button>
           );
         })}
       </nav>

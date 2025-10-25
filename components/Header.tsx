@@ -1,6 +1,7 @@
 import React from 'react';
 import { FilterIcon, SearchIcon, FireIcon } from './Icons';
 import { View } from '../App';
+import { motion } from 'framer-motion';
 
 interface HeaderProps {
     searchTerm: string;
@@ -37,27 +38,50 @@ const Header: React.FC<HeaderProps> = ({ searchTerm, setSearchTerm, onOpenFilter
                 <div className="flex items-center justify-between">
                     <div className="w-16 flex items-center gap-2">
                         {isSearchVisible && (
-                             <button 
+                             <motion.button 
                                 onClick={onToggleHeatmap} 
-                                className={`p-1.5 rounded-full transition-all duration-200 active:scale-90 ${isHeatmapVisible ? 'bg-primary/20 text-primary' : 'text-foreground-light dark:text-foreground-dark'}`}
+                                className={`p-1.5 rounded-full transition-all duration-200 ${isHeatmapVisible ? 'bg-primary/20 text-primary' : 'text-foreground-light dark:text-foreground-dark'}`}
                                 aria-label="Toggle Heatmap"
+                                whileTap={{ scale: 0.9 }}
+                                whileHover={{ scale: 1.1 }}
                             >
                                 <FireIcon className="w-5 h-5"/>
-                            </button>
+                            </motion.button>
                         )}
                     </div>
-                    <h1 className="text-lg font-bold text-foreground-light dark:text-foreground-dark">{getTitle()}</h1>
+                    <motion.h1 
+                      className="text-lg font-bold text-foreground-light dark:text-foreground-dark"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {getTitle()}
+                    </motion.h1>
                     <div className="w-16 flex justify-end">
                     {isSearchVisible ? (
-                        <button onClick={onOpenFilters} className="text-foreground-light dark:text-foreground-dark p-1 transition-transform active:scale-90">
+                        <motion.button 
+                          onClick={onOpenFilters} 
+                          className="text-foreground-light dark:text-foreground-dark p-1 transition-transform"
+                          whileTap={{ scale: 0.9 }}
+                          whileHover={{ scale: 1.1 }}
+                        >
                             <FilterIcon />
-                        </button>
+                        </motion.button>
                     ) : (
                         <div className="w-8"></div>
                     )}
                     </div>
                 </div>
-                <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isSearchVisible ? 'max-h-40 mt-4' : 'max-h-0 mt-0 opacity-0'}`}>
+                <motion.div 
+                  className={`transition-all duration-300 ease-in-out overflow-hidden ${isSearchVisible ? 'max-h-40 mt-4' : 'max-h-0 mt-0 opacity-0'}`}
+                  initial={false}
+                  animate={{ 
+                    maxHeight: isSearchVisible ? 160 : 0,
+                    marginTop: isSearchVisible ? 16 : 0,
+                    opacity: isSearchVisible ? 1 : 0
+                  }}
+                  transition={{ duration: 0.3 }}
+                >
                     <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                             <SearchIcon className="text-foreground-muted-light dark:text-foreground-muted-dark" />
@@ -70,7 +94,7 @@ const Header: React.FC<HeaderProps> = ({ searchTerm, setSearchTerm, onOpenFilter
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                </div>
+                </motion.div>
             </div>
         </header>
     );

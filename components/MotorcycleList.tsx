@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Motorcycle, MotorcycleCategory } from '../types';
 import MotorcycleCard from './MotorcycleCard';
 import { HeartIcon, BellIcon } from './Icons';
+import { motion } from 'framer-motion';
 
 interface MotorcycleListProps {
   motorcycles: Motorcycle[];
@@ -47,18 +48,27 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
   return (
     <div onClick={onAddHeatmapPoint}>
       {showFeatured && (
-        <div className={`pt-4 ${isDataStable ? 'animate-fade-in-up' : ''}`} style={{ animationDelay: '0ms' }}>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="pt-4"
+        >
           <h2 className="text-2xl font-bold text-foreground-light dark:text-foreground-dark px-4 mb-3">Destacadas</h2>
           <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 no-scrollbar">
             {featuredMotorcycles.map((moto, index) => (
-              <div
+              <motion.div
                 key={moto.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
+                whileHover={{ y: -5 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={(e) => {
                     e.stopPropagation();
                     onSelectMotorcycle(moto)
                 }}
-                className={`flex-shrink-0 w-64 cursor-pointer group ${isDataStable ? 'animate-fade-in-up' : ''}`}
-                style={{ animationDelay: `${index * 75}ms` }}
+                className="flex-shrink-0 w-64 cursor-pointer group"
               >
                 <div className="h-full bg-card-light dark:bg-card-dark rounded-xl overflow-hidden shadow-md border border-border-light dark:border-border-dark transition-transform duration-200 hover:scale-[1.03] active:scale-95">
                   <div className="relative">
@@ -66,7 +76,8 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
                       className="w-full h-36 bg-cover bg-center"
                       style={{ backgroundImage: `url(${moto.imageUrls[0]})` }}
                     />
-                    <button
+                    <motion.button
+                      whileTap={{ scale: 0.9 }}
                       onClick={(e) => {
                         e.stopPropagation();
                         onToggleFavorite(moto.id);
@@ -75,7 +86,7 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
                       aria-label="Añadir a favoritos"
                     >
                       <HeartIcon filled={favorites.includes(moto.id)} className="w-5 h-5" />
-                    </button>
+                    </motion.button>
                   </div>
                   <div className="p-3">
                     <p className="font-bold truncate text-foreground-light dark:text-foreground-dark group-hover:text-primary transition-colors">{moto.make} {moto.model}</p>
@@ -85,17 +96,21 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
                     </p>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
       )}
 
       <div className="px-4 py-3">
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar">
-          {categories.map((category) => (
-            <button
+          {categories.map((category, index) => (
+            <motion.button
               key={category}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2, delay: index * 0.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={(e) => {
                 e.stopPropagation(); // Prevent click from bubbling to the main container
                 onSelectCategory(category);
@@ -107,13 +122,18 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
               }`}
             >
               {category}
-            </button>
+            </motion.button>
           ))}
         </div>
       </div>
       
       {areFiltersActive && (
-        <div className={`px-4 pb-2 ${isDataStable ? 'animate-fade-in-up' : ''}`} style={{animationDelay: '100ms'}}>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="px-4 pb-2"
+        >
             <button 
               onClick={(e) => { 
                 e.stopPropagation(); 
@@ -128,13 +148,20 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
                 <BellIcon className="w-5 h-5" />
                 Crear alerta para esta búsqueda
             </button>
-        </div>
+        </motion.div>
       )}
 
       {visibleMotorcycles.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4">
-          {visibleMotorcycles.map((moto) => (
-            <div key={moto.id} className={isDataStable ? 'animate-fade-in-up' : ''} style={{ animationDelay: '0ms' }}>
+          {visibleMotorcycles.map((moto, index) => (
+            <motion.div
+              key={moto.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.05 }}
+              whileHover={{ y: -3 }}
+              whileTap={{ scale: 0.98 }}
+            >
               <MotorcycleCard 
                   motorcycle={moto} 
                   onSelect={(e, selectedMoto) => {
@@ -154,14 +181,19 @@ const MotorcycleList: React.FC<MotorcycleListProps> = ({
                   }}
                   isFavorite={favorites.includes(moto.id)}
               />
-            </div>
+            </motion.div>
           ))}
         </div>
       ) : (
-         <div className="text-center py-16 px-4">
+         <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="text-center py-16 px-4"
+        >
             <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark">No se encontraron resultados</h3>
             <p className="text-foreground-muted-light dark:text-foreground-muted-dark mt-2">Intenta ajustar tus términos de búsqueda o filtros.</p>
-        </div>
+        </motion.div>
       )}
     </div>
   );

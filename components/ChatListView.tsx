@@ -1,6 +1,7 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { ChatConversation, ChatMessage, Motorcycle, User, Part } from '../types';
 import { ChatIcon, ArchiveIcon, InboxIcon } from './Icons';
+import { motion } from 'framer-motion';
 
 interface ChatListViewProps {
   conversations: ChatConversation[];
@@ -27,33 +28,6 @@ const ChatListView: React.FC<ChatListViewProps> = ({
   showArchivedChats,
   onToggleShowArchived
 }) => {
-  const [prevShowArchivedChats, setPrevShowArchivedChats] = useState(showArchivedChats);
-  const [animationClass, setAnimationClass] = useState('');
-
-  // Handle the transition when showArchivedChats changes
-  useEffect(() => {
-    if (showArchivedChats !== prevShowArchivedChats) {
-      // Determine direction based on the change
-      if (showArchivedChats) {
-        // Going from active to archived - slide in from right
-        setAnimationClass('slide-in-right');
-      } else {
-        // Going from archived to active - slide in from left
-        setAnimationClass('slide-in-left');
-      }
-      
-      // Update the previous state
-      setPrevShowArchivedChats(showArchivedChats);
-      
-      // Reset animation class after animation completes
-      const timer = setTimeout(() => {
-        setAnimationClass('');
-      }, 300);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [showArchivedChats, prevShowArchivedChats]);
-
   const conversationsWithDetails = useMemo(() => {
     // Filter conversations based on archived status
     const filteredConversations = showArchivedChats 
@@ -89,49 +63,28 @@ const ChatListView: React.FC<ChatListViewProps> = ({
   }, [conversations, messages, motorcycles, parts, currentUser, users, showArchivedChats]);
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <style>
-        {`
-          @keyframes slideInRight {
-            from {
-              transform: translateX(50px);
-              opacity: 0;
-            }
-            to {
-              transform: translateX(0);
-              opacity: 1;
-            }
-          }
-          
-          @keyframes slideInLeft {
-            from {
-              transform: translateX(-50px);
-              opacity: 0;
-            }
-            to {
-              transform: translateX(0);
-              opacity: 1;
-            }
-          }
-          
-          .slide-in-right {
-            animation: slideInRight 0.3s ease-out forwards;
-          }
-          
-          .slide-in-left {
-            animation: slideInLeft 0.3s ease-out forwards;
-          }
-        `}
-      </style>
-      
+    <motion.div 
+      className="max-w-4xl mx-auto"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+    >
       {/* Toggle button for archived chats */}
       <div className="flex justify-between items-center p-4">
-        <h2 className="text-xl font-bold text-foreground-light dark:text-foreground-dark">
+        <motion.h2 
+          className="text-xl font-bold text-foreground-light dark:text-foreground-dark"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+        >
           {showArchivedChats ? 'Chats Archivados' : 'Chats Activos'}
-        </h2>
-        <button 
+        </motion.h2>
+        <motion.button 
+          whileTap={{ scale: 0.95 }}
           onClick={onToggleShowArchived}
           className="flex items-center gap-2 px-4 py-2 bg-card-light dark:bg-card-dark rounded-lg hover:bg-black/[.03] dark:hover:bg-white/[.05] transition-colors"
+          whileHover={{ y: -2 }}
         >
           {showArchivedChats ? (
             <>
@@ -144,17 +97,26 @@ const ChatListView: React.FC<ChatListViewProps> = ({
               <span>Ver Archivados</span>
             </>
           )}
-        </button>
+        </motion.button>
       </div>
       
-      <div className={animationClass}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+      >
         {conversationsWithDetails.length > 0 ? (
           <div className="space-y-2 p-2">
-            {conversationsWithDetails.map(convo => (
-              <div 
+            {conversationsWithDetails.map((convo, index) => (
+              <motion.div 
                   key={convo.id} 
                   onClick={() => onSelectConversation(convo.id)} 
-                  className="bg-card-light dark:bg-card-dark p-4 rounded-xl flex items-center gap-4 cursor-pointer hover:bg-black/[.03] dark:hover:bg-white/[.05] transition-all duration-300 ease-in-out transform hover:translate-x-1 relative"
+                  className="bg-card-light dark:bg-card-dark p-4 rounded-xl flex items-center gap-4 cursor-pointer hover:bg-black/[.03] dark:hover:bg-white/[.05] transition-all duration-300 ease-in-out relative"
+                  whileHover={{ x: 5 }}
+                  whileTap={{ scale: 0.98 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
               >
                 {convo.item && (
                   <img 
@@ -182,42 +144,52 @@ const ChatListView: React.FC<ChatListViewProps> = ({
                   )}
                 </div>
                 {convo.unreadCount > 0 && (
-                  <div className="absolute top-2 right-2 bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
+                  <motion.div 
+                    className="absolute top-2 right-2 bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                  >
                     {convo.unreadCount}
-                  </div>
+                  </motion.div>
                 )}
                 <div className="text-xs text-foreground-muted-light dark:text-foreground-muted-dark">
                   {convo.lastMessage && new Date(convo.lastMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
                 {/* Archive/Unarchive button */}
-                <button 
+                <motion.button 
+                  whileTap={{ scale: 0.9 }}
                   onClick={(e) => {
                     e.stopPropagation();
                     onArchiveConversation && onArchiveConversation(convo.id, !convo.archived);
                   }}
                   className="absolute top-2 right-10 p-1 rounded-full hover:bg-black/[.05] dark:hover:bg-white/[.1] transition-colors"
                   title={convo.archived ? "Desarchivar conversación" : "Archivar conversación"}
+                  whileHover={{ scale: 1.1 }}
                 >
                   <ArchiveIcon className={`w-5 h-5 ${convo.archived ? 'text-foreground-light dark:text-foreground-dark' : 'text-foreground-muted-light dark:text-foreground-muted-dark'}`} />
-                </button>
-              </div>
+                </motion.button>
+              </motion.div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-20 px-4">
-            <ChatIcon className="w-16 h-16 mx-auto text-foreground-muted-light dark:text-foreground-muted-dark mb-4"/>
-            <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark">
-              {showArchivedChats ? 'No tienes chats archivados' : 'No tienes chats activos'}
+          <motion.div 
+            className="text-center py-16 px-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ChatIcon className="w-16 h-16 mx-auto text-foreground-muted-light dark:text-foreground-muted-dark" />
+            <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark mt-4">
+              {showArchivedChats ? 'No hay chats archivados' : 'No hay chats activos'}
             </h3>
             <p className="text-foreground-muted-light dark:text-foreground-muted-dark mt-2">
-              {showArchivedChats 
-                ? 'Los chats que archivas aparecerán aquí.' 
-                : 'Inicia una conversación desde cualquier anuncio.'}
+              {showArchivedChats ? 'Tus chats archivados aparecerán aquí.' : 'Tus conversaciones aparecerán aquí.'}
             </p>
-          </div>
+          </motion.div>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 
