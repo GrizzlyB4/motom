@@ -21,7 +21,7 @@ import HeatmapOverlay from './components/HeatmapOverlay';
 import ConfirmationModal from './components/ConfirmationModal';
 import OfferModal from './components/OfferModal';
 import OffersView from './components/OffersView';
-import { supabase, addHeatmapPoint as addHeatmapPointToDb, getHeatmapData } from './services/supabase';
+import { supabase, addHeatmapPoint as addHeatmapPointToDb, getHeatmapData, archiveConversation, deleteOldArchivedConversations } from './services/supabase';
 import Spinner from './components/Spinner';
 
 
@@ -92,6 +92,7 @@ const App: React.FC = () => {
   const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false);
   const [itemToPromote, setItemToPromote] = useState<{id: string, type: 'motorcycle' | 'part'} | null>(null);
   const [marketView, setMarketView] = useState<'motorcycles' | 'parts'>('motorcycles');
+  const [showArchivedChats, setShowArchivedChats] = useState(false);
   
   const [offers, setOffers] = useState<Offer[]>([]);
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
@@ -376,6 +377,8 @@ const App: React.FC = () => {
                 participants: convo.participants,
                 motorcycle_id: convo.motorcycle_id,
                 part_id: convo.part_id,
+                archived: convo.archived || false,
+                archivedAt: convo.archived_at ? new Date(convo.archived_at).getTime() : undefined, // Add archivedAt field
             })) || []);
             setMessages(messagesRes.data?.map((msg: any) => ({
                 id: msg.id,
@@ -404,6 +407,21 @@ const App: React.FC = () => {
     }
   }, [currentUser]);
 
+  // Add useEffect to periodically clean up old archived conversations
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    // Run cleanup immediately on app start
+    deleteOldArchivedConversations();
+    
+    // Set up interval to run cleanup daily (every 24 hours)
+    const cleanupInterval = setInterval(() => {
+      deleteOldArchivedConversations();
+    }, 24 * 60 * 60 * 1000); // 24 hours in milliseconds
+    
+    // Clean up interval on unmount
+    return () => clearInterval(cleanupInterval);
+  }, [currentUser]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -1262,6 +1280,32 @@ const App: React.FC = () => {
     }
   };
 
+  // Add function to handle archiving/unarchiving conversations
+  const handleArchiveConversation = async (conversationId: string, archived: boolean) => {
+    try {
+      const updatedConversation = await archiveConversation(conversationId, archived);
+      if (updatedConversation) {
+        // Update local state
+        setConversations(prev => 
+          prev.map(conv => 
+            conv.id === conversationId 
+              ? { ...conv, archived: updatedConversation.archived } 
+              : conv
+          )
+        );
+        
+        // If we're viewing the conversation that was just archived, go back to chat list
+        if (archived && view === 'chatDetail' && selectedConversationId === conversationId) {
+          setSelectedConversationId(null);
+          setView('chatList');
+        }
+      }
+    } catch (error) {
+      console.error('Error archiving conversation:', error);
+      alert('Error al archivar la conversación. Por favor, inténtalo de nuevo.');
+    }
+  };
+
   const filteredMotorcycles = useMemo(() => {
     let filtered = motorcycles.filter(m => m.status === 'for-sale' || m.status === 'reserved');
     const lowercasedFilter = searchTerm.toLowerCase();
@@ -1386,14 +1430,23 @@ const App: React.FC = () => {
       case 'offers':
         return <OffersView offers={offers} currentUser={currentUser} users={users} motorcycles={motorcycles} parts={parts} onAcceptOffer={handleAcceptOffer} onRejectOffer={handleRejectOffer} onSelectItem={(item) => 'make' in item ? handleSelectMotorcycle(item) : handleSelectPart(item)} onCancelSale={handleCancelSale} />;
       case 'chatList':
+        // Filter conversations based on archived status
+        const userConversations = conversations.filter(c => c.participants.includes(currentUser.email));
+        const displayedConversations = showArchivedChats 
+          ? userConversations 
+          : userConversations.filter(c => !c.archived);
+          
         return <ChatListView 
-          conversations={conversations.filter(c => c.participants.includes(currentUser.email))} 
+          conversations={displayedConversations} 
           messages={messages} 
           motorcycles={motorcycles} 
           parts={parts} 
           currentUser={currentUser} 
           users={users} 
           onSelectConversation={handleNavigateToChat} 
+          onArchiveConversation={handleArchiveConversation}
+          showArchivedChats={showArchivedChats}
+          onToggleShowArchived={() => setShowArchivedChats(!showArchivedChats)}
         />;
 
       case 'chatDetail': {
@@ -1412,6 +1465,7 @@ const App: React.FC = () => {
           onSendMessage={handleSendMessage} 
           isTyping={isTyping[selectedConversationId] || false} 
           onMarkAsRead={markMessagesAsRead} 
+          onArchiveConversation={handleArchiveConversation}
         />;
       }
       case 'home':

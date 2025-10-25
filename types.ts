@@ -83,6 +83,8 @@ export interface ChatConversation {
   participants: string[];
   motorcycle_id?: string;
   part_id?: string;
+  archived?: boolean;
+  archivedAt?: number;
 }
 
 export interface SavedSearch {

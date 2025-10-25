@@ -101,3 +101,57 @@ export const getProfileByEmail = async (email: string) => {
     return null;
   }
 };
+
+// Function to archive a conversation
+export const archiveConversation = async (conversationId: string, archived: boolean) => {
+  try {
+    const updateData: any = { archived };
+    if (archived) {
+      updateData.archived_at = new Date().toISOString();
+    } else {
+      updateData.archived_at = null;
+    }
+    
+    const { data, error } = await supabase
+      .from('conversations')
+      .update(updateData)
+      .eq('id', conversationId)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error updating conversation archive status:', error);
+      return null;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Unexpected error updating conversation archive status:', error);
+    return null;
+  }
+};
+
+// Function to delete archived conversations older than 15 days
+export const deleteOldArchivedConversations = async () => {
+  try {
+    const fifteenDaysAgo = new Date();
+    fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+    
+    const { data, error } = await supabase
+      .from('conversations')
+      .delete()
+      .lt('archived_at', fifteenDaysAgo.toISOString())
+      .eq('archived', true);
+      
+    if (error) {
+      console.error('Error deleting old archived conversations:', error);
+      return null;
+    }
+    
+    console.log(`Deleted ${(data as any[])?.length || 0} archived conversations older than 15 days`);
+    return data;
+  } catch (error) {
+    console.error('Unexpected error deleting old archived conversations:', error);
+    return null;
+  }
+};

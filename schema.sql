@@ -161,7 +161,9 @@ CREATE TABLE IF NOT EXISTS public.conversations (
     participants text[] NOT NULL,
     motorcycle_id uuid REFERENCES public.motorcycles(id) ON DELETE SET NULL,
     part_id uuid REFERENCES public.parts(id) ON DELETE SET NULL,
-    created_at timestamptz NOT NULL DEFAULT now()
+    created_at timestamptz NOT NULL DEFAULT now(),
+    archived boolean NOT NULL DEFAULT false,
+    archived_at timestamptz
 );
 COMMENT ON TABLE public.conversations IS 'Representa una conversación de chat entre usuarios sobre un anuncio.';
 
@@ -313,7 +315,7 @@ CREATE POLICY "Participants can access messages in their conversations." ON publ
 )) WITH CHECK ((
   SELECT true
   FROM public.conversations
-  WHERE id = conversation_id AND auth.email() = ANY(participants) AND sender_email = auth.email()
+  WHERE id = conversation_id AND auth.email() = ANY(participants)
 ));
 
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||

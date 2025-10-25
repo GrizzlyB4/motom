@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ChatConversation, ChatMessage, Motorcycle, User, Part } from '../types';
-import { ArrowLeftIcon, SendIcon } from './Icons';
+import { ArrowLeftIcon, SendIcon, ArchiveIcon } from './Icons';
 
 interface ChatDetailViewProps {
   conversation: ChatConversation;
@@ -11,7 +11,8 @@ interface ChatDetailViewProps {
   onBack: () => void;
   onSendMessage: (conversationId: string, text: string) => void;
   isTyping: boolean;
-  onMarkAsRead: (conversationId: string) => void; // Add this prop
+  onMarkAsRead: (conversationId: string) => void;
+  onArchiveConversation?: (conversationId: string, archived: boolean) => void;
 }
 
 const TypingIndicator: React.FC = () => (
@@ -22,10 +23,21 @@ const TypingIndicator: React.FC = () => (
     </div>
 );
 
-const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages, item, currentUser, users, onBack, onSendMessage, isTyping, onMarkAsRead }) => {
+const ChatDetailView: React.FC<ChatDetailViewProps> = ({ 
+  conversation, 
+  messages, 
+  item, 
+  currentUser, 
+  users, 
+  onBack, 
+  onSendMessage, 
+  isTyping, 
+  onMarkAsRead,
+  onArchiveConversation
+}) => {
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null); // Add typing timeout
+  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Memoize sorted messages to prevent unnecessary re-renders
   const sortedMessages = useMemo(() => {
@@ -80,6 +92,16 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages,
     setTypingTimeout(timeout);
   };
 
+  const handleArchiveToggle = () => {
+    if (onArchiveConversation) {
+      onArchiveConversation(conversation.id, !conversation.archived);
+      // If archiving, go back to chat list
+      if (!conversation.archived) {
+        onBack();
+      }
+    }
+  };
+
   const itemName = 'make' in item ? `${item.make} ${item.model}` : item.name;
 
   return (
@@ -99,10 +121,17 @@ const ChatDetailView: React.FC<ChatDetailViewProps> = ({ conversation, messages,
             <ArrowLeftIcon className="w-6 h-6 text-foreground-light dark:text-foreground-dark" />
           </button>
           <img src={item.imageUrls[0]} alt={itemName} className="w-10 h-10 object-cover rounded-md" />
-          <div>
+          <div className="flex-grow">
              <h2 className="font-bold text-foreground-light dark:text-foreground-dark leading-tight">{itemName}</h2>
              <p className="text-xs text-foreground-muted-light dark:text-foreground-muted-dark">Chat con {otherParticipant?.name || otherParticipantEmail}</p>
           </div>
+          <button 
+            onClick={handleArchiveToggle}
+            className="p-2 rounded-full hover:bg-black/[.05] dark:hover:bg-white/[.1] transition-colors"
+            title={conversation.archived ? "Desarchivar conversación" : "Archivar conversación"}
+          >
+            <ArchiveIcon className={`w-6 h-6 ${conversation.archived ? 'text-foreground-light dark:text-foreground-dark' : 'text-foreground-muted-light dark:text-foreground-muted-dark'}`} />
+          </button>
         </div>
       </header>
       
