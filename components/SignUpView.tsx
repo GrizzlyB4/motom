@@ -13,6 +13,7 @@ const SignUpView: React.FC<SignUpViewProps> = ({ onSignUp, onNavigateToLogin }) 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +37,35 @@ const SignUpView: React.FC<SignUpViewProps> = ({ onSignUp, onNavigateToLogin }) 
     }
     
     onSignUp(name, email, password);
+    setSuccess(true);
   };
+
+  if (success) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background-light dark:bg-background-dark p-4">
+        <div className="w-full max-w-sm mx-auto">
+          <div className="flex flex-col items-center mb-8">
+            <MotorcycleIcon className="w-16 h-16 text-primary mb-2" />
+            <h1 className="text-3xl font-bold text-foreground-light dark:text-foreground-dark">MotoMarket</h1>
+          </div>
+          
+          <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 text-center">
+            <h2 className="text-xl font-bold text-foreground-light dark:text-foreground-dark mb-4">¡Registro Exitoso!</h2>
+            <p className="text-foreground-muted-light dark:text-foreground-muted-dark mb-4">
+              Hemos enviado un correo de confirmación a <span className="font-semibold">{email}</span>. 
+              Por favor, revisa tu bandeja de entrada y haz clic en el enlace de confirmación para completar tu registro.
+            </p>
+            <button
+              onClick={onNavigateToLogin}
+              className="w-full bg-primary text-white font-bold py-3 px-4 rounded-xl hover:opacity-90 transition-opacity duration-300 text-lg mt-4"
+            >
+              Ir a Iniciar Sesión
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background-light dark:bg-background-dark p-4">
@@ -118,7 +147,7 @@ const SignUpView: React.FC<SignUpViewProps> = ({ onSignUp, onNavigateToLogin }) 
         </p>
 
       </div>
-      <style>{`.form-input { width: 100%; background-color: transparent; border: 1px solid #2a3c46; border-radius: 0.75rem; padding: 0.75rem 1rem; color: inherit; transition: all 0.2s; } .form-input:focus { outline: none; border-color: #1193d4; box-shadow: 0 0 0 2px rgba(17, 147, 212, 0.5); }`}</style>
+      <style>{`.form-input { width: 100%; background-color: transparent; border: 1px solid #2a3c46; border-radius: 0.75rem; padding: 0.75rem 1rem; color: #F8F9FA; transition: all 0.2s; } .form-input:focus { outline: none; border-color: #1193d4; box-shadow: 0 0 0 2px rgba(17, 147, 212, 0.5); } .dark .form-input { color: #F8F9FA; }`}</style>
     </div>
   );
 };
