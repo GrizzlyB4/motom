@@ -280,10 +280,11 @@ const App: React.FC = () => {
              });
              setView('home');
         }
+        setIsLoading(false); // Add this line
       } else {
         setCurrentUser(null);
         setView('login');
-        setIsLoading(false);
+        setIsLoading(false); // Add this line
       }
     });
 
