@@ -100,6 +100,7 @@ const App: React.FC = () => {
   const [itemToMakeOfferOn, setItemToMakeOfferOn] = useState<Motorcycle | Part | null>(null);
   
   const [isLoading, setIsLoading] = useState(true);
+  const [supabaseError, setSupabaseError] = useState<string | null>(null);
 
   // Add this useEffect for real-time chat subscriptions
   useEffect(() => {
@@ -253,42 +254,49 @@ const App: React.FC = () => {
       setNotificationPermission(Notification.permission);
     }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-        
-        if (profile) {
-            const user: User = {
-                id: profile.id,
-                name: profile.name,
-                email: profile.email,
-                profileImageUrl: profile.profile_image_url,
-                totalRatingPoints: profile.total_rating_points,
-                numberOfRatings: profile.number_of_ratings
-            };
-            setCurrentUser(user);
-            setView('home');
+    // Check if Supabase is properly initialized
+    try {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (profile) {
+              const user: User = {
+                  id: profile.id,
+                  name: profile.name,
+                  email: profile.email,
+                  profileImageUrl: profile.profile_image_url,
+                  totalRatingPoints: profile.total_rating_points,
+                  numberOfRatings: profile.number_of_ratings
+              };
+              setCurrentUser(user);
+              setView('home');
+          } else {
+               setCurrentUser({
+                  id: session.user.id,
+                  email: session.user.email!,
+                  name: session.user.user_metadata.name || 'Nuevo Usuario',
+               });
+               setView('home');
+          }
+          setIsLoading(false);
         } else {
-             setCurrentUser({
-                id: session.user.id,
-                email: session.user.email!,
-                name: session.user.user_metadata.name || 'Nuevo Usuario',
-             });
-             setView('home');
+          setCurrentUser(null);
+          setView('login');
+          setIsLoading(false);
         }
-        setIsLoading(false); // Add this line
-      } else {
-        setCurrentUser(null);
-        setView('login');
-        setIsLoading(false); // Add this line
-      }
-    });
+      });
 
-    return () => subscription.unsubscribe();
+      return () => subscription.unsubscribe();
+    } catch (error) {
+      console.error('Supabase initialization error:', error);
+      setSupabaseError('Failed to initialize Supabase. Please check your environment variables.');
+      setIsLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -1393,6 +1401,22 @@ const App: React.FC = () => {
         <div className="flex items-center justify-center min-h-screen bg-background-dark">
             <Spinner />
         </div>
+    );
+  }
+
+  if (supabaseError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background-light dark:bg-background-dark p-4">
+        <div className="w-full max-w-md mx-auto text-center">
+          <h1 className="text-2xl font-bold text-primary mb-4">Error de Configuración</h1>
+          <p className="text-foreground-light dark:text-foreground-dark mb-4">
+            {supabaseError}
+          </p>
+          <p className="text-foreground-muted-light dark:text-foreground-muted-dark">
+            Por favor, verifica que las variables de entorno VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY estén configuradas correctamente.
+          </p>
+        </div>
+      </div>
     );
   }
 
